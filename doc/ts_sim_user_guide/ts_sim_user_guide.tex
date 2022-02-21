@@ -1432,6 +1432,22 @@ ts_sim_run.py --elab-only rtl first_test
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{How to run only simulation ?}
+\label{sec:how-to-run-only-simulation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+It is also possible to run only the simulation using the \textit{--sim-only} option of
+\textit{ts_sim_run.py} script like so:
+
+\begin{lstlisting}
+ts_sim_run.py --sim-only rtl first_test
+\end{lstlisting}
+
+Please note that the elaboration phase will not be run if this option is activated, so
+make sure your design is elaborated beforehand.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection{How to queue for simulation license ?}
 \label{sec:how-to-queue-for-simulation-license}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
