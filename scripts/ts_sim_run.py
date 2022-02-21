@@ -164,8 +164,12 @@ if __name__ == "__main__":
     if not ts_get_cfg("no_check"):
         
         # Check elab log files
-        if (ts_get_cfg("check_elab_log")):
+        if ts_get_cfg("check_elab_log"):
             all_sim_log_files.extend(all_elab_log_files)
+
+        # Skip logfile check if list is empty
+        if not all_sim_log_files:
+            sys.exit(ret_val)
 
         # Check sim log files
         ts_empty_line()
