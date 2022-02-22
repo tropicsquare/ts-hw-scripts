@@ -4,8 +4,8 @@ variables:
 stages:
   - run_tests
   - build_docs
-  - deploy
   - publish
+  - deploy
 
 .only-default: &only-default
   only:
@@ -24,6 +24,7 @@ run_tests:
     stage: run_tests
     tags:
         - shell
+    allow_failure: true
     script:
         - pwd
         - source ./setup_env
@@ -52,6 +53,22 @@ build_docs:
             - doc/ts_sim_specification/build/pdf/ts_sim_specification.pdf
             - doc/ts_sim_user_guide/build/pdf/ts_sim_user_guide.pdf
 
+pages:
+    <<: *only-default
+    tags:
+        - shell
+    stage: publish
+    when: always
+    script:
+        - echo "Publishing pages..."
+        - mkdir -p public
+        - cp doc/ts_sim_specification/build/pdf/ts_sim_specification.pdf public
+        - cp doc/ts_sim_user_guide/build/pdf/ts_sim_user_guide.pdf public
+        
+    artifacts:
+        paths:
+            - public
+
 tropic_install:
     <<: *only-stable
     stage: deploy
@@ -73,20 +90,4 @@ tropic_install:
 
         # Publish scripts themselves
         - cp -r scripts $DEST_FOLDER/$VERSION
-
-pages:
-    <<: *only-default
-    tags:
-        - shell
-    stage: publish
-    when: always
-    script:
-        - echo "Publishing pages..."
-        - mkdir -p public
-        - cp doc/ts_sim_specification/build/pdf/ts_sim_specification.pdf public
-        - cp doc/ts_sim_user_guide/build/pdf/ts_sim_user_guide.pdf public
-        
-    artifacts:
-        paths:
-            - public
 
