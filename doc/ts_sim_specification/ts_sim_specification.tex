@@ -1,0 +1,957 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% This is Specification for scripting system for digital simulations in
+% Tropic Square. It specifies needed features for digital simulation scripting
+% system.
+% 
+% This document uses Tropic Square LaTex library. Set file to this library in
+% TROPICTEXLIBPATH variable (see below).
+%
+% LaTex class:
+%	tropic_design_spec
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Specify Tropic Square document class
+\documentclass{tropic_design_spec}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Document properties and title page
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\title{Design specification}
+\author{Ondrej Ille, Tropic Square}
+\date{July 2021}
+
+% Start of document
+\begin{document}
+
+% Parameters Needed by Design spec class (must be inside document)
+% Set these parameters according to your project.
+\def \projectname {Tropic Square HW Simulation Scripting System}
+\def \documentname {Design specification}
+\def \versionnumber {0.3}
+
+% Title page
+\maketitle
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Document revisions
+% We revision with GIT, however, it does not mean that major changes in the
+% document should not be kept also with document!
+% In general, when you increase document version number, add also entry to
+% this table with revisions saying what changed!
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section*{Version history}
+
+\begin{TropicRatioTable4Col}
+	{0.1}			{0.2}				{0.2}			{0.5}
+	{Version Tag 	& Date 				& Author		&	Description					}
+     0.1            & 20.7.2021         & Ondrej Ille  	&	
+     Initial version		\Ttlb
+
+     0.2            & 10.8.2021         & Ondrej Ille  	&
+     Adapt to first implementation. Mark covered for all requirements which are
+     designed in first implementation. \Ttlb
+     
+     \versionnumber & 10.8.2021         & Ondrej Ille  	&
+     Add specification of Requirement tracing.
+
+\end{TropicRatioTable4Col}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Table of contents
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\pagebreak
+\tableofcontents
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Document
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Introduction
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\pagebreak
+\section{Introduction}
+This document specifies behavior of Digital simulation scripting system. This
+system consists of set of scripts which can be used for following purposes:
+\begin{itemize}
+    \item{Define source list files, Define simulation tests}
+    \item{Compile HDL code for simulation}
+    \item{Simulate HW designs, run tests}
+    \item{Check test results}
+    \item{Run regressions}
+    \item{Do requirement tracing}
+    \item{Analyze code coverage}
+\end{itemize}
+
+At the moment, the scripting system is aimed towards VCS simulator, but the
+structure shall be generic enough to add support of other simulators (either
+Verilator for simple block level test-benches, GHDL, or other commercial simulators).
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Interface
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\pagebreak
+\section{Interface}
+
+\subsection{Pre-requisities}
+
+The scripting system relies on following pre-requisities:
+
+\begin{itemize}
+	\item{\textbf{TS_REPO_ROOT}\space}{Repository root variable}
+\end{itemize}
+
+At the moment it is assumed that \textbf{TS_REPO_ROOT} variable is set out-side
+of scripting system. This is typically done by means of repository specific
+\textit{setup_env} script.
+
+\subsection{Scripts}
+The scripting system contains following Python scripts:
+
+\subsubsection*{ts_sim_compile.py}
+Compiles simulation sources in current repository
+
+\subsubsection*{ts_sim_run.py}
+Runs the simulations/tests in current repository
+
+\subsubsection*{ts_sim_check.py}
+Checks test results
+
+\subsubsection*{ts_sim_coverage.py}
+Analyzes code coverage
+
+\subsubsection*{ts_sim_regress.py}
+Runs regression
+
+\subsubsection*{ts_sim_req_trac.py}
+Perform requirement tracing
+
+\subsubsection*{ts_sim_config.yml}
+YAML configuration file for whole system.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Use-case
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\pagebreak
+\section{Use cases}
+
+\subsection{Running digital simulation}
+Following use-case demonstrate how can the user use this scripting system to
+run digital simulations:
+\begin{enumerate}
+	\item{Check latest version of ts-hw-scripts available via \textit{ts_sw_cfg.py --list-sw}.}
+	\item{Add this SW to repository specific config in \textit{ts_sw_cfg.yml}.
+          Make sure that paths to simulator executables are in PATH variable}
+    \item{Run \textit{source ./setup_env} from repository root folder.}
+    \item{Run the scripts to compile/simulate HDL code}
+\end{enumerate}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Common requirements
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\pagebreak
+
+\section{Common requirements}
+
+\ReqStart{TS_SCMN}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {If there is an option in simulation config file which can be overiden by a command
+     line switch of a script, such switch shall always have priority (if it is set).}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {If there is an option in simulation config file which can be overriden by a command
+     line switch of a script, then the name of this option shall be equal to switch name
+     with the exception of word separator. (E.g. switch '--clear-logs' shall correspond
+     to keyword 'clear_logs'.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {Word separator for command line switches shall be "-", word separator for config
+     file, source/test list file keywords shall be "_".}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {All script shall have "--help", similar to standard Unix help command. Help shall
+     show all command line options.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}{All script shall have following "verbosity" options:}
+\ReqSubStart
+    \ReqSubItem{1}{Regular verbosity - Shows only most important steps executed by script.}
+    \ReqSubItem{1}{Verbose - Shows nearly all steps executed by a script.}
+    \ReqSubItem{1}{Very verbose - Shows all steps executed by a script}
+\ReqSubEnd
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}{If applicable, verbosity options shall be passed to underlying simulator,
+            compiler.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}{All scripts shall use colorized outputs to command line to distinguish
+            importance of various messages (Error - Red, Warning - Yellow/Orange, Info -
+            Purple). The reason behind this is to ease debugging/locating of problems from
+            the script output. It shall be possible to disable colorized outputs (in case
+            script is executed in environment without ANSI coloring).}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqEnd
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% TS_SIM_CONFIG
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\pagebreak
+
+\section{ts_sim_config.yml}
+
+\ReqStart{TS_SCFG}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {Scripting system shall have configuration available in YAML config file                       
+     \textbf{ts_sim_config.yml} located in TS_REPO_ROOT/\textbf{sim} directory}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}{Configuration file shall contain:}
+\begin{itemize}
+    \item{Current simulation tool to be used. Right now only VCS shall be supported.}
+    \item{List of design "targets". Design "target" is similar to makefile target, and
+          it can be used to distinguish between RTL, FPGA and gate level simulation.}	
+    \item{VHDL/Verilog language versions}
+    \item{Tool specific compile, elaborate and simulate options. It shall be possible
+          to specify common options and also options separate for each tool.}
+    \item{Enable/Disable of compilation with coverage collection.}
+    \item{Ability to enable/disable "debug mode" for compiler underlying the simulator.
+          It shall be possible to specify usage of these optimizations by an option.}
+	\item{Global macros defined in all Verilog/System Verilog files}
+	\item{List of regular expressions which cause that line from log file is classified
+	      as Error when it matches this regular expression.}
+	\item{List of regular expressions which cause that line from log file is classified
+	      as Warning when it matches this regular expression.}
+	\item{Simulation "check severity" with possible values: Error, Warning. With "Error"
+	      severity, if there is a line in simulation log file which is classified as
+	      Error, test fails. With "Warning" severity, if there is a line in simulation
+	      log file which is classified as Error or Warning, test fails.}
+    \item{Regular expression patterns which allow to turn on/off ignoring of lines which
+          are classified as Error/Warnings. If the line is ignored, it does not cause
+          test failure.}
+    \item{Time resolution for simulation. The system shall abstract away differences
+          between VHDL and Verilog/System Verilog resolution and single resolution shall
+          configure both VHDL and Verilog/System Verilog designs. If Verilog/System
+          Verilog designs have file specific resolution, the system shall not override
+          it.}
+    \item{Simulation verbosity. Mapping of simulation verbosity to framework specific
+          verbosity (e.g. UVM verbosity) shall be possible via configuration file.}
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}{Each design target shall have following configurable:}
+\begin{itemize}
+	\item{Target name}
+	\item{List of source list files. See "Source list files" section.}
+	\item{Target specific compilation options}
+	\item{Target specific simulation options}
+	\item{Simulation top module/entity}
+	\item{Settings of top level generics/parameters}
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {Path to files (e.g. path to source/test list files) in simulation config file shall
+     be treated as relative to \textbf{TS_REPO_ROOT} variable if they are relative. If
+     the paths are absolute, then they shall be treated as absolute.}
+            
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqEnd
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Source list files
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\pagebreak
+\section{Source list files}
+
+\ReqStart{TS_SLST}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {Repository RTL and TB source codes shall be listed in YAML source list files. Each
+     source file shall be explicitly listed, auto-discovery of source files shall be
+     avoided}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {Paths to individual source files within a source list file shall be interpreted as
+     relative to current list file, if they are absolute. If paths to a file is absolute,
+     it shall be treated as absolute.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {Source list files shall support VHDL, Verilog, System Verilog and/or YAML files}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {Type of file shall be deduced from file extension by all scripts. Scripting system
+     shall treat each file based on its extension (e.g. calling vlogan for Verilog files,
+     and vhdlan VHDL files). Following extensions shall be supported:}
+\ReqSubStart
+	\ReqSubItem{1}{".vhd" - VHDL}
+	\ReqSubItem{1}{".sv"  - System Verilog}
+	\ReqSubItem{1}{".v"	  - Verilog}
+	\ReqSubItem{1}{".yml" - YAML - Indicates nested list file}
+\ReqSubEnd
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {VHDL, Verilog, SystemVerilog files from source list file shall be compiled by a      
+     simulator which is configured in simulator config file.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {YAML file shall be interpreted as nested list file and each script analyzing such
+     list file shall recursively analyze this nested source list file. The script shall
+     implement a mechanism to limit depth of nesting of source list files.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {It shall be possible to define library into which source file will be compiled for
+     each file, as well as for all files within a list file.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {It shall be possible to define custom macro definition for each source file, as well
+     as for all files within a list file.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {Per-file tool specific switches shall be avoided in source list files (apart from
+     macro define). The reason is that whole repository shall be compilable with the same
+     configuration settings. It is not appropriate to e.g. compile RTL with one version
+     of System Verilog standard and TB with another version of System Verilog standard.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqEnd
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Test list files
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\pagebreak
+\section{Test list files}
+
+\ReqStart{TS_TLST}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {It shall be possible to define available tests in current repository via test list
+     file. Test list file shall be YAML file.}
+     
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {It shall be possible to group tests into groups in test list file. Each group of
+     tests shall have its name.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {Each test shall have following configurable:}
+\ReqSubStart
+    \ReqSubItem{1}{Test name}
+    \ReqSubItem{1}{Elaboration and Simulation options which are test specific.}
+    \ReqSubItem{1}{Pre-test and Post-test hooks.}
+    \ReqSubItem{1}{Top level generics which are test specific.}
+\ReqSubEnd
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {It shall be possible to load sub-test list files. This allows nesting test list
+     files. All scripts shall recursively search this sub-list file for available tests.
+     It shall be possible to merge tests from sub-list files into a flat list of tests,
+     as well as placing them into a test group.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqEnd
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% TS_SIM_COMPILE
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\pagebreak
+
+\section{ts_sim_compile.py}
+
+\ReqStart{TS_SCOMP}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {Scripting system shall implement \textbf{ts_sim_compile.py} script. The main
+     purpose of the script is to compile all sources for simulation in current 	
+     repository. This script is further in this section referred to as "script".}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {Script shall by default compile all sources to \textbf{TS_REPO_ROOT/sim/build}
+     folder}
+
+\ReqSubStart
+    \ReqSubItem{1}
+        {It shall be possible to override the directory where the code is 
+         compiled either in simulation_config file, or via command line switch.}
+\ReqSubEnd
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {Script shall perform "compile" step of commnly known three-step simulation flow.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {Sources for compilation shall be given by reference to a single or more lists file 
+     in \textbf{ts_sim_config.yml} config file.}%
+		
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{0}
+    {If underlying simulator does not support particular file type (.e.g. VHDL in case of
+     Verilator), script shall indicate this and throw an error.}%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {Script shall be configurable by a \textbf{ts_sim_config.yml} config file.}%
+\ReqSubStart
+    \ReqSubItem{1}
+        {Script shall take \textbf{sim/ts_sim_config.yml} file as config file.}
+    \ReqSubItem{1}
+        {It shall be possible to override used simulation config file.}
+\ReqSubEnd
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {Script shall have an option to specify for which target from config file you are
+     compiling, as well as option to list all available targets, and list all source files
+     within a target.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {Script shall have an option to clear all compiled files (force recompile).}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {Script shall store compile logs to \textbf{sim/comp_logs} folder.}
+			
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {Script shall terminate and clearly indicate error as soon as compilation of any file
+     fails.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {Compilation log file shall contain target name and timestamp when compilation was
+     performed. When for multiple targets, log files will not be over-written.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {Script shall call pre-compile and post-compile hooks as implemented in 
+     \textbf{ts_sim_config.yml} file. Pre-compile hook shall execute before compilation.
+     Post-compile hook shall execute after simulation. Each hook (if set), shall be a
+     path to separate Python or Bash script with commands to be executed. Typical
+     use-case is compilation of e.g. SW for simulation of CPU core ia external
+     compilation system by running "make" command.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqEnd
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% TS_SIM_RUN
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\pagebreak
+
+\section{ts_sim_run.py}
+
+\ReqStart{TS_SRUN}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {Scripting system shall implement \textbf{ts_sim_run.py} script. This script shall be
+     used to launch simulations in current repository. \textbf{ts_sim_run.py} is further
+     in this section only referred to as "script".}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {Script shall rely on TS_REPO_ROOT environment variable, and \textbf{ts_sim_config.yml}
+     configuration file.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {Script depends on \textbf{ts_sim_compile.py} script. Therefore, the simulation flow
+     shall be:
+    \begin{enumerate}			
+        \item{"compile" (\textbf{ts_sim_compile.py})}
+        \item{"simulate" (\textbf{ts_sim_run.py})}
+    \end{enumerate}
+     It is users responsibility to call \textbf{ts_sim_compile.py} script first.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {Script shall perform "elaborate" and "simulate" parts of the three-step simulation
+     flow automatically as single step.}.	
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {It shall be possible to only instruct the script to perform elaboration, and not
+     launch simulation by a command line switch}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {By default, script shall run simulation in batch mode. If specified by a switch,
+     script shall launch simulation in GUI mode.}.
+\ReqSubStart
+    \ReqSubItem{1}{VCS simulator shall support launching DVE when running in GUI mode.}
+\ReqSubEnd
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {To perform simulation, user shall put design target equal to compilation design
+     target as a command line argument. It is users responsibility that compilation was
+     executed for the same target as simulation.}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {Script shall have a switch which will enable recording of full design hierarchy into
+     wave files}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {It shall be possible to specify test name when running the script. The script shall
+     check whether test matches any available test name from any of test list files. If
+     not, the script shall indicate that there is no such test available.} 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {It shall be possible to use wild-cards to specify test names.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {Location of root test list file shall be configurable via \textbf{ts_sim_config.yml}
+    simulation config file.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {When running a test as an argument of a script, tests from groups shall be accessible
+     by using group name as prefix to test name. This avoids naming conflicts between
+     tests in groups.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {It shall be possible to over-ride seed for randomization when starting the script.
+     This allows debugging of fails from regressions. If seed is not specified by 
+     command line switch, or simulation config file, random seed shall be generated!}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {It shall be possible to run a test multiple times in a loop by a command line switch.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {It shall be possible to specify multiple tests at single call of the script. Each
+     test shall be executed once, or multiple times if specified by a switch from previous
+     requirement.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {When multiple tests are run (either repetition of single test, or different tests),
+     script shall execute these strictly synchronously, therefore consuming one license
+     at a time. For parallel execution refer to \textbf{ts_sim_regress.py} script.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {Test log files from simulation shall be stored in \textbf{TS_REPO_ROOT/sim_logs/}.
+     Name of each log file shall contain timestamp, test name, design target and seed.
+     Script shall append simulator exit code and duration of simulation to each log file.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {Script shall run elaboration and simulation (create simulation binary) into a separate
+     folder for each test. The folder shall be located under "build" directory in which
+     code was compiled.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {When simulation ends, script shall invoke \textbf{ts_sim_check.py} script (see
+     separate section for its specification). Script shall pass name of the simulation
+     log file(s) to the \textbf{ts_sim_check.py}. Script shall return a return value passed
+     from this sub-script.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {It shall be possible to configure if scripts shall proceed with simulating next test
+     if \textbf{ts_sim_check.py} marks the test as "failed" (\textbf{ts_sim_check.py}
+     returns non-zero value). By default, the simulation shall run all the tests.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {If there were multiple tests ran, the script shall print summary of all the test
+     results as given by \textbf{ts_sim_check.py} for each test. This summary shall be
+     printed after all tests were ran.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {It shall be possible to disable call of the \textbf{ts_sim_check.py} script at the
+     end of \textbf{ts_sim_run.py} execution by a command line switch. However, by default,
+     the script shall call \textbf{ts_sim_check.py}.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {It shall be possible to specify following hooks for the script:
+
+\begin{itemize}
+    \item{Pre-run            - Executes before start of first test.}
+    \item{Pre-test           - Executes before start of each test - common to all tests}
+    \item{Pre-test-specific  - Executes before start of each test - test specific}
+    \item{Post-test-specific - Executes after finish of each test - test specific}
+    \item{Post-test          - Executes after finish of each test - common to all tests}
+    \item{Post-run           - Executes after finish of all test, before run of
+                               \textbf{ts_sim_check.py}}
+    \item{Post-check         - Executes after finish of \textbf{ts_sim_check.py} script
+                               executed at the end of test-run.}
+\end{itemize}
+
+    Each hook shall be a path to Python/Bash script, and it shall be specified via
+    \textbf{ts_sim_config.yml} configuration file, or could be test specific (specified
+    in test list file).
+}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {It shall be possible to pass additional elaboration and simulation options by a
+     specific command line switch.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqEnd
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% TS_SIM_CHECK
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\pagebreak
+
+\section{ts_sim_check.py}
+
+\ReqStart{TS_SCHK}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {Scripting system shall implement \textbf{ts_sim_check.py} script whose main purpose
+     is to determine if simulation passed or failed based on test log file. Further, this
+     section refers to it only as "script".}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {Script shall be invoked by \textbf{ts_sim_run.py} script, and it shall take name of
+     the log file as an argument. It shall be possible to provide multiple log files
+     at once.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {It shall be possible to invoke the script separately. In such case log files provided
+     shall be provided via command line switch. If the log file paths are relative, they
+     shall be interpreted as relative to directory from which the script is called.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {Script shall determine whether the test(s) has passed or failed. Number of failed
+     tests shall be returned as script exit code.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {If the simulation exited with non-zero exit code, test shall be marked as failed.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {The script shall parse input log file(s) and look for specific patterns which
+     determine if the test has failed. These patterns shall be regular expressions,
+     and script shall search each line of the provided log file(s) for their occurrence.
+     Following logs shall cause the test to fail:
+\begin{itemize}
+	\item{Any line within log file classified as "Error"}
+	\item{Any line within log file classified as "Warning" shall cause test to fail if it
+		  is configured in \textbf{ts_sim_config.yml} config file.}
+\end{itemize}
+
+    Note that format of these messages is simulator specific! Further, it shall be
+    possible for user to extend these!
+
+    The reason why we shall not rely purely on "UVM_ERROR" reporting mechanism is, that
+    analog models, memory models delivered by third parties might not use UVM, but they
+    will surely use "error" severity logs to throw errors. Therefore it is important to
+    create a system which decides "what passed" and "what failed" not purely on number
+    of UVM_ERRORs, but is rather super-set of UVM reporting mechanisms.
+}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {Script shall count number warnings and errors it encounters during analysis of
+     simulation log file.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {Script shall allow ignoring of errors/warnings if specified in a simulation config
+     file.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{1}
+    {If "verbose" option of the script is set, the script shall print the lines from the
+     log file which cause the test to fail. If it is not set, the script shall only print
+     the result of the test.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqEnd
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% TS_SIM_REGRESS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\pagebreak
+
+\section{ts_sim_regress.py}
+
+\ReqStart{TS_SREG}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{0}
+    {Scripting system shall implement \textbf{ts_sim_regress.py} script whose purpose is
+     to run regressions in parallel (running multiple simulations at a time). Further in
+     this section \textbf{ts_sim_regress.py} is referred to only as script. This script
+     is intended to be used in CI environment.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{0}
+    {Script shall accept the same test names as \textbf{ts_sim_run.py} script.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{0}
+    {It shall be possible to use wild-cards to start multiple tests at the same time
+     (e.g. to run all tests from "base_tests" group you can use "base_test/* as a test
+     name)}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{0}
+    {It shall be possible to specify how many simulations shall be run in parallel. When
+     running simulations in parallel.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{0}
+    {When the whole regression finishes, the script shall report a summary of all tests
+     indicating whether they passed or failed. The script shall also create a backup of
+     all logs from regression into common directory.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{0}
+    {If there is at least one failing test in the regression, the script shall return
+     non-zero exit code. This allows calling the script from CI environment, and
+     connecting pipeline status to return value of this script.}
+			
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqEnd
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% TS_SIM_REQ_TRACE
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\pagebreak
+
+\section{ts_sim_req_trace.py}
+
+\ReqStart{TS_RQTR}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ReqItem{0}
+    {Scripting system shall implement \textbf{ts_sim_req_trace.py} script whose main 
+     purpose is to perform requirement tracing.}
+
+\ReqItem{0}
+    {Requirement tracing shall detect following mapping:
+    \begin{item}
+        \item {Test to Verification item}
+        \item {Test to Design requirement}
+        \item {Verification item to Design Requirement}
+    \end{item}
+    }
+
+\ReqItem{0}
+    {An input to requirement tracing shall be:
+        \begin{itemize}
+            \item{target - As defined in simulation config file}
+            \item{Verification plan (written with ts-latex-lib)}
+            \item{Design specification (written with ts-latex-lib)}
+        \end{itemize}
+    }
+
+\ReqItem{0}
+    {An output of requirement tracing shall be list with mapping from tests and
+     verification items to design requirements.
+    }
+
+\ReqItem{0}
+    {Output of requirement tracing shall mark design requirement as verified/not
+     verified based on following criteria:
+     \begin{itemize}
+         \item{By default all requirements are marked as not verified.}
+         \item{If a requirement is in state "Not designed", it shall never be
+               marked as verified regardless of following criteria.}
+         \item{If a requirement is marked as "Obsolete" it shall not be traced.}
+         \item{If a requirement is linked from a test within test list file,
+               it shall be marked as Verified.}
+         \item{If a requirement is linked from verification item, this verification
+               item is marked as "VERIFIED" and there exists a link from test to
+               verification item, then requirement can be marked as "Verified".}
+     \end{itemize}
+    }
+
+\ReqItem{0}
+    {Requirement tracing shall output following:
+     \begin{itemize}
+        \item{List of Verified design requirements.}
+        \item{List of Un-Verified design requirements.}
+        \item{List of Un-Verified Verification items (either due to being in NOT VERIFIED state),
+              or due to having no tracing from a test.}
+        \item{List of Verification items having no matching design requirements.}
+     \end{itemize}
+    }
+
+\ReqItem{0}
+    {Requirement tracing shall indicate verification as complete if:
+     \begin{itemize}
+        \item{There are no Un-Verified design requirements.}
+        \item{There are no Un-Verified Verification items.}
+        \item{There are no Verification items which does no trace to a design requirement.}
+     \end{itemize}
+    }
+
+
+\ReqEnd
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% TS_SIM_COVERAGE
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\pagebreak
+
+\section{ts_sim_coverage.py}
+
+\OpenIssue{Specify how should coverage analysis behave! Currently we only need to run
+		   simulations. Code coverage analysis comes later during the verification
+		   process, therefore we don't implement the script yet}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Open issues
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\pagebreak
+\section{Open Issues}
+
+\PrintOpenIssueSummary
+
+\end{document}
