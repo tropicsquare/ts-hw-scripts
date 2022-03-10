@@ -252,7 +252,9 @@ def check_single_test(sim_log_file_path: str):
                     "line_number": 0})
 
     # Make sure that UVM report summary has been found in a UVM test
-    if ts_is_uvm_enabled() and not uvm_report_summary_found:
+    # Ignore on elaboration logs!
+    if ts_is_uvm_enabled() and (not uvm_report_summary_found) and \
+        (not os.path.basename(sim_log_file_path).startswith("elab")):
         test_results["result"] = False
         test_results["errors"].append({
                     "line": "UVM simulation ended without UVM report summary!",

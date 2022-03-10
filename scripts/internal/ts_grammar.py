@@ -37,6 +37,9 @@ BUILT_IN_PATTERNS = {
             "Error:",
             "Fatal:",
 
+            # Produced by elaboration of VCS
+            "Error-",
+
             # Produced by failing "assert property" in SystemVerilog!
             "failed at",
 
@@ -54,7 +57,10 @@ BUILT_IN_PATTERNS = {
         ],
         "vcs": [
             "Warning:",
-            "Report WARNING"
+            "Report WARNING",
+
+            # Produced by elaboration of VCS
+            "Warning-",
         ]
     }
 }

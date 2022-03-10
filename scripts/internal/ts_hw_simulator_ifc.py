@@ -53,7 +53,7 @@ __SIMULATOR_COMMANDS = {
         },
         "elaborate": {
             "command": "vcs +plusarg_save",
-            "common_options": "-lca -notice -psl",
+            "common_options": "-lca -notice -psl +warn=all,noLCA_FEATURES_ENABLED +lint=TFIPC-L +lint=PCWM",
             "compile_debug": "-debug_access+all",
 
             # This overrides rules for searching finest Verilog resolution or default VHDL resolution
