@@ -20,12 +20,8 @@
 \usepackage{listings}
 \lstset{backgroundcolor=\color{lightgray}}
 
-%  Function to get environment variable
-\usepackage{catchfile}
-\newcommand{\getenv}[2][]{%
-    \CatchFileEdef{\temp}{"|kpsewhich --var-value #2"}{\endlinechar=-1}%
-    \if\relax\detokenize{#1}\relax\temp\else\let#1\temp\fi}
-
+% For executing shell commands
+\usepackage{iexec}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Document properties and title page
@@ -41,8 +37,7 @@
 % Set these parameters according to your project.
 \def \projectname {Tropic Square HW Simulation Scripting System}
 \def \documentname {User manual}
-\getenv[\versionnumber]{GITTAG}
-\getenv[\gitrevision]{GITREV}
+\def \versionnumber {\iexec{git describe --tags --abbrev=0 HEAD}}
 
 % Title page
 \maketitle
@@ -78,7 +73,7 @@
                 0.7 &  3.12.2021        & Ondrej Ille  	&	Add target specific enable_uvm and test_name_strategy.
                                                             Add hook as system command, not only as file path! \Ttlb
                 0.8 &  17.12.2021       & Ondrej Ille  	&	Add JUnit output export. \Ttlb
-     \versionnumber &  08.04.2022       & Henri LHote  	&	Add Verdi support.
+               0.13 &  08.04.2022       & Henri LHote  	&	Add Verdi support.
                                                             Add simulation only run.
                                                             Add custom do file.
                                                             Add targets inheritance.
