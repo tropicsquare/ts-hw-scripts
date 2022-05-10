@@ -1,0 +1,10 @@
+*.o
+*.log
+*.jou
+*.swp
+build/
+__pycache__/
+comp_logs/
+elab_logs/
+sim_logs/
+regression_*/
