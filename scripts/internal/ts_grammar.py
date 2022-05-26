@@ -171,7 +171,7 @@ GRAMMAR_SIM_CFG = GrammarSchema({
     Optional("enable_uvm", default=False): bool,
     Optional("simulation_resolution"): __sim_time_res_regex,
     Optional("session_file"): And(str, Use(ts_get_curr_dir_rel_path), os.path.isfile),
-    Optional("do_file"): And(str, Use(ts_get_curr_dir_rel_path), os.path.isfile),
+    Optional("do_file"): And(str, Use(ts_get_root_rel_path), os.path.isfile),
     Optional("generics"): __key_val_dict,
     Optional("parameters"): __key_val_dict,
     Optional("license_wait", default=False): bool,
@@ -217,7 +217,8 @@ GRAMMAR_SIM_CFG = GrammarSchema({
             Optional("test_name_strategy", default=None): lambda x: x in (None, "uvm", "generic_parameter"),
             Optional("test_name_generic"): str,
             Optional("test_name_parameter"): str,
-            Optional("include_dirs"): [str]
+            Optional("include_dirs"): [str],
+            Optional("do_file"): And(str, Use(ts_get_root_rel_path), os.path.isfile)
         }
     },
     Optional("error_patterns", default=BUILT_IN_PATTERNS["error_patterns"]): Patterns("error_patterns"),
