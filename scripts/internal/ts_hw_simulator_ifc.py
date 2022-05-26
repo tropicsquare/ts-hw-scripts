@@ -900,8 +900,13 @@ def ts_sim_run(test: dict) -> str:
     log_file_path = create_log_file_name(test["seed"], test["name"], "sim")
 
     # Take do file if specified otherwise create it
-    sim_cmd_file_path = ts_get_cfg().get("do_file")
-    if sim_cmd_file_path is None:
+    # Look for target-specific first and then global
+    for sim_dict in (ts_get_cfg("targets")[ts_get_cfg("target")],
+                    ts_get_cfg()):
+        sim_cmd_file_path = sim_dict.get("do_file")
+        if sim_cmd_file_path is not None:
+            break
+    else:
         sim_cmd_file_path = __create_sim_command_file(test)
 
     # Build simulation command line
