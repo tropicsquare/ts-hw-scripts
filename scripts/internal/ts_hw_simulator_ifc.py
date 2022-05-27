@@ -781,16 +781,22 @@ def ts_sim_elaborate(test: dict) -> str:
     return log_file_path
 
 
-def __create_sim_command_file(test: str) -> str:
+def __create_sim_command_file(test: str, user_specified_do_file: str) -> str:
     """
     Creates simulation specific command file ("do" file)
     :param test: Test dictionary object
     """
     simulator = ts_get_cfg("simulator")
 
-    if simulator == "vcs":
-        lines = []
+    lines = []
 
+    # If user specified do file exist, execute it before the generated one.
+    if user_specified_do_file:
+        fd = open(user_specified_do_file)
+        lines.extend(fd.readlines())
+
+    if simulator == "vcs":
+        
         gui = ts_get_cfg("gui")
 
         # If wave dumping is enabled, instruct simulator to dump database
@@ -901,13 +907,13 @@ def ts_sim_run(test: dict) -> str:
 
     # Take do file if specified otherwise create it
     # Look for target-specific first and then global
-    for sim_dict in (ts_get_cfg("targets")[ts_get_cfg("target")],
-                    ts_get_cfg()):
-        sim_cmd_file_path = sim_dict.get("do_file")
-        if sim_cmd_file_path is not None:
+    user_specified_do_file = None
+    for sim_dict in (ts_get_cfg("targets")[ts_get_cfg("target")], ts_get_cfg()):
+        user_specified_do_file = sim_dict.get("do_file")
+        if user_specified_do_file is not None:
             break
-    else:
-        sim_cmd_file_path = __create_sim_command_file(test)
+    
+    sim_cmd_file_path = __create_sim_command_file(test, user_specified_do_file)
 
     # Build simulation command line
     sim_cmd = __build_sim_command(sim_binary, sim_cmds, test, log_file_path, sim_cmd_file_path)
