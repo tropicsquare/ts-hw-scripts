@@ -336,8 +336,9 @@ def generate_junit_test_object(test_result: dict, log_file_path: str, export_log
     for err in test_result["errors"]:
         test.add_error_info(err)
 
-    for ign_err in test_result["ignored_errors"]:
-        test.add_skipped_info(ign_err)
+    if ts_get_cfg("check_severity") == "warning":
+        for warn in test_result["warnings"]:
+            test.add_error_info(warn)
 
     return test
 
