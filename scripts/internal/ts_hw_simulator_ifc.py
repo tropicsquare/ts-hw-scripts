@@ -684,7 +684,7 @@ def __build_elab_command(test: dict, top_entity: str, log_file_path: str = "") -
             for param, item, function in (("test_name_generic", "generics", __add_generics),
                                         ("test_name_parameter", "parameters", __add_parameters)):
                 with contextlib.suppress(KeyError):
-                    elab_cmd.extend(function({item : {single_dict[param]: test["name"]}}))
+                    elab_cmd.extend(function({item : {single_dict[param]: test["base_name"]}}))
 
     # Add simulation resolution
     if "simulation_resolution" in ts_get_cfg():
@@ -923,7 +923,7 @@ def __build_sim_command(test: dict, elab_dir: str, sim_dir: str, log_file_path: 
     # Add UVM test name if specified
     for single_dict in (ts_get_cfg(), ts_get_cfg("targets")[ts_get_cfg("target")]):
         if single_dict["test_name_strategy"] == "uvm":
-            sim_cmd.append(sim_cmds["uvm_test_name"].format(test["name"]))
+            sim_cmd.append(sim_cmds["uvm_test_name"].format(test["base_name"]))
 
     return " ".join(filter(str.strip, sim_cmd))
 

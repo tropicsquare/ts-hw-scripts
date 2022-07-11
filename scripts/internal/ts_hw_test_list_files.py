@@ -56,6 +56,9 @@ def __load_test_list(src: dict, path: str) -> list:
     """
     ret_val = []
     for test in src["tests"]:
+        if "name" in test:
+            test["base_name"] = test["name"]
+
         # Interpret test which has "sub_list" keyword as sub-group!
         with contextlib.suppress(KeyError):
             sub_list_path = ts_get_file_rel_path(path, test["sub_list"])
@@ -74,6 +77,7 @@ def __load_test_list(src: dict, path: str) -> list:
             tmp_path = ts_get_file_rel_path(path, test.get(hook_name, ''))
             if os.path.isfile(tmp_path):
                 test[hook_name] = tmp_path
+
         ret_val.append(test)
 
     return ret_val

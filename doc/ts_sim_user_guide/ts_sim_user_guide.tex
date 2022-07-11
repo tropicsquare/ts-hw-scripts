@@ -931,8 +931,13 @@ this example shows how to pass name of the test from scripting system to TB. The
 same applies for \textbf{parameters} keyword when having Verilog/System Verilog designs.
 
 \TropicNote{
-The system allows overriding only top level generics, not generics within a
-design hierarchy.
+    The system allows overriding only top level generics, not generics within a
+    design hierarchy.
+}
+
+\TropicNote{
+    When test name is passed to TB (either via generic, or to UVM TB), only its name
+    as written in test list file is passed, not the whole name including group prefix!
 }
 
 
