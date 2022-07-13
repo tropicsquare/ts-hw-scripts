@@ -67,8 +67,6 @@ class TsErrCode(Enum):
 
     # Config file errors
     ERR_CFG_8 = auto()
-    ERR_CFG_13 = auto()
-    ERR_CFG_22 = auto()
     ERR_CFG_23 = auto()
 
     # Source list file and test list file errors
@@ -76,7 +74,6 @@ class TsErrCode(Enum):
     ERR_SLF_5 = auto()
     ERR_SLF_14 = auto()
     ERR_SLF_15 = auto()
-    ERR_SLF_17 = auto()
     ERR_SLF_18 = auto()
 
     # Compilation errors
@@ -108,16 +105,7 @@ __ERR_CODE_MSG_PAIR = {
                                                  "in simulation configuration file! Available "
                                                  "targets are: {}".format(target, targets),
 
-    TsErrCode.ERR_CFG_13: lambda a, b: "'{}' and '{}' keywords in config file must be set "
-                                       "together! It is not possible to set one without "
-                                       "another!".format(a, b),
-
-    TsErrCode.ERR_CFG_22: lambda: "When 'test_name_strategy=generic_parameter', 'test_name_generic' keyword must be defined "
-                                  "(in VHDL top), or 'test_name_parameter' keyword must be defined (in Verilog /System Verilog top) "
-                                  " and contain top level generic/parameter name.",
-
     TsErrCode.ERR_CFG_23: lambda error_message: f"Configuration is invalid > {error_message}",
-
 
     TsErrCode.ERR_SLF_4: lambda depth: "Depth {} exceeded when nesting source list files! "
                                       "Probably your list files contain circular reference".format(depth),
@@ -132,12 +120,7 @@ __ERR_CODE_MSG_PAIR = {
                                   "need to provide 'test_name' argument(s). Use '--list-tests' "
                                   "switch to show list of all available tests.",
 
-    TsErrCode.ERR_SLF_17: lambda file_name, lf: "VHDL file '{}' in list file '{}' does not support "
-                                           "define keyword! It is impossible to define macro in "
-                                           "VHDL language!".format(file_name, lf),
-
-    TsErrCode.ERR_SLF_18: lambda error_message, tlf: f"Test list file {tlf} is invalid > {error_message}",
-
+    TsErrCode.ERR_SLF_18: lambda error_message, tlf: f"List file {tlf} is invalid > {error_message}",
 
     TsErrCode.ERR_CMP_0: lambda ext, file_name, sup: "Unknown file extension '.{}' of file '{}'. "
                                                 "Supported file name extensions are: {}".format(
