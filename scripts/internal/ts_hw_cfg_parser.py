@@ -51,7 +51,7 @@ def __merge_args_with_config(args):
     :param args: Command line arguments
     """
     ts_debug("Merging config file with command line attributes")
-    for attr_key in GRAMMAR_SIM_CFG:
+    for attr_key in GRAMMAR_SIM_CFG.attrs():
         ts_debug("Parsing attribute: {}".format(attr_key))
         try:
             attr_val = getattr(args, attr_key)
@@ -113,34 +113,6 @@ def __finalize_config():
         _solve_inheritance(target)
 
 
-def __check_config():
-    """
-    Checks simulation config file for validity.
-    Throws an exception if config file has an error in it.
-    """
-    ts_debug("Checking configuration against grammar template")
-    try:
-        TsGlobals.TS_SIM_CFG = GRAMMAR_SIM_CFG.validate(TsGlobals.TS_SIM_CFG)
-    except SchemaError as e:
-        ts_throw_error(TsErrCode.ERR_CFG_23, e)
-
-    ts_debug("Performing additional checks")
-
-    ts_debug("Checking test strategy parameters")
-    for to_test in (TsGlobals.TS_SIM_CFG, *TsGlobals.TS_SIM_CFG["targets"].values()):
-        if to_test.get("test_name_strategy") == "generic_parameter":
-            if (to_test.get("test_name_generic"), to_test.get("test_name_parameter")) == (None, None):
-                ts_throw_error(TsErrCode.ERR_CFG_22)
-
-    ts_debug("Checking coupling of 'ignore_start' and 'ignore_stop' patterns")
-    config_keys = set(TsGlobals.TS_SIM_CFG.keys())
-    for kwd_pair in ({"error_ignore_start", "error_ignore_stop"},
-                    {"warning_ignore_start", "warning_ignore_stop"}):
-        # start and stop cannot be one without the other
-        if len(kwd_pair - config_keys) == 1:
-            ts_throw_error(TsErrCode.ERR_CFG_13, *kwd_pair)
-
-
 def do_config_init(args, skip_check=False):
     """
     Common initialization for all scripts which load simulation config file. Performs following:
@@ -174,7 +146,10 @@ def do_config_init(args, skip_check=False):
 
     # Checking simulation config file
     ts_info(TsInfoCode.INFO_CMN_1)
-    __check_config()
+    try:
+        TsGlobals.TS_SIM_CFG = GRAMMAR_SIM_CFG.validate(TsGlobals.TS_SIM_CFG)
+    except SchemaError as e:
+        ts_throw_error(TsErrCode.ERR_CFG_23, e)
     ts_info(TsInfoCode.INFO_CMN_2)
 
 

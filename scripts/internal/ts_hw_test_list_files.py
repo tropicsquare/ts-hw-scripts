@@ -9,43 +9,10 @@
 import os
 import re
 import contextlib
-import collections
 from schema import SchemaError
 
 from .ts_hw_common import *
 from .ts_grammar import *
-
-
-__FORBIDDEN_CHARACTERS = set("[@!#$%^&*()<>?/\|}{~:]")
-
-
-def __check_test_list_file(list_file: dict, path: str):
-    """
-    Checks if test list file is valid.
-    :param list_file: Dictionary with loaded test list file
-    :param path: Path to test list file.
-    """
-    try:
-        GRAMMAR_TST_LST.validate(list_file)
-    except SchemaError as e:
-        ts_throw_error(TsErrCode.ERR_SLF_18, e, path)
-
-    test_names = [*map(lambda x: x["name"], filter(lambda x: x.get("name"), list_file["tests"]))]
-
-    ts_debug("Check uniqueness of test names")
-    duplicated_names = [*filter(lambda x: x[1] > 1, collections.Counter(test_names).items())]
-    if duplicated_names:
-        ts_throw_error(TsErrCode.GENERIC,
-                        "In file '{}': Some tests have duplicates: {}".format(path, duplicated_names))
-
-    ts_debug("Check test names validity")
-    for test_name in test_names:
-        common_characters = set(test_name) & __FORBIDDEN_CHARACTERS
-        if common_characters:
-            ts_throw_error(TsErrCode.GENERIC,
-                            "In file '{}': invalid test name '{}' contains "
-                            "unauthorized character(s) '{}'.".format(
-                                path, test_name, common_characters))
 
 
 def __load_test_list(src: dict, path: str) -> list:
@@ -97,8 +64,24 @@ def __load_test_list_file(list_file_path: str) -> list:
     list_file = expand_vars(list_file)
 
     ts_debug("Checking list file for validity:")
-    __check_test_list_file(list_file, list_file_path)
+    try:
+        GRAMMAR_TST_LST.validate(list_file)
+    except SchemaError as e:
+        ts_throw_error(TsErrCode.ERR_SLF_18, e, list_file_path)
     ts_debug("List file valid!")
+
+    for phase, options in (("elaboration", "elab_options"),
+                            ("simulation", "sim_options")):
+        ts_debug(f"Merging {phase} options in test file")
+        root_options = list_file.pop(options, {})
+        for k, v in root_options.items():
+            for test_dict in list_file["tests"]:
+                test_options = test_dict.setdefault(options, {})
+                if k in test_options:
+                    test_options[k] = v + " " + test_options[k]
+                else:
+                    test_options[k] = v
+        ts_debug("Done")
 
     # Load list of tests
     ts_debug("Getting list of tests...")

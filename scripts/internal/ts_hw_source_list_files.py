@@ -14,24 +14,6 @@ from .ts_hw_common import *
 from .ts_grammar import *
 
 
-def __check_src_list_file(list_file: dict, path: str):
-    """
-    Checks if source list file is valid. Includes check of structure (allowed keywords) and
-    presence of required keywords. Throws exception if not.
-    :param list_file: Loaded list file dictionary
-    :param gold: Golden dictionary
-    :param path: Path to the list file
-    """
-    try:
-        GRAMMAR_SRC_LST.validate(list_file)
-    except SchemaError as e:
-        ts_throw_error(TsErrCode.ERR_SLF_18, e, path)
-
-    for file_dict in list_file["source_list"]:
-        if "define" in file_dict and file_dict["file"].endswith(".vhd"):
-            ts_throw_error(TsErrCode.ERR_SLF_17, file_dict["file"], path)
-
-
 def __merge_global_to_local_dict(global_cfg: dict, local_cfg: dict):
     """
     Merges global dictionary to local dictionary, local one has priority in equal keys
@@ -74,8 +56,22 @@ def __load_source_list_file(list_file_path: str, current_depth: int = 1) -> list
     list_file = expand_vars(list_file)
 
     ts_debug("Checking list file for validity:")
-    __check_src_list_file(list_file, list_file_path)
+    try:
+        GRAMMAR_SRC_LST.validate(list_file)
+    except SchemaError as e:
+        ts_throw_error(TsErrCode.ERR_SLF_18, e, list_file_path)
     ts_debug("List file valid!")
+
+    ts_debug("Merging compilation options in source file")
+    root_comp_options = list_file.pop("comp_options", {})
+    for k, v in root_comp_options.items():
+        for file_dict in list_file["source_list"]:
+            file_comp_options = file_dict.setdefault("comp_options", {})
+            if k in file_comp_options:
+                file_comp_options[k] = v + " " + file_comp_options[k]
+            else:
+                file_comp_options[k] = v
+    ts_debug("Done")
 
     # Get config keywords common for all files
     global_cfg = list_file.copy()

@@ -3,7 +3,7 @@
 % This is User-guide for scripting system for digital simulations in
 % Tropic Square. It explains basic use-cases of the scripting system and shows
 % examples how to use the scripting system.
-% 
+%
 % This document uses Tropic Square LaTex library. Set file to this library in
 % TROPICTEXLIBPATH variable (see below).
 %
@@ -137,7 +137,7 @@ needed from such simulation system. Following tools were considered:
     \item{Not a simulation framework, rather "package build system" whatever
           that is... Lacks definition of tests, and common way how to evaluate
           test results.}
- 
+
 \end{itemize}
 
 
@@ -186,7 +186,7 @@ ts_sw_cfg.py --list-sw
 
 \begin{lstlisting}
 source ./setup_env
-\end{lstlisting} 
+\end{lstlisting}
 
 Sourcing \textit{setup_env} will configure the \textit{TS_REPO_ROOT} environment variable.
 This variable is required by the simulation system.
@@ -245,7 +245,7 @@ and set-up the repository for digital simulation. HW scripting system uses
 is possible to override default file by command line switches). If there is no
 reasons for choosing alternative path to config file, use default one. If no such
 config file exists in repository where you would like to use the scripting system,
-either create one (see example below), or copy one from "example" folder of 
+either create one (see example below), or copy one from "example" folder of
 \textit{ts-hw-scripts} repository. The minimal required content of config file
 is as follows:
 
@@ -270,7 +270,7 @@ warning_patterns:
 sim_verbosity_levels:
     info:
 sim_verbosity: info
-            
+
 \end{lstlisting}
 
 \TropicNote{The example above demonstrates global test list file as well as target
@@ -289,11 +289,11 @@ Basic keywords within config file have following meaning:
 
 \textbf{check_severity} Chooses severity of \textit{ts_sim_check.py} script. See
     \ref{sec:how-to-set-check-severity}.
-                        
+
 \textbf{error_patterns} and \textbf{warning_patterns} Define regular expressions
     which cause a line within simulation/elaboration log file to be classified as warning or error.
     See \ref{sec:how-to-classify-errors-warnings-in-elaboration-simulation-output}.
-    
+
 \textbf{sim_verbosity_levels} Defines available verbosity levels in the simulation.
     See \ref{sec:how-to-define-simulation-verbosity}.
 
@@ -384,7 +384,7 @@ Note that at least one test list file (global or target specific) must be define
 If none of these two is defined, system throws an error.
 
 Test list files can be nested, see \ref{sec:how-to-point-to-nested-test-list-files}
-for details. Tests can be also put into named groups, see 
+for details. Tests can be also put into named groups, see
 \ref{sec:how-to-define-test-groups} for details. A minimal example of test list file
 is following:
 
@@ -394,7 +394,7 @@ tests:
     - name: second_test
 \end{lstlisting}
 
-This example demonstrates definition of two tests: \textit{first_test} and 
+This example demonstrates definition of two tests: \textit{first_test} and
 \textit{second_test}.
 
 \TropicNote{
@@ -490,7 +490,7 @@ HW scripts evaluate results of the test based on two indicators:
 
 \textit{ts_sim_check.py} script parses simulation/elaboration log file line by line and
 determines if a line shall be classified as an error or warning. A line is classified
-as an error/warning when it matches regular expressions defined under 
+as an error/warning when it matches regular expressions defined under
 \textbf{error_patterns}/\textbf{warning_patterns} keyword (see
 \ref{sec:how-to-classify-errors-warnings-in-elaboration-simulation-output} in simulation
 config file.
@@ -536,7 +536,7 @@ and natively display them:
 
 Scripting system offers two ways of running tests:
 \begin{itemize}
-    \item {ts_sim_run.py - Runs single test at a time.} 
+    \item {ts_sim_run.py - Runs single test at a time.}
     \item {ts_sim_regress.py - Can run multiple tests at a time in parallel.}
 \end{itemize}
 
@@ -553,19 +553,19 @@ Differences between scripts:
      Number of test loops in given
      by \textit{--loop} switch.      & Number of loops is given for each test separately
                                        in test list file by \textit{regress_loops} keyword. \Ttlb
-     
+
      Runs single simulation at once. & Runs \textit{--regress-jobs} simulations at once.\Ttlb
-     
+
      Requires \textit{--clear-logs}
      switch to remove log files from
      previous simulations.           & Implicitly clears simulation and elaboration log files
                                        from previous simulations. \Ttlb
-                
+
      Resulting logs are in
      \textit{sim/sim_logs} and
      \textit{sim/elab_logs} folders. & Resulting logs are backed up into regression directory
                                        under \textit{sim/regression_<time>}. Where <time> is
-                                       current time when regression ended. \Ttlb 
+                                       current time when regression ended. \Ttlb
 
 \end{TropicRatioTable2Col}
 
@@ -607,9 +607,9 @@ log file. If \textbf{timestamp_log_file} keyword in simulation config file is se
 \label{sec:elaboration-simulation-directories}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Scripting system executes compilation in \textit{\$TS_REPO_ROOT/sim/build} directory 
+Scripting system executes compilation in \textit{\$TS_REPO_ROOT/sim/build} directory
 regardless of the location from where you call \textit{ts_sim_compile.py} script. If you
-interrupt the compilation process while it is running, it is possible you will end up in 
+interrupt the compilation process while it is running, it is possible you will end up in
 a directory different from the one you launched the compilation from.
 
 Scripting system executes elaboration and simulation from test specific directory under
@@ -728,8 +728,8 @@ targets:
             - rtl/spi_slave_rtl.yml
 \end{lstlisting}
 
-The example above creates target \textbf{rtl} with top entity 
-\textbf{spi_slave_rtl.spi_top}. Note that library name is used as a prefix of top entity. 
+The example above creates target \textbf{rtl} with top entity
+\textbf{spi_slave_rtl.spi_top}. Note that library name is used as a prefix of top entity.
 Target contains source files which are located in
 \textit{\$TS_REPO_ROOT/rtl spi_slave_rtl.yml} source list file (assuming default location
 of simulation config file).
@@ -741,22 +741,40 @@ defined target.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection{How to define compile options ?}
+\subsubsection{How to define compile options?}
 \label{sec:how-to-define-compile-options}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Global compile options (applied to all files) can be defined by \textbf{comp_options} 
-keyword placed in root of simulation config file. E.g.:
+Compile options can be defined globally - in the root of the simulation config file -
+or can be specific for one target. To do so use the keyword \textbf{comp_options}.
+If compilation options are defined in a target, they enrich the eventual compilation
+options defined at the root level.
+
+Example:
 
 \begin{lstlisting}
 comp_options:
-    vcs: -switch_1
-    common: -switch_2
+    common: -switch_1
+    vcs: -switch_2
+targets:
+    rtl_0:
+        top_entity: rtl_0.top
+        source_list_file:
+            - slf_0.yml
+        comp_options:
+            common: -switch_3
+            vcs: -switch_4
+    rtl_1:
+        top_entity: rtl_1.top
+        source_list_file:
+            - slf_1.yml
 \end{lstlisting}
 
-The example above will add \textit{-switch_1} and \textit{-switch_2} to compilation
-command when compiling a file with VCS simulator. It will only add \textit{-switch_2}
-when compiling with any other simulator.
+In the example above compiling the target \textbf{rtl_0} with the VCS simulator will use
+all the compilation options but only \textit{-switch_1} and \textit{-switch_3}
+with another one.
+Compiling the target \textbf{rtl_1} with the VCS simulator will use \textit{-switch_1}
+and \textit{-switch_2} but only \textit{-switch_1} with another one.
 
 \TropicNote{
 The distinction between simulators is unnecessary now, since only VCS is supported,
@@ -781,7 +799,7 @@ source_list:
 \end{lstlisting}
 
 The example above will add \textit{-my_fancy_switch} to compile command when
-compiling all files from the source list file, and it will also add 
+compiling all files from the source list file, and it will also add
 \textit{-tx_only_switch} when compiling \textit{spi_tx.vhd} file.
 
 \TropicNote{
@@ -840,27 +858,48 @@ single repository.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection{How to define elaboration / simulation options ?}
+\subsubsection{How to define elaboration / simulation options?}
 \label{sec:how-to-define-elaboration-simulation-options}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 To define elaboration/simulation options use \textbf{elab_options} / \textbf{sim_options}
 keywords in simulation config file and/or in test list file. Options will
-be appended to elaboration/simulation command issued to a simulator. Global elaboration
-and/or simulation options shall be defined in root level of simulation config file, while
-local (test specific) elaboration/simulation options shall be defined in test list file.
+be appended to elaboration/simulation command issued to a simulator.
+Elaboration and/or simulation options shall be defined either at root or at target
+level of simulation config file, while test-specific elaboration/simulation options
+shall be defined in test list file.
 E.g.:
 
 \begin{lstlisting}
 elab_options:
-    common: -dummy-elab-switch
+    common: -root-common-elab-opt
+    vcs: -root-vcs-elab-opt
 sim_options:
-    common: -simulation-switch
+    common: -root-common-sim-opt
+    vcs: -root-vcs-sim-opt
+targets:
+    rtl_0:
+        top_entity: rtl_0.top
+        source_list_file:
+            - slf_0.yml
+        elab_options:
+            common: -rtl_0-common-elab-opt
+            vcs: -rtl_0-vcs-elab-opt
+        sim_options:
+            common: -rtl_0-common-sim-opt
+            vcs: -rtl_0-vcs-sim-opt
+    rtl_1:
+        top_entity: rtl_1.top
+        source_list_file:
+            - slf_1.yml
 \end{lstlisting}
 
-The above example of simulation config file will add \textit{-dummy-elab-switch} to
-elaboration command and it will add \textit{-simulation-switch} to simulation command
-on all simulators.
+In the example above \textit{-root-common-elab-opt} and \textit{-root-common-sim-opt}
+will be used in the elaboration and simulation phases respectively on all simulators.
+\textit{-root-vcs-elab-opt} and \textit{-root-vcs-sim-opt} will be added if VCS is used.
+The options of \textbf{rtl_0} will also be used if tests are run on this target.
+\textbf{rtl_1} does not have any target-specific options so only the root options
+will be used when running tests on this target.
 
 \begin{lstlisting}
 elab_options:
@@ -958,7 +997,7 @@ define:
 \end{lstlisting}
 
 This example defines two macros: \textbf{MACRO_WITHOUT_VALUE} and \textbf{MACRO_WITH_VALUE}
-whose value is 10. 
+whose value is 10.
 
 To define macro for group of files, place \textbf{define} keyword to root of source list file, e.g.:
 
@@ -1022,7 +1061,7 @@ files.
 \label{sec:how-to-define-include-directories}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-To define global include directory where simulator will look for Verilog/System 
+To define global include directory where simulator will look for Verilog/System
 Verilog header files, use \textbf{include_dirs} keyword in root level of simulation config
 file, and YAML list of directories as value. E.g.:
 
@@ -1119,7 +1158,7 @@ The example above will print each compile command to command line before being e
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection{How to point to nested source list files ?} 
+\subsubsection{How to point to nested source list files ?}
 \label{sec:how-to-point-to-nested-source-list-file}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1151,7 +1190,7 @@ source_list:
 The example above will load 4 nested list files before loading top source file of
 a design. Design library is specified for whole list file, however, nested list
 files will contain their own \textbf{library} keyword, therefore overriding top
-level library. 
+level library.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1249,7 +1288,7 @@ the above configuration will define following tests:
 \label{sec:how-to-list-all-available-tests}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-To list all tests within a repository, use \textit{--list-tests} switch of 
+To list all tests within a repository, use \textit{--list-tests} switch of
 \textit{ts_sim_run.py}:
 
 \begin{lstlisting}
@@ -1544,8 +1583,8 @@ license_wait: true
 whether a line is a warning or an error. A line is classified as a warning if it matches a
 regular expression listed under \textbf{warning_patterns} keyword in simulation config
 file. Similarly, a line is classified as an error if it matches a regular expression
-listed under \textbf{error_patterns} keyword in simulation config file. Note that it is 
-possible to configure "common" patterns which cause failure under all simulators, and 
+listed under \textbf{error_patterns} keyword in simulation config file. Note that it is
+possible to configure "common" patterns which cause failure under all simulators, and
 simulator specific patterns.
 
 \begin{lstlisting}
@@ -1561,7 +1600,7 @@ warning_patterns:
     vcs:
         - 'VCS specific warning'
 \end{lstlisting}
- 
+
 The example above shows an example configuration which can classify UVM_ERRORs/ UVM_WARNINGs
 as errors/warnings by \textit{ts_sim_check.py} script. This example also shows VCS specific
 patterns which match format of log caused by VHDLs "report <MESSAGE> severity error/warning"
@@ -1601,7 +1640,7 @@ for errors/warning patterns. E.g.:
 
 \begin{lstlisting}
     check_elab_log: true
-\end{lstlisting}    
+\end{lstlisting}
 
 Note that when showing results in test summary, simulation and elaboration log files are
 shown as separate entries (on separate lines). Thus, if you run 10 tests, then 20 lines
@@ -1732,7 +1771,7 @@ tests:
     - name: third_test
 \end{lstlisting}
 
-In the example above, \textit{script.sh} will be called before starting elaboration of 
+In the example above, \textit{script.sh} will be called before starting elaboration of
 \textbf{first_test} test, and "HELLO WORLD" will be printed to terminal after
 simulation of \textbf{second_test}.
 
@@ -1822,7 +1861,7 @@ The example also shows that verbosity level "info" will set top-level generic
 verbosity within scripting system to "info" level.
 
 \TropicNote{Simulation verbosity mechanism is a generic form of defining simulation
-verbosities and translating them to simulator specific verbosity levels (e.g. it is 
+verbosities and translating them to simulator specific verbosity levels (e.g. it is
 possible to connect verbosity levels to "UVM verbosity").
 }
 
@@ -1877,7 +1916,7 @@ use \textit{--clear} option of \textit{ts_sim_run.py}. E.g.:
 ts_sim_compile.py --clear rtl
 \end{lstlisting}
 
-The example above will delete the build directory before starting the compilation, 
+The example above will delete the build directory before starting the compilation,
 therefore forcing clean-table compilation.
 
 
@@ -1889,7 +1928,7 @@ therefore forcing clean-table compilation.
 To clear log files, use \textit{--clear-logs} switch of \textit{ts_sim_compile.py} or
 \textit{ts_sim_run.py} scripts. Using this switch with \textit{ts_sim_compile.py} will
 erase all logs from \textit{\$TS_REPO_ROOT/sim/comp_logs} folder. Using this switch with
-\textit{ts_sim_compile.py} will erase all logs from \textit{\$TS_REPO_ROOT/sim/elab_logs} 
+\textit{ts_sim_compile.py} will erase all logs from \textit{\$TS_REPO_ROOT/sim/elab_logs}
 and \textit{\$TS_REPO_ROOT/sim/sim_logs} folders.
 
 
@@ -1960,7 +1999,7 @@ If there is a need to execute these two steps at once, it is possible to use so 
 \begin{lstlisting}
 ts_sim_run.py --recompile <target_name> <test_name>
 \end{lstlisting}
-    
+
 The above command is equivalent of calling \textit{ts_sim_compile.py --clear rtl} followed
 by calling \textit{ts_sim_run.py <target_name> <test_name>}.
 
@@ -2199,5 +2238,5 @@ The example above will launch the simulation and execute the commands from the "
 \section{Open Issues}
 
 \PrintOpenIssueSummary
- 
+
 \end{document}
