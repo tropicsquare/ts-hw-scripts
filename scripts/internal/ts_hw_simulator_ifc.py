@@ -771,6 +771,12 @@ def ts_sim_elaborate(test: dict) -> str:
         with open(__TARGET_LIBS_LIST(ts_get_cfg("target")), "rb") as fd:
             target_libs_list = pickle.load(fd)
         for lib_name, lib_dir in target_libs_list:
+            ts_debug(f"Checking library compilation directory. '{lib_name}': {lib_dir}")
+            if not os.path.isdir(lib_dir):
+                ts_throw_error(TsErrCode.GENERIC,
+                                f"Library compilation directory not found! '{lib_name}': {lib_dir}")
+            if lib_name.lower() == "uvm":
+                continue
             if os.path.getmtime(sim_cfg_file) < os.path.getmtime(__LIB_FILE_LIST(lib_dir)):
                 ts_info(TsInfoCode.GENERIC, "Elaboration needed")
                 break
