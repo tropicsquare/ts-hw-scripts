@@ -199,7 +199,8 @@ def do_design_config_init(args, skip_check=False):
         if os.path.exists(cfg_file_path):
             TsGlobals.TS_DESIGN_CFG = load_design_config_file(cfg_file_path)
         else:
-            ts_warning(TsWarnCode.WARN_PDK_1)
+            if args.verbose > 0:
+                ts_warning(TsWarnCode.WARN_PDK_1)
             return
     except Exception as e:
         ts_throw_error(TsErrCode.ERR_PDK_1, e, cfg_file_path)
