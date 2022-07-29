@@ -94,7 +94,8 @@ class VerboseOptional(Optional):
     def __init__(self, key, *args, **kwargs):
         default = kwargs["default"]
         def wrapper():
-            ts_warning(TsWarnCode.WARN_CFG_1, key, default)
+            if ts_get_cfg("verbose") > 0:
+                ts_warning(TsWarnCode.WARN_CFG_1, key, default)
             return default
         kwargs["default"] = wrapper
         super().__init__(key, *args, **kwargs)
@@ -366,3 +367,83 @@ class GRAMMAR_TST_LST:
                 raise SchemaError(f"invalid test name '{test_name}' contains "
                                     f"unauthorized character(s) '{unauthorized_characters}'.")
 
+
+###################################################################################################
+#
+# PDK config file grammar
+#
+###################################################################################################
+
+# Corner name : Corner path
+__corner_view_config = GrammarSchema({
+    str: str
+})
+
+# Single path, or multiple files (e.g. lefs can be split to multiple files for single PDK std celss)
+__str_or_list = GrammarSchema(
+    Or(str, list)
+)
+
+PDK_VIEW_CONFIG = GrammarSchema({
+        Optional("nldm_db"): __corner_view_config,
+        Optional("nldm_lib"): __corner_view_config,
+        Optional("ccs_db"): __corner_view_config,
+        Optional("ccs_lib"): __corner_view_config,
+        Optional("lef"): __str_or_list,
+        Optional("def"): __str_or_list,
+        Optional("gds"): __str_or_list,
+        Optional("cdl"): __str_or_list,
+        Optional("milkyway"): __str_or_list,
+        Optional("slf"): __str_or_list,
+        Optional("tluplus") : __str_or_list
+});
+
+__GRAMMAR_VERSION = GrammarSchema(
+    Or(str, int, float)
+)
+
+GRAMMAR_PDK_CONFIG = GrammarSchema({
+    "name" : str,
+    Optional("corners") : {
+        str : Or(None, {
+                Optional("voltage") : float,
+                Optional("temperature") : int
+                }),
+    },
+    Optional("std_cells") : [{
+        "name" : str,
+        "version" : __GRAMMAR_VERSION,
+        "views" : PDK_VIEW_CONFIG
+    }],
+    Optional("ips") : [{
+        "name" : str,
+        "version" : __GRAMMAR_VERSION,
+        "views" : PDK_VIEW_CONFIG
+    }]
+});
+
+
+###################################################################################################
+#
+# Design config file grammar
+#
+###################################################################################################
+
+GRAMMAR_DSG_CONFIG = GrammarSchema({
+    "pdk_configs" : [str],
+    "design" : {
+        "target" : str,
+        "pdk" : str,
+        "std_cells" : [{str:__GRAMMAR_VERSION}],
+        Optional("constraints"): __str_or_list,
+        Optional("floorplan"): str,
+        Optional("ips"): [{str:__GRAMMAR_VERSION}],
+        "modes": [{
+            "name" : str,
+            "corner" : str,
+            "constraints" : str
+        }]
+    }
+})
+
+ALLOWED_DESIGN_OBJ_TYPES = ["std_cells", "ips"]

@@ -16,8 +16,14 @@ class TsGlobals:
     # Simulation directory
     TS_SIM_DIR = "sim"
 
+    # Configuration directory
+    TS_CFG_DIR = "cfg"
+
     # Simulation config file path
     TS_SIM_CFG_PATH = join(TS_SIM_DIR, "ts_sim_config.yml")
+
+    # Design config file path
+    TS_DESIGN_CFG_PATH = join(TS_CFG_DIR, "ts_design_config.yml")
 
     # Environment configuration script
     TS_CONFIG_ENV_SCRIPT = "source ./setup_env"
@@ -61,4 +67,14 @@ class TsGlobals:
 
     # Source files loaded for compilation - dictionary by compilation library
     TS_SIM_SRCS_BY_LIB = None
+
+    # Design configuration (Dictionary from YAML parser)
+    TS_DESIGN_CFG = None
+
+    # List of PDK configurations loaded
+    TS_PDK_CFGS = []
+
+    # List of PDK views to be exported
+    TS_EXP_VIEWS = []
+
 

@@ -79,6 +79,9 @@
                                                             Add targets inheritance.
                                                             Add arbitrary file extension.
                                                             Add ts_sim_coverage.py. \Ttlb
+               0.17 &  08.04.2022       & Ondrej Ille  	&	Add Design config and PDK config file. Add description
+                                                            of \textit{ts_design_cfg.py} script. Add examples of
+                                                            including PDK slf view. \Ttlb
 \end{TropicRatioTable4Col}
 
 
@@ -101,10 +104,9 @@
 \pagebreak
 \section{Introduction}
 
-This document is user guide for Tropic Square HW simulation scripting system
-(\textit{ts-hw-scripts} repository). HW simulation scripting system is tightly
-coupled toolchain written in Python which is used in Tropic Square for
-following purposes:
+This document is user guide for Tropic Square digital HW design scripting system
+(\textit{ts-hw-scripts} repository). HW scripting system is tightly coupled
+toolchain written in Python which is used in Tropic Square for following purposes:
 
 \begin{itemize}
 	\item{Define list(s) of HDL source files (either RTL and/or TB).}
@@ -114,6 +116,8 @@ following purposes:
 	\item{Generate scripts which can be sourced by synthesis tool to load RTL into
           synthesis.}
     \item{Run regressions in parallel (multiple simulations at once).}
+    \item{Hold physical design views of PDK and hard macros (db, lib, gds, etc...)
+          in a single configuration file and export them to TCL scripts.}
 	\item{Be universal tool for the above mentioned tasks regardless of design
 	      language (VHDL, Verilog, SystemVerilog) and/or testbench methodology
 	      (UVM/OVM, VHDL TB, cosimulation).}
@@ -121,9 +125,9 @@ following purposes:
 
 \subsection*{Implementation reasons}
 
-The simulation system was implemented because at the time of implementation there
+The scripting system was implemented because at the time of implementation there
 was no freely available scripting system which would full-fill the requirements
-needed from such simulation system. Following tools were considered:
+needed from such scripting system. Following tools were considered:
 \begin{itemize}
     \item{VUnit - Mainly supports VHDL, no support for VCS simulator, lacks
           universality (hard to couple with UVM TB environment). Does not
@@ -146,9 +150,18 @@ needed from such simulation system. Following tools were considered:
 Ts-HW-scripts are distributed to individual project/module repositories in
 via \textit{setup_env} scripts. Released versions of \textit{ts-hw-scripts}
 are installed in \textit{/tools} network disc. System was implemented on Python
-3.6, and it is debugged and tested on RHEL8 machine. It requires no external
-Python modules, only standard Python libraries are required.
+3.6, and it is debugged and tested on RHEL8 machine. It requires following
+external python modules to work correctly:
+\begin{itemize}
+    \item{schema - Library for checking syntax of configuration files}
+    \item{junit_xml - Library for exporting Gitlab compatibl JUnit test results}
+    \item{}
+\end{itemize}
 
+\TropicNote{
+    You don't need to install the Python modules, developers of ts-hw-scripts
+    make sure that these modules are available on Tropic Square runner machines.
+}
 
 \subsection*{Current limitations and future work}
 
@@ -206,11 +219,10 @@ which ts_sim_compile.py
 \end{enumerate}
 
 \TropicNote{
-Currently scripting system does not implement any form of checking if
-Python installation has correct version, therefore if significantly
-other version than 3.6 is being used, it is possible the system will
-not function properly. Since only standard Python libraries are used,
-there is no need to install nor check any Python modules.
+    Currently scripting system does not implement any form of checking if
+    Python installation has correct version, therefore if significantly
+    other version than 3.6 is being used, it is possible the system will
+    not function properly.
 }
 
 
@@ -219,8 +231,7 @@ there is no need to install nor check any Python modules.
 \subsection{Tool use model}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
-Basic HW simulation scripting system use-model is shown in the following figure:
+Basic HW scripting system use-model is shown in the following figure:
 
 \begin{figure}[h]
     \centering
@@ -231,7 +242,8 @@ Basic HW simulation scripting system use-model is shown in the following figure:
 Input files (on the left) are HW design repository specific files which configure the
 scripting system, allow user to define HDL source files and define tests available
 within the repository. These files shall be created by user for each project (see
-examples below, or "example" folder in \textit{ts-hw-scripts} repository).
+examples below, "example" folder or "templates" folder in \textit{ts-hw-scripts}
+repository).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -259,17 +271,6 @@ targets:
         source_list_files:
             - <path_to_source_list_file>
 check_severity: error
-error_patterns:
-    common:
-        - <Error pattern>
-        - <Another error pattern>
-warning_patterns:
-    common:
-        - <Warning pattern>
-        - <Another warning pattern>
-sim_verbosity_levels:
-    info:
-sim_verbosity: info
 
 \end{lstlisting}
 
@@ -290,40 +291,33 @@ Basic keywords within config file have following meaning:
 \textbf{check_severity} Chooses severity of \textit{ts_sim_check.py} script. See
     \ref{sec:how-to-set-check-severity}.
 
-\textbf{error_patterns} and \textbf{warning_patterns} Define regular expressions
-    which cause a line within simulation/elaboration log file to be classified as warning or error.
-    See \ref{sec:how-to-classify-errors-warnings-in-elaboration-simulation-output}.
-
-\textbf{sim_verbosity_levels} Defines available verbosity levels in the simulation.
-    See \ref{sec:how-to-define-simulation-verbosity}.
-
-\textbf{sim_verbosity} Defines current verbosity level.
-    See \ref{sec:how-to-define-simulation-verbosity}.
 
 \TropicNote{
-Relative paths in simulation config file (e.g path to source list files) are always
-interpreted to be relative to \textit{\$TS_REPO_ROOT} environment variable (relative
-to HW design repository root folder). Absolute paths are treated as absolute paths.}
-
-\TropicNote{
-When scripting system loads simulation config file it throws an error if there are
-invalid keys within config file, there are information missing or there is an
-invalid keyword within the config file. If such an error is thrown, scripting system
-shows you a list of valid keys at position where error occured.}
-
-\TropicNote{
-Scripting system provides basic set of Error messages which indicate to user when
-something is missing/wrong in config file, or other parts of the scripting system.
-The idea is that the user does not need to dive into details of implementation, but
-works with firmly defined level of abstraction. If you manage to "break" the
-scripting system to such extent, that any of scripts crashes and shows only Python
-stack-trace, please open an issue in \textit{ts-hw-scripts} Gitlab project.
+    Relative paths in simulation config file (e.g path to source list files) are always
+    interpreted to be relative to \textit{\$TS_REPO_ROOT} environment variable (relative
+    to HW design repository root folder). Absolute paths are treated as absolute paths.
 }
 
 \TropicNote{
-Some options specified in simulation scripting flow can be configured also by
-command line switches of scripts. If these options are specified as command line
-switches, they always override the value from simulation config file.
+    When scripting system loads simulation config file it throws an error if there are
+    invalid keys within config file, there are information missing or there is an
+    invalid keyword within the config file. If such an error is thrown, scripting system
+    shows you a list of valid keys at position where error occured.
+}
+
+\TropicNote{
+    Scripting system provides basic set of Error messages which indicate to user when
+    something is missing/wrong in config file, or other parts of the scripting system.
+    The idea is that the user does not need to dive into details of implementation, but
+    works with firmly defined level of abstraction. If you manage to "break" the
+    scripting system to such extent, that any of scripts crashes and shows only Python
+    stack-trace, please open an issue in \textit{ts-hw-scripts} Gitlab project.
+}
+
+\TropicNote{
+    Some options specified in simulation scripting flow can be configured also by
+    command line switches of scripts. If these options are specified as command line
+    switches, they always override the value from simulation config file.
 }
 
 
@@ -406,6 +400,146 @@ test list files.}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{PDK config file}
+\label{sec:pdk-config-file}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+PDK configuration file is a YAML file which captures information about PDK (Process
+development kit). PDK configuration contains:
+\begin{itemize}
+    \item Definitions of available digital standard cells in the PDK.
+    \item Definitions of hard-macros in the PDK.
+    \item Definitions of corners available in the PDK.
+\end{itemize}
+
+There can be two types of PDK config files:
+\begin{itemize}
+    \item{Local - Placed in chip top design repository. Typically contains only list of IPs,
+                  views and corners used during the design of the chip.}
+    \item{Global - Placed in location where PDK is placed. Typically this type of coinfig
+                   file contains every IP/standard cell available under given PDK and it
+                   is good candidate to be used in IP/Block design repositories for block
+                   specific CAD tool setup (e.g. block level synthesis.)} 
+\end{itemize}
+
+An example of PDK config file is following:
+
+\begin{lstlisting}[basicstyle=\footnotesize]
+name: umc55
+corners:
+  108c125_wc:
+    voltage: 1.08
+    temperature: 125
+  132c-40_bc:
+    voltage: 1.32
+    temperature: -40
+
+std_cells:
+  - name: umc55uhd
+    version: 0.2
+    views:
+      nldm_db:
+        108c125_wc: std_55_UM055LSCEE12BDH/0v2/nldm_db/u055lscee12bdh_108c125_wc.db
+        120c25_tc: std_55_UM055LSCEE12BDH/0v2/nldm_db/u055lscee12bdh_120c25_tc.db
+        132c-40_bc: std_55_UM055LSCEE12BDH/0v2/nldm_db/u055lscee12bdh_132c-40_bc.db
+
+      gds: std_55_UM055LSCEE12BDH/0v2/gds/u055lscee12bdh.gds
+      lef: std_55_UM055LSCEE12BDH/0v2/lef/u055lscee12bdh.lef
+      tluplus:
+        - std_55_UM055LSCEE12BDH/0v2/tluplus/u055lscee12bdh_RCMAX.TLUPlus
+        - std_55_UM055LSCEE12BDH/0v2/tluplus/u055lscee12bdh_RCMIN.TLUPlus
+        - std_55_UM055LSCEE12BDH/0v2/map/UMC55_5m0t1f_TLUplus.map
+      milkyway: std_55_UM055LSCEE12BDH/0v2/mw
+      slf: std_55_UM055LSCEE12BDH/0v2/behav_models/slf_umc55_cells_pg_sdf21.yml
+
+ips:
+  - name: flash_UM055EFLLP128KX039S4F
+    version: 0.2
+    views: 
+      lef: ip_55_UM055EFLLP128KX039S4F/0v2/lef/u055efllp128kx039s4f.lef
+\end{lstlisting}
+
+The example above defines a PDK with two corners: "108c125_wc" and "132c-40_bc", single
+standard cell library "umc55uhd" and single hard macro / IP \newline ("flash_UM055EFLLP128KX039S4F").
+Standard cells have "nldm_db", "gds", "lef", "tluplus", "milkyway" and "slf" views defined.
+PDK config files support various "views". List of currently supported views can be found
+by running \textit{ts_design_cfg.py ----list-supported-views}. Views can be with corner,
+or without corner. Views with corner need to have single file defined per corner
+defined. Views without corner can define single file, or list of multiple files per view.
+
+Relative paths in PDK config file are interpreted relative to location of PDK config
+file itself.
+
+\TropicNote{
+    "slf" view of PDK objects shall contain path to source-list file(s) with HDL sources
+    for given hard-macro. This is typically used to include simulation models of standard cells
+    or hard-macros. Such source list file can be referenced in simulation config file,
+    see \ref{sec:how-include-source-list-files-from-pdk}.
+}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{Design config file}
+\label{sec:design-config-file}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Design config file contains physical design configuration of given chip / HW block.
+It loads PDK information from PDK config file via "pdk_configs" keyword.
+PDK config file contains:
+\begin{itemize}
+    \item {Target PDK (must be loaded from PDK config file)}
+    \item {Target standard cells (must be in configured PDK)}
+    \item {IPs / Hard macros used by the design}
+    \item {Design top (by referencing target from simulation config file)}
+    \item {Design modes (pairs of: PDK corner + constraint file)}
+    \item {Global constraints}
+    \item {Design floorplan}
+\end{itemize}
+
+\begin{lstlisting}[basicstyle=\footnotesize]
+pdk_configs:
+  - /projects/tropic01/pdk/umc/ts_pdk_config.yml
+
+design:
+  target: rtl_umc55_synth
+  pdk: umc55
+  std_cells:
+    - umc55uhd: 0.2
+  constraints:
+    - sdc/tassic_top_physical.sdc
+  floorplan: floorplan/def/chip_fp_for_synth.def
+
+  ips:
+    - flash_UM055EFLLP128KX039S4F: 0.2
+
+  modes:
+    - name: func_min
+      corner: 132c-40_bc
+      constraints: sdc/tassic_top_func.sdc
+    - name: func_max
+      corner: 108c125_wc
+      constraints: sdc/tassic_top_func.sdc
+\end{lstlisting}
+
+The example above loads PDK config file located in \newline
+\textit{/projects/tropic01/pdk/umc/ts_pdk_config.yml} and loads all PDKs listed in this file.
+Further it defines following in for the design:
+\begin{itemize}
+    \item Design top (target "rtl_umc55_synth" from Simulation config file.)
+    \item Target PDK to be "umc55".
+    \item Standard cells used to be "umc55uhd", version 0.2.
+    \item Global constraint file (common for all modes).
+    \item Floorplan file.
+    \item IPs / Hard macros used by design: "flash_UM055EFLLP128KX039S4F" version 0.2.
+    \item Two modes: "func_min" and "func_max".
+\end{itemize}
+
+Paths relative to Design config file are relative to \textit{\$TS_REPO_ROOT} environment
+variable. Default location of Design config file in the HW design repository is in:
+\textit{cfg/ts_design_cfg.yml}.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Compilation / Simulation flow}
 \label{sec:compilation-simulation-flow}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -437,10 +571,16 @@ Where \textit{<target_name>} is name of a target from simulation config file, e.
 ts_sim_compile.py rtl
 \end{lstlisting}
 
+\TropicNote{
+    Targets can be used model type of design being simulated. Typical targets could be
+    "tb_rtl", "tb_gate_min", "tb_gate_typ", "tb_gate_max".
+}
 
 \TropicNote{
-Targets can be used model type of design being simulated. Typical targets could be "rtl", "gate_min", "gate_typ", "gate_max".
+    When naming targets, prefix them with "rtl_" when these targets contain synthesizable
+    code and prefix them with "tb_" when these targets contain testbench sources.
 }
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection{Run test(s)}
@@ -461,9 +601,9 @@ ts_sim_run.py rtl first_test
 \end{lstlisting}
 
 \TropicNote{
-It is possible to specify multiple tests for single test-run as well as use wild-cards
-to specify test names. Using \textbf{*} as \textit{test_name} will run all tests within
-the repository.
+    It is possible to specify multiple tests for single test-run as well as use wild-cards
+    to specify test names. Using \textbf{\textbackslash*} as \textit{test_name} will run all
+    tests within the repository.
 }
 
 
@@ -568,6 +708,32 @@ Differences between scripts:
                                        current time when regression ended. \Ttlb
 
 \end{TropicRatioTable2Col}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{Exporting PDK configuration}
+\label{sec:exporting-pdk-configuration}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Design config file and PDK config file contains definitions of hard macros and standard
+cells used in the chip / block design. It contains list of views, corners and modes
+available for physical design process. Typically, in the physical design process multiple
+tools need this information (e.g. timing views are needed by synthesis, PnR and sign-off STA.).
+
+Design and PDK config files serve as single place where this information is defined for
+a given block / chip design. To propagate this information into each physical design flow,
+\textit{ts-hw-scripts} provide `ts_design_cfg.py` export script which generates TCL file with
+variables containing paths to these views.
+
+Example of calling such script is:
+\begin{lstlisting}
+    ts_design_cfg.py -v --add-views=nldm_db,gds,tluplus
+                        --exp-tcl-design-cfg debug.tcl
+                        --add-top-entity
+                        --add-syn-rtl-build-dirs
+                        --add-constraints
+                        --add-floorplan    
+\end{lstlisting}
 
 
 
@@ -1784,7 +1950,8 @@ The overall hook flow is following:
 \end{figure}
 
 \TropicNote{
-    Scripting system always passes 3 arguments to pre-test/post-test hooks:
+    When scripting system is executing a bash script as a hook, it passes
+    3 arguments to pre-test/post-test hooks:
     \begin{itemize}
         \item{Test name}
         \item{Test seed}
@@ -1795,10 +1962,8 @@ The overall hook flow is following:
     and can be used to e.g. perform generation of seed-deterministic data within
     a hook, or choosing different input data for test.
 
-    When hook is specified as a bash command, it is not passed to the command.
+    When hook is specified as a bash command, these arguments are not passed to the command.
 }
-
-\OpenIssue{Add option to pass arbitrary arguments to hooks!}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -2229,6 +2394,45 @@ ts_sim_run.py --do-file=my_do_file rtl first_test
 \end{lstlisting}
 
 The example above will launch the simulation and execute the commands from the "do" file.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{How to include source list files from PDK ?}
+\label{sec:how-include-source-list-files-from-pdk}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Since PDK config file contains "slf" (source list file) views (typically with
+simulation models of hard-macros or standard cells), such models are typically
+used in simulation. To reference "slf" view of a an IP / Standard cell defined in
+PDK config file, you can use ":" notation when defining source list file for a target
+within simulation config file as shown in following example:
+
+\begin{lstlisting}
+    targets:
+    targetA:
+        top_entity: <targetA top entity>
+        source_list_files:
+            - :umc55uhd:slf_umc55_cells_pg_sdf21.yml
+
+\end{lstlisting}
+
+The example above will attempt to load \textit{slf_umc55_cells_pg_sdf21.yml} from "umc55uhd"
+object in current PDK. Current PDK must be loaded in Design config file, and set by
+"pdk" keyword under "design" keyword. Path to \textit{slf_umc55_cells_pg_sdf21.yml} must be
+listed under "slf" keyword of PDK object (standard cells or an IP) "umc55uhd".
+Example of such PDK config file containing "slf" view for "umc55uhd" standard cells
+is in \ref{sec:pdk-config-file}.
+
+\TropicNote{
+    If multiple PDKs are loaded, only sources from target PDK as configured in "pdk"
+    keyword under "design" keyword of PDK config file can be included.
+}
+
+\TropicNote{
+    Even path in "slf" view of PDK config file contains multiple directories, you only
+    need to refer to the name of final source list file. This is to facilitate easy
+    switching between versions of hard-macros.
+}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

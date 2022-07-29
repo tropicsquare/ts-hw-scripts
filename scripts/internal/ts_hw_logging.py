@@ -74,7 +74,11 @@ class TsErrCode(Enum):
     ERR_SLF_5 = auto()
     ERR_SLF_14 = auto()
     ERR_SLF_15 = auto()
+    ERR_SLF_17 = auto()
     ERR_SLF_18 = auto()
+    ERR_SLF_19 = auto()
+    ERR_SLF_20 = auto()
+    ERR_SLF_21 = auto()
 
     # Compilation errors
     ERR_CMP_0 = auto()
@@ -95,6 +99,26 @@ class TsErrCode(Enum):
 
     # Hook errors
     ERR_HOK_0 = auto()
+
+    # PDK config file errors
+    ERR_PDK_0 = auto()
+    ERR_PDK_1 = auto()
+    ERR_PDK_2 = auto()
+    ERR_PDK_3 = auto()
+    ERR_PDK_4 = auto()
+    ERR_PDK_5 = auto()
+    ERR_PDK_6 = auto()
+    ERR_PDK_7 = auto()
+    ERR_PDK_8 = auto()
+    ERR_PDK_9 = auto()
+    ERR_PDK_10 = auto()
+    ERR_PDK_11 = auto()
+    ERR_PDK_12 = auto()
+    ERR_PDK_13 = auto()
+    ERR_PDK_14 = auto()
+    ERR_PDK_15 = auto()
+    ERR_PDK_16 = auto()
+    ERR_PDK_17 = auto()
 
 
 # Pair between error code, and message to be printed.
@@ -120,7 +144,18 @@ __ERR_CODE_MSG_PAIR = {
                                   "need to provide 'test_name' argument(s). Use '--list-tests' "
                                   "switch to show list of all available tests.",
 
+    TsErrCode.ERR_SLF_17: lambda file_name, lf: "VHDL file '{}' in list file '{}' does not support "
+                                           "define keyword! It is impossible to define macro in "
+                                           "VHDL language!".format(file_name, lf),
+
     TsErrCode.ERR_SLF_18: lambda error_message, tlf: f"List file {tlf} is invalid > {error_message}",
+
+    TsErrCode.ERR_SLF_19: lambda pdk_obj, tgt: f"Unable to find PDK object: {pdk_obj}, reffered to by target {tgt}",
+
+    TsErrCode.ERR_SLF_20: lambda slf, pdk_obj, allowed: f"Unable to find source list file: '{slf}', for pdk object '{pdk_obj}', available source list files for this pdk object: {allowed}",
+
+    TsErrCode.ERR_SLF_21: lambda obj, target: f"Design config file is not loaded, you can't reffer to PDK IPs/standard cells in simulation config file! Trying to reffer to '{obj}' in target '{target}'.",
+
 
     TsErrCode.ERR_CMP_0: lambda ext, file_name, sup: "Unknown file extension '.{}' of file '{}'. "
                                                 "Supported file name extensions are: {}".format(
@@ -160,7 +195,43 @@ __ERR_CODE_MSG_PAIR = {
     TsErrCode.ERR_SIM_0: lambda bin_file: "Simulation binary '{}' does not exist. Make sure that "
                                       "elaboration finished successfully!".format(bin_file),
 
-    TsErrCode.ERR_SIM_1: lambda log_file: "Simulation log file '{}' does not exist.".format(log_file)
+    TsErrCode.ERR_SIM_1: lambda log_file: "Simulation log file '{}' does not exist.".format(log_file),
+
+    TsErrCode.ERR_PDK_0: lambda e, pdk_file: "PDK config file '{}' is invalid. \n {}".format(pdk_file, e),
+
+    TsErrCode.ERR_PDK_1: lambda e, design_file: "Failed to load design config file '{}'. \n {}".format(design_file, e),
+
+    TsErrCode.ERR_PDK_2: lambda e: "Design config file is invalid. \n {}".format(e),
+
+    TsErrCode.ERR_PDK_3: lambda path: "PDK configuration file: '{}' does not exist \n".format(path),
+
+    TsErrCode.ERR_PDK_4: lambda corner, instance, allowed: "Invalid corner '{}' for '{}'. Defined corners are: '{}'. \n".format(corner, instance, allowed),
+
+    TsErrCode.ERR_PDK_5: lambda instance, path: "View '{}' does not exist for '{}'".format(path, instance),
+    
+    TsErrCode.ERR_PDK_6: lambda pdk_name, allowed: "PDK '{}' set in design config file not available. Loaded PDKs: '{}'".format(pdk_name, allowed),
+
+    TsErrCode.ERR_PDK_7: lambda pdk_name, std_cells, version, allowed: "Standard cells '{}({})' not available in PDK '{}'. Available standard cells: '{}'".format(std_cells, version, pdk_name, allowed),
+
+    TsErrCode.ERR_PDK_8: lambda ip_name, ip_version, pdk_name, allowed: "IP '{}({})' not found in target PDK '{}'. Available IPs: '{}'".format(ip_name, ip_version, pdk_name, allowed),
+
+    TsErrCode.ERR_PDK_9: lambda ip_name, pdk_name: "IP '{}' not found in target PDK '{}'. No IPs available in this PDK!".format(ip_name, pdk_name),
+
+    TsErrCode.ERR_PDK_10: lambda mode, corner, pdk, allowed: "Invalid corner '{}' for mode '{}'. Available corners in '{}' PDK: '{}'".format(corner, mode, pdk, allowed),
+
+    TsErrCode.ERR_PDK_11: lambda constraint, mode: "Constraint file '{}' for mode '{}' not found".format(constraint, mode),
+
+    TsErrCode.ERR_PDK_12: lambda obj_type, obj_name, version: "{} '{}({})' defined multiple times".format(obj_type, obj_name, version),
+
+    TsErrCode.ERR_PDK_13: lambda view, allowed: "Unknown view '{}' to export. Known views are : '{}'".format(view, allowed),
+
+    TsErrCode.ERR_PDK_14: lambda vals: "Only one standard cells can be defined as target standard cells in the design. Currently, following are defined: {}".format(vals),
+
+    TsErrCode.ERR_PDK_15: lambda target, allowed: "Target '{}' defined as PD design top does not exist in simulation config file. Existing targets are: {}".format(target, allowed),
+
+    TsErrCode.ERR_PDK_16: lambda file: "Global constraint file: '{}' does not exist".format(file),
+
+    TsErrCode.ERR_PDK_17: lambda file: "Floorplan file: '{}' does not exist".format(file)
 }
 
 
@@ -176,15 +247,29 @@ class TsWarnCode(Enum):
     # Config file warnings
     WARN_CFG_1 = auto()
 
+    # PDK / Design config file warnings
+    WARN_PDK_1 = auto()
+    WARN_PDK_2 = auto()
+    WARN_PDK_3 = auto()
+    WARN_PDK_4 = auto()
+    WARN_PDK_5 = auto()
+
 
 # Pair between error code, and message to be printed.
 __WARN_CODE_MSG_PAIR = {
     # Generic warning
     TsWarnCode.GENERIC: lambda string: str(string),
 
-    # Configuration file warnings
+    # Simulation Configuration file warnings
     TsWarnCode.WARN_CFG_1: lambda key, def_val: "Key '{}' not defined in simulation configuration file. "
                                                 "Assuming '{}' by default.".format(key, def_val),
+
+    # PDK / Design configuration file warnings
+    TsWarnCode.WARN_PDK_1: lambda : "Design config file not found -> Skipping initialization.",
+    TsWarnCode.WARN_PDK_2: lambda corner, obj: "'{}' corner for '{}' not defined!".format(corner, obj),
+    TsWarnCode.WARN_PDK_3: lambda name, version, view: "'{}({})' is missing view '{}', not exporting.".format(name, version, view),
+    TsWarnCode.WARN_PDK_4: lambda name, version, view, corner: "'{}({})' is missing view '{}' for corner: '{}', not exporting.".format(name, version, view, corner),
+    TsWarnCode.WARN_PDK_5: lambda: "'Floorplan not defined, but export attempted!"
 }
 
 
@@ -213,6 +298,14 @@ class TsInfoCode(Enum):
     INFO_HOK_0 = auto()
     INFO_HOK_1 = auto()
 
+    # PDK config info messages
+    INFO_PDK_0 = auto()
+    INFO_PDK_1 = auto()
+    INFO_PDK_2 = auto()
+    INFO_PDK_3 = auto()
+    INFO_PDK_4 = auto()
+    INFO_PDK_5 = auto()
+
 
 # Pair between error code, and message to be printed.
 __INFO_CODE_MSG_PAIR = {
@@ -220,9 +313,9 @@ __INFO_CODE_MSG_PAIR = {
     TsInfoCode.GENERIC: lambda string: str(string),
 
     # Common config files
-    TsInfoCode.INFO_CMN_0: lambda file_name: "Loading configuration file: '{}'".format(file_name),
+    TsInfoCode.INFO_CMN_0: lambda file_name: "Loading simulation configuration file: '{}'".format(file_name),
     TsInfoCode.INFO_CMN_1: lambda: "Checking simulation configuration...",
-    TsInfoCode.INFO_CMN_2: lambda: "Configuration OK!",
+    TsInfoCode.INFO_CMN_2: lambda: "Simulation Configuration OK!",
     TsInfoCode.INFO_CMN_3: lambda tgt: "Loading source list files for target: '{}'".format(tgt),
     TsInfoCode.INFO_CMN_5: lambda lib: "Compiling files for library: '{}'".format(lib),
     TsInfoCode.INFO_CMN_13: lambda tests: "Tests to be executed: {}".format(", ".join(tests)),
@@ -234,6 +327,15 @@ __INFO_CODE_MSG_PAIR = {
     # Hook info messages
     TsInfoCode.INFO_HOK_0: lambda hook_name: "Calling hook: '{}'".format(hook_name),
     TsInfoCode.INFO_HOK_1: lambda hook_name: "Skipping unspecified hook: '{}'".format(hook_name),
+
+    # PDK config file
+    TsInfoCode.INFO_PDK_0: lambda path: "Loading PDK configuration file: '{}'".format(path),
+    TsInfoCode.INFO_PDK_1: lambda path: "Loading Design configuration file: '{}'".format(path),
+
+    TsInfoCode.INFO_PDK_2: lambda: "Checking design configuration...",
+    TsInfoCode.INFO_PDK_3: lambda: "Design configuration OK!",
+    TsInfoCode.INFO_PDK_4: lambda pdk_name: "Loading PDK: {}".format(pdk_name),
+    TsInfoCode.INFO_PDK_5: lambda file: "Exporting design configuration to: '{}'".format(file)
 }
 
 

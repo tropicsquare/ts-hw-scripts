@@ -45,7 +45,7 @@ build_docs:
     script:
         - source ./setup_env
         - cd doc/ts_sim_user_guide
-        - source build.sh
+        - ts_latex_build.py ts_sim_user_guide.tex
     artifacts:
         paths:
             - doc/ts_sim_user_guide/build/pdf/ts_sim_user_guide.pdf

@@ -67,6 +67,7 @@ if __name__ == "__main__":
     # Add script arguments
     parser = TsArgumentParser(description="Digital regression script")
     add_ts_common_args(parser)
+    add_cfg_files_arg(parser)
     add_target_arg(parser)
     add_ts_sim_regress_args(parser)
     argcomplete.autocomplete(parser)
@@ -75,7 +76,8 @@ if __name__ == "__main__":
     ts_configure_logging(args)
 
     # Load config file, merge with args and check configuration
-    do_config_init(args)
+    do_sim_config_init(args)
+    do_design_config_init(args)
 
     # Fill default config values for command line options which are not available
     # in ts_sim_regress.py

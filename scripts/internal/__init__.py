@@ -20,4 +20,5 @@ from .ts_hw_hooks import *
 from .ts_hw_simulator_ifc import *
 from .ts_hw_source_list_files import *
 from .ts_hw_test_list_files import *
-from .ts_hw_synth_exp import *
+from .ts_hw_export import *
+from .ts_hw_design_config_file import *

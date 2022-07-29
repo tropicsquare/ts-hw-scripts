@@ -95,6 +95,7 @@ if __name__ == "__main__":
     # Add script arguments
     parser = TsArgumentParser(description="HDL compilation script")
     add_ts_common_args(parser)
+    add_cfg_files_arg(parser)
     add_ts_sim_compile_args(parser)
     add_target_arg(parser)
     argcomplete.autocomplete(parser)
@@ -102,8 +103,9 @@ if __name__ == "__main__":
     TsGlobals.TS_SIM_CFG_PATH = args.sim_cfg
     ts_configure_logging(args)
 
-    # Load config file, merge with args and check configuration
-    do_config_init(args)
+    # Load config files, merge with args and check configuration
+    do_sim_config_init(args)
+    do_design_config_init(args)
 
     # Launch compilation
     sys.exit(sim_compile(args))

@@ -51,15 +51,16 @@ if __name__ == "__main__":
     # Add arguments
     parser = TsArgumentParser(description="Simulation result check script")
     add_ts_common_args(parser)
+    add_cfg_files_arg(parser)
     add_target_arg(parser)
     add_ts_sim_check_args(parser)
     argcomplete.autocomplete(parser)
     args = parser.parse_args()
     ts_configure_logging(args)
 
-    # Load config file and check it
-    do_config_init(args)
+    # Load config files and check them
+    do_sim_config_init(args)
+    do_design_config_init(args)
 
     # Launch checking process
     sim_check(args, args.log_file)
-

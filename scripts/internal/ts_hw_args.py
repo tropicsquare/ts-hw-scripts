@@ -39,10 +39,18 @@ def add_ts_common_args(parser):
     parser.add_argument("-n", "--no-color", action="store_true", default=False,
                         help="Do not use coloured output of the script.")
 
-    parser.add_argument("-c", "--sim-cfg",
+
+def add_cfg_files_arg(parser):
+    """
+    Adds simulation and design config file arguments
+    :param parser: Argparse parser to which arguments shall be added
+    """
+    parser.add_argument("-sc", "--sim-cfg",
                         default=ts_get_root_rel_path(TsGlobals.TS_SIM_CFG_PATH),
                         help="Overrides simulation config file, default is "
                             f"${__norm_join(TsGlobals.TS_REPO_ROOT, TsGlobals.TS_SIM_CFG_PATH)}")
+    parser.add_argument("-dc", "--design-cfg", default=ts_get_root_rel_path(TsGlobals.TS_DESIGN_CFG_PATH),
+                        help="Specifies Design configuration file to load.")
 
 
 def add_target_arg(parser):
@@ -53,6 +61,48 @@ def add_target_arg(parser):
     parser.add_argument("target",
                         help="Design target from simulation config file "
                             "(e.g. rtl, gate_min, gate_max)")
+
+
+def add_pdk_cfg_args(parser):
+    """
+    Adds PDK configuration arguments.
+    :param parser: Argparse parser to which arguments shall be added
+    """
+    parser.add_argument("--list-pdks", action="store_true", default=False,
+                        help="List available PDKs")
+
+    parser.add_argument("--list-pdk-ips", action="store_true",
+                        help="Only list available IPs for loaded PDKs, do not export any config.")
+
+    parser.add_argument("--list-pdk-std-cells", action="store_true",
+                        help="Only list available IPs for loaded PDKs, do not export any config.")
+
+    parser.add_argument("--list-supported-views", action="store_true",
+                        help="Only list views supported by the scrip, do not export any config")
+
+    parser.add_argument("--exp-tcl-file-dc", default="",
+                        help="Exports TCL file with sources for DC shell.")
+
+    parser.add_argument("--exp-tcl-file-vivado", default="",
+                        help="Exports TCL file with sources for Vivado.")
+
+    parser.add_argument("--exp-tcl-design-cfg",
+                        help="Export TCL file with design configuration (IPs (hard macros), standard cells) views")
+
+    parser.add_argument("--add-views",
+                        help="Comma separated list of views to export (e.g. db,mw)")
+
+    parser.add_argument("--add-top-entity", action="store_true",
+                        help="Export top entity (design name).")
+
+    parser.add_argument("--add-syn-rtl-build-dirs", action="store_true",
+                        help="Export RTL build directories (per-library)")
+
+    parser.add_argument("--add-constraints", action="store_true",
+                        help="Export constraints (global and per-mode)")
+
+    parser.add_argument("--add-floorplan", action="store_true",
+                        help="Export floorplan")
 
 
 def add_ts_sim_compile_args(parser):

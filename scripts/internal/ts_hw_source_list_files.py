@@ -120,9 +120,59 @@ def load_source_list_files(design_target: str):
         for source in ts_get_cfg("targets")[target]["source_list_files"]:
             if source == target:
                 raise RecursionError(f"Circular recursion: {target} includes itself")
-            # source is either a yaml file
-            if source.endswith(".yml"):
-               sources.append(source)
+
+            # Reference to SLF view of PDK object
+            if source.startswith(":"):
+                ts_debug("Searching PDK object source list file from: {}".format(source))
+                
+                # For backwards compatibility most of repositories do not have design config
+                # available at the time of implementation! So we must avoid bug if we tried
+                # to reference PDK object without any design config file loaded!
+                if not TsGlobals.TS_DESIGN_CFG:
+                    ts_throw_error(TsErrCode.ERR_SLF_21, source, target)
+
+                # Search if YAML is hard macro referenced behav model view from used
+                # IP cores
+                split_name = source.split(":")
+                while "" in split_name:
+                    split_name.remove("")
+
+                # Find PDK object matching to first word in the path
+                pdk_obj = None
+                for obj_type in ALLOWED_DESIGN_OBJ_TYPES:                    
+                    for obj in TsGlobals.TS_DESIGN_CFG["design"][obj_type]:
+                        obj_name = list(obj.keys())[0]
+                        obj_version = list(obj.values())[0]
+                        if split_name[0] == obj_name:
+                            pdk_obj = get_pdk_obj(obj_type, obj_name, obj_version)
+
+                if pdk_obj:
+                    try:
+                        found = False
+                        for src in pdk_obj["views"]["slf"]:
+                            if os.path.basename(src) == split_name[-1]:
+                                ts_debug("Appending source list file: {} from PDK object: {}\n".format(src, pdk_obj["name"]))
+                                sources.append(src)
+                                found = True
+                        if not found:
+                            raise Exception
+                    except:
+                        if "slf" in pdk_obj["views"]:
+                            filt = [os.path.basename(x) for x in pdk_obj["views"]["slf"]]
+                        else:
+                            filt = []
+                        ts_throw_error(TsErrCode.ERR_SLF_20, split_name[-1], split_name[0], filt)
+                    
+                else:
+                    ts_throw_error(TsErrCode.ERR_SLF_19, split_name[0], design_target)
+
+                #except:
+                #    pass
+            
+            # Regular YAML file
+            elif source.endswith(".yml"):
+                sources.append(source)
+
             # or a target
             else:
                 ts_info(TsInfoCode.INFO_CMN_25, source)
@@ -139,20 +189,21 @@ def load_source_list_files(design_target: str):
         ts_script_bug("Target whose source list file you are trying to load is empty!")
 
     source_lists = []
-    try:
-        for source_list_path in _get_all_sources_for_target(design_target):
-            # Remove duplicates
-            if source_list_path not in source_lists:
-                source_lists.append(source_list_path)
-    except Exception as e:
-        ts_throw_error(TsErrCode.GENERIC,
-                        f"An issue occurred while parsing target '{design_target}': {e}")
+    #try:
+    for source_list_path in _get_all_sources_for_target(design_target):
+        # Remove duplicates
+        if source_list_path not in source_lists:
+            source_lists.append(source_list_path)
+    #except Exception as e:
+    #    ts_throw_error(TsErrCode.GENERIC,
+    #                    f"An issue occurred while parsing target '{design_target}': {e}")
 
     ts_debug("Source list files are: {source_lists}")
 
     src_list = []
     for source_list_path in source_lists:
-        src_list.extend(__load_source_list_file(ts_get_root_rel_path(source_list_path)))
+        if not source_list_path.startswith("::"):
+            src_list.extend(__load_source_list_file(ts_get_root_rel_path(source_list_path)))
 
     # Create two lists of source files: flat and library-wise hierarchical
     TsGlobals.TS_SIM_SRCS = []

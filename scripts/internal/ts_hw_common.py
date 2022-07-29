@@ -21,6 +21,20 @@ from .ts_hw_logging import *
 from .ts_hw_global_vars import *
 
 
+def concat_keys(in_lst: list, key: str, sep: str):
+    """
+    Concatenate key values from list of dictionaries
+    """
+    ret_val = ""
+    #print(in_lst)
+    for obj in in_lst:
+        if key in obj:
+            ret_val += obj[key]
+        if not obj == in_lst[-1]:
+            ret_val += sep
+    return ret_val
+
+
 def expand_vars(cfg):
     """
     Expand the environment variables in strings
@@ -383,3 +397,73 @@ def init_signals_handler():
     signal.signal(signal.SIGINT, gracefully_quit)
     signal.signal(signal.SIGTERM, gracefully_quit)
 
+
+def get_pdk_obj(obj_type: str, target_obj_name: str, target_obj_version: str) -> dict:
+    """
+    """
+    assert(obj_type == "std_cells" or obj_type == "ips")
+
+    pdk_name = TsGlobals.TS_DESIGN_CFG["design"]["pdk"]
+    target_pdk = None
+
+    for pdk in TsGlobals.TS_PDK_CFGS:
+        if pdk_name == pdk["name"]:
+            target_pdk = pdk
+
+    assert (target_pdk is not None)
+
+    for obj in target_pdk[obj_type]:
+        #print(obj)
+        if obj["name"] == target_obj_name and \
+           obj["version"] == target_obj_version:
+            return obj
+
+    # We should never get here since loading of design config file guarantees that
+    # std_cells and IPs referred to are consistent
+    assert (False)
+
+
+def view_has_corner(pdk_view: str):
+    """
+    Returns True if given view shall have per-corner value, False otherwise
+    :param pdk_view: Name of the view
+    """
+    if pdk_view == "nldm_lib" or pdk_view == "nldm_db" or \
+       pdk_view == "ccs_lib" or pdk_view == "ccs_db":
+       return True
+    return False
+
+
+def is_used_corner(corner: str):
+    """
+    """
+    for mode in TsGlobals.TS_DESIGN_CFG["modes"]:
+        if mode["corner"] == corner:
+            return True
+    return False
+
+
+def get_used_corners():
+    """
+    """
+    raw_list = []
+    filtered_list = []
+    for mode in TsGlobals.TS_DESIGN_CFG["modes"]:
+        raw_list.append(mode["corner"])
+    [filtered_list.append(x) for x in raw_list if x not in filtered_list]
+    return filtered_list
+
+
+def get_mode_for_corner(corner: str):
+    """
+    """
+    for mode in TsGlobals.TS_DESIGN_CFG["modes"]:
+        if mode["corner"] == corner:
+            return mode
+    ts_script_bug("Mode not found for corner -> Was the Design config file checked properly during parsing?")
+
+
+def ts_get_design_top():
+    """
+    """
+    return ts_get_cfg()["targets"][ts_get_cfg()["target"]]["top_entity"].split(".")[-1].upper()

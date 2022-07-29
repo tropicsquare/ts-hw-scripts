@@ -203,6 +203,7 @@ if __name__ == "__main__":
     # Add script arguments
     parser = TsArgumentParser(description="Coverage script")
     add_ts_common_args(parser)
+    add_cfg_files_arg(parser)
     add_ts_sim_coverage_args(parser)
     argcomplete.autocomplete(parser)
     args = parser.parse_args()
@@ -210,7 +211,7 @@ if __name__ == "__main__":
     ts_configure_logging(args)
 
     # Load config file, merge with args and check configuration
-    do_config_init(args, skip_check=True)
+    do_sim_config_init(args, skip_check=True)
 
     # Launch compilation
     sys.exit(sim_coverage(args))

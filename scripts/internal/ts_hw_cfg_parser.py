@@ -12,6 +12,7 @@ from schema import SchemaError
 
 from .ts_hw_common import *
 from .ts_grammar import *
+from .ts_hw_design_config_file import *
 
 
 def fill_default_config_regress_values(cfg_curr: dict):
@@ -113,12 +114,50 @@ def __finalize_config():
         _solve_inheritance(target)
 
 
-def do_config_init(args, skip_check=False):
+def __check_sim_config():
     """
-    Common initialization for all scripts which load simulation config file. Performs following:
+    Checks simulation config file for validity.
+    Throws an exception if config file has an error in it.
+    """
+    ts_debug("Checking configuration against grammar template")
+    try:
+        TsGlobals.TS_SIM_CFG = GRAMMAR_SIM_CFG.validate(TsGlobals.TS_SIM_CFG)
+    except SchemaError as e:
+        ts_throw_error(TsErrCode.ERR_CFG_23, e)
+
+    ts_debug("Performing additional checks")
+
+    ts_debug("Checking test strategy parameters")
+    for to_test in (TsGlobals.TS_SIM_CFG, *TsGlobals.TS_SIM_CFG["targets"].values()):
+        if to_test.get("test_name_strategy") == "generic_parameter":
+            if (to_test.get("test_name_generic"), to_test.get("test_name_parameter")) == (None, None):
+                ts_throw_error(TsErrCode.ERR_CFG_22)
+
+    ts_debug("Checking coupling of 'ignore_start' and 'ignore_stop' patterns")
+    config_keys = set(TsGlobals.TS_SIM_CFG.keys())
+    for kwd_pair in ({"error_ignore_start", "error_ignore_stop"},
+                    {"warning_ignore_start", "warning_ignore_stop"}):
+        # start and stop cannot be one without the other
+        if len(kwd_pair - config_keys) == 1:
+            ts_throw_error(TsErrCode.ERR_CFG_13, *kwd_pair)
+
+
+def __check_design_config():
+    """
+    """
+    try:
+        TsGlobals.TS_DESIGN_CFG = GRAMMAR_DSG_CONFIG.validate(TsGlobals.TS_DESIGN_CFG)
+    except SchemaError as e:
+        ts_throw_error(TsErrCode.ERR_PDK_2, e)
+
+
+def do_sim_config_init(args, skip_check=False):
+    """
+    Common initialization for all scripts which load simulation config files.
+    Performs following:
         1. Loads simulation config file
-        2. Merges simulation config file with command line arguments
-        3. Checks if config is valid (no invalid keywords, or values).
+        2. Merges simulation config files with command line arguments
+        3. Checks if configs are valid (no invalid keywords, or values).
     :param args: Command line arguments
     """
     # Loading simulation config
@@ -146,11 +185,45 @@ def do_config_init(args, skip_check=False):
 
     # Checking simulation config file
     ts_info(TsInfoCode.INFO_CMN_1)
-    try:
-        TsGlobals.TS_SIM_CFG = GRAMMAR_SIM_CFG.validate(TsGlobals.TS_SIM_CFG)
-    except SchemaError as e:
-        ts_throw_error(TsErrCode.ERR_CFG_23, e)
+    __check_sim_config()
     ts_info(TsInfoCode.INFO_CMN_2)
+
+
+def do_design_config_init(args, skip_check=False):
+    """
+    """
+    # Load Design config file
+    cfg_file_path = ts_get_curr_dir_rel_path(args.design_cfg)
+    ts_info(TsInfoCode.INFO_PDK_1, cfg_file_path)
+    try:
+        if os.path.exists(cfg_file_path):
+            TsGlobals.TS_DESIGN_CFG = load_design_config_file(cfg_file_path)
+        else:
+            if args.verbose > 0:
+                ts_warning(TsWarnCode.WARN_PDK_1)
+            return
+    except Exception as e:
+        ts_throw_error(TsErrCode.ERR_PDK_1, e, cfg_file_path)
+
+    # Check towards grammar
+    if not skip_check:
+        ts_info(TsInfoCode.INFO_PDK_2)
+        __check_design_config()
+        ts_info(TsInfoCode.INFO_PDK_3)
+
+    # Read in PDKS
+    load_pdk_configs()
+
+    # Check that Design config is valid (it references towards PDK objects)
+    validate_design_config_file()
+
+
+def check_valid_design_target():
+    """
+    """
+    if TsGlobals.TS_DESIGN_CFG["design"]["target"] not in ts_get_cfg("targets"):
+        ts_throw_error(TsErrCode.ERR_PDK_15, TsGlobals.TS_DESIGN_CFG["design"]["target"], str(list(ts_get_cfg("targets").keys())) )
+        
 
 
 def print_target_list():
