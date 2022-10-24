@@ -21,11 +21,11 @@ Released version of this repository is placed in `/tools/tropic`.
 
 ## Documentation
 
-[User manual](https://tropic-gitlab.corp.sldev.cz/internal/development-environment/ts-hw-scripts/-/jobs/artifacts/master/file/public/ts_sim_user_guide.pdf?job=pages).
+[User manual](https://tropic-gitlab.corp.sldev.cz/internal/development-environment/ts-hw-scripts/-/jobs/artifacts/master/raw/public/ts_sim_user_guide.pdf?job=build_docs).
 
-[Memory map generator User manual](https://tropic-gitlab.corp.sldev.cz/internal/development-environment/ts-hw-scripts/-/jobs/artifacts/master/file/public/ts_mem_map_generate_user_guide.pdf?job=pages).
+[Memory map generator User manual](https://tropic-gitlab.corp.sldev.cz/internal/development-environment/ts-hw-scripts/-/jobs/artifacts/master/raw/public/ts_mem_map_generate_user_guide.pdf?job=build_docs).
 
-[Power analysis User manual](https://tropic-gitlab.corp.sldev.cz/internal/development-environment/ts-hw-scripts/-/jobs/artifacts/master/file/public/ts_pwr_user_guide.pdf?job=pages).
+[Power analysis User manual](https://tropic-gitlab.corp.sldev.cz/internal/development-environment/ts-hw-scripts/-/jobs/artifacts/master/raw/public/ts_pwr_user_guide.pdf?job=build_docs).
 
 ## Examples
 
