@@ -1,0 +1,50 @@
+###################################################################################################
+# TODO: License
+#
+# Author: Vit Masek
+#
+# Description:
+#   This is an example of Power config file.
+#
+#   Power config file is typically located in "pwr" folder of a block repository. It defines
+#   scenarios for power analysis.
+#
+#   Structure of Power config file is fixed and given by a grammar. 
+#
+#   ts-hw-scripts flow checks following from Power config file:
+#     - Grammar is matching predefined format. This example file provides you valid example which
+#       can be used as base when creating Power config file.
+#     - Existence of 'mode' in Design config file
+#     - Existence of 'simulation target' in Simulation config file.
+#     - Existence of 'test_name' in Test list file defined for given simulation target
+#     - That 'from' <= 'to'
+#
+###################################################################################################
+
+# Strip path, e.g. tassic_tb_top/tassic_top_INST
+strip_path: tassic_tb_top/tassic_top_INST
+
+scenarios:
+  - name: dummy_scenario
+
+    # Reference to mode specified in Design config file
+    mode: func_typ
+
+    # Reference to target in Simulation config file.
+    # The target must match the corner specified by mode. E.g. for mode 'func_typ' use
+    # target 'tb_uvm_gate_pnr_umc55_typ'.
+    simulation_target: tb_uvm_gate_pnr_umc55_typ
+
+    # Reference to test in Test list file to be simulated. 
+    test_name: dummy_test
+
+    # Timing margins for power analysis.
+    # Switching activity file (VCD) will be dumped only in this simulation time interval.
+    # The time interval shall refer to some "interesting" operation in the test, e.g. macandd or
+    # spect calculation.
+    from: 10
+    to: 110
+
+    # Seed for the simulation can be randomized (true) or fixed to all zeros (false)
+    randomized: False  # OPTIONAL
+    

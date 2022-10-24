@@ -1,0 +1,96 @@
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+
+stages:
+  - run_tests
+  - build_docs
+  - deploy
+
+.only-default: &only-default
+  only:
+    - master
+    - merge_requests
+    - tags
+
+.only-stable: &only-stable
+  only:
+    - master
+    - tags
+
+# Runs test for HW scripts them-selves.
+run_tests:
+    <<: *only-default
+    stage: run_tests
+    tags:
+        - shell
+    allow_failure: true
+    script:
+        - pwd
+        - source ./setup_env
+        - cd tests
+        - pytest -s 2>&1 --junit-xml=../report.xml | sed 's/\x1B\[[0-9;]*[JKmsu]//g'
+
+    # Clean-up VCS builds after the tests since they take lot of space!
+    after_script:
+        - cd tests
+        - source clean_up_all.sh
+    artifacts:
+      when: always
+      reports:
+        junit: report.xml
+
+# Builds user manual.
+build_docs:
+    <<: *only-default
+    tags:
+        - shell
+    stage: build_docs
+    script:
+        - source ./setup_env
+        - cd doc/ts_sim_user_guide
+        - ts_latex_build.py ts_sim_user_guide.tex
+
+        - cd ../ts_pwr_user_guide
+        - ts_latex_build.py ts_pwr_user_guide.tex
+
+        - cd ../ts_mem_map_generate_user_guide
+        - ts_latex_build.py ts_mem_map_generate_user_guide.tex
+
+    after_script:
+        - echo "Publishing pages..."
+        - mkdir -p public
+        - cp doc/ts_sim_user_guide/build/pdf/ts_sim_user_guide.pdf public
+        - cp doc/ts_pwr_user_guide/build/pdf/ts_pwr_user_guide.pdf public
+        - cp doc/ts_mem_map_generate_user_guide/build/pdf/ts_mem_map_generate_user_guide.pdf public
+
+    artifacts:
+        paths:
+            - public
+
+tropic_install:
+    <<: *only-stable
+    stage: deploy
+    when: manual
+    tags:
+        - shell
+    script:
+        - export VERSION=`git describe --tags --abbrev=0`
+        - export DEST_FOLDER=/tools/tropic/ts-hw-scripts
+
+        # Will fail if concrete version directory already exists. This will avoid
+        # re-placing older version with new if we forget to add new tag!
+        - mkdir -p $DEST_FOLDER
+        - mkdir $DEST_FOLDER/$VERSION
+
+        # Publish documentation
+        - mkdir $DEST_FOLDER/$VERSION/doc
+        - cp public/ts_sim_user_guide.pdf $DEST_FOLDER/$VERSION/doc/
+        - cp public/ts_pwr_user_guide.pdf $DEST_FOLDER/$VERSION/doc/
+        - cp public/ts_mem_map_generate_user_guide.pdf $DEST_FOLDER/$VERSION/doc/
+
+        # Add version to source files
+        - echo "__version__ = \"$(git describe --tags)\"" > scripts/internal/__version__.py
+
+        # Publish scripts themselves
+        - cp -r scripts $DEST_FOLDER/$VERSION
+
