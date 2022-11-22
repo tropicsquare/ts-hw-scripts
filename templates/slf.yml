@@ -1,0 +1,82 @@
+#******************************************************************************
+# Source List File
+#
+# TODO: License
+#
+# Author: Marek Santa
+#
+# Description:
+#   This file specifies list of HDL source files used as an input for various
+#   CAD tools (simulator, synthesizer, ...).
+#
+#   Validity of content of this file is checked by TS HW Scripts.
+#
+#   Keys of slf.yml file
+#   ====================
+#
+#   1) library
+#      Defines name of HDL library into which the sources will be compiled.
+#      A global compilation library is required in each source list file. The
+#      scripting system does not allow relying on default ("work") library.
+#
+#   2) define (optional)
+#      Defines global macros that will be applied during compilation of any
+#      Verilog/SystemVerilog file specified in source_list (see later). VHDL
+#      (until 2019) has no concept of pre-processor macros therefore any
+#      defined macros are ignored for VHDL files.
+#
+#   3) include_dirs (optional)
+#      Defines directories where CAD tool will look for Verilog/SystemVerilog
+#      header files when compiling any of the files specified in source_list
+#      (see later). Include directories are ignored for VHDL files since VHDL
+#      has no concept of header files. Relative path are interpreted as
+#      relative to source list file itself (not to $TS_REPO_ROOT). Absolute
+#      paths are interpreted as absolute paths.
+#
+#   4) source_list
+#      Defines list of source files. A value of this source list shall be
+#      a YAML list.
+#      a) file                    - source file or nested YAML source list
+#                                   file to be compiled
+#      c) library (optional)      - same as 1) library but applies to
+#                                   currently compiled source file only
+#      d) lang (optional)         - language of currently compiled source
+#                                   file. Useful when non-standard file
+#                                   extention is used and language cannot be
+#                                   obtained automatically. Supported values:
+#                                   vhdl, verilog, system_verilog.
+#      e) comp_options (optional) - compilation switches to be added when
+#                                   compiling current source file. These
+#                                   switches are appended to global compilation
+#                                   options.
+#      f) include_dirs (optional) - same as 3) include_dirs but applies to
+#                                   currently compiled source file only
+#      g) define (optional)       - same as 2) define but applies to currently
+#                                   compiled source file only
+#
+#*****************************************************************************
+
+library: dummy_lib
+
+define:
+    MACRO_WITHOUT_VALUE
+    MACRO_WITH_VALUE: 10
+
+include_dirs:
+    - .
+    - rtl/include
+
+source_list:
+    - file: dummy.sv
+      library: another_lib
+      include_dirs: 
+          - another/include
+      comp_options:
+          common: -my_fancy_switch
+
+    - file: strange_name.pkg
+      lang: system_verilog
+      define:
+          MACRO_FOR_PACKAGE
+
+    - file: path/to/nested_list.yml
