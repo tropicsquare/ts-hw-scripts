@@ -1,0 +1,60 @@
+#******************************************************************************
+# Test List File
+#
+# TODO: License
+#
+# Author: Marek Santa
+#
+# Description:
+#   This file specifies list of available tests together with additional
+#   per-test options.
+#
+#   Validity of content of this file is checked by TS HW Scripts.
+#
+#   Keys of tlf.yml file
+#   ====================
+#
+#   1) tests
+#      Defines list of tests. Relative paths in test list file ar interpreted
+#      as relative to test list file itself (not to $TS_REPO_ROOT). Absolute
+#      paths are interpreted as absolute.
+#      a) name/sub_list             - name of test or path to a YAML file
+#                                     defining tests. When name and sub_list
+#                                     keywords are used in the same entry,
+#                                     name keyword is interpreted as a test
+#                                     group name.
+#      b) elab_options (optional)   - elaboration options to be added when
+#                                     executing given test. These switches are
+#                                     appended to global elaboration options.
+#      c) sim_options (optional)    - simulation options to be added when
+#                                     executing given test. These switches are
+#                                     appended to global simulation options.
+#      d) pre_test_hook (optional)  - command to be executed prior test run.
+#      e) post_test_hook (optional) - command to be executed after test run.
+#      f) generics (optional)       - top level generics to be defined when 
+#                                     running VHDL test.
+#      g) parameters (optional)     - top level parameters to be defined when 
+#                                     running Verilog/SystemVerilog test.
+#      h) regress_loops (optional)  - number of repetitions how many times
+#                                     given test will be executed then running
+#                                     regression via ts_sim_regress.py
+#******************************************************************************
+
+tests:
+    - name: dummy_test
+      elab_options:
+          common: -dummy-elab-switch
+      sim_options:
+          common: -dummy-sim-switch
+      pre_test_hook: script.sh
+      post_test_hook: echo "Hello World"
+
+    - sub_list: path/to/additional_test_list.yml
+      name: my_test_group
+      parameters:
+          G_MY_INTEGER_PARAM: 2
+          G_MY_STRING_PARAM: "path/to/file"
+
+    - name: repeat_test
+      regress_loop: 5
+
