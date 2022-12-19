@@ -132,6 +132,6 @@ if __name__ == "__main__":
     # Release data to a given flow_dir - sta
     if args.release and TsGlobals.TS_DESIGN_CFG["design"]["flow_dirs"]["sta"] and not args.force:
         TsGlobals.TS_STA_RELEASE_DIR = join(ts_get_root_rel_path(TsGlobals.TS_DESIGN_CFG["design"]["flow_dirs"]["sta"],TsGlobals.TS_STA_RUNCODE))
-        release(TsGlobals.TS_SYN_RUN_DIR,TsGlobals.TS_SYN_RELEASE_DIR,"sta")
+        release(TsGlobals.TS_STA_RUN_DIR,TsGlobals.TS_STA_RELEASE_DIR,"sta")
 
 sys.exit(0)
