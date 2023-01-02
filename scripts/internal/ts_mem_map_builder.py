@@ -15,12 +15,13 @@ from .ts_grammar import *
 
 current_level = []
 
+
 def pretty_hex(num: int):
     """force print 8 hex digits, add space in between"""
 
     tmp = hex(num).upper()
     tmp = tmp[2:].zfill(8)
-    tmp = "0x" + tmp[:4] + " " + tmp[4:]
+    tmp = f"0x{tmp[:4]} {tmp[4:]}"
 
     return tmp
 
@@ -69,7 +70,7 @@ def latex_valid_identifier(name):
     return name
 
 
-def ordt_build_parms_file(output_dir, ordt_parms_filename, base_address=0):
+def ordt_build_parms_file(output_parms_file, base_address=0):
     """builds a parameters file with default parameters for ordt in the output directory"""
 
     default_parms = dedent(
@@ -89,22 +90,21 @@ def ordt_build_parms_file(output_dir, ordt_parms_filename, base_address=0):
             add_latex_reg_summary   = true      // Add register summary table on top
             add_landscape_tables    = true	    // Add register table in landscape mode
             add_absolute_addresses  = true      // Sums up absolute address from parameters to offsets
+            add_hyperlinks    = true      // Links register tables to field tables
         }}
     """
     )
 
-    with open(os.path.join(output_dir, ordt_parms_filename), "w") as fp:
+    with open(output_parms_file, "w") as fp:
         fp.write(default_parms)
-
-    return os.path.join(output_dir, ordt_parms_filename)
 
 
 def load_rdl(target_filepath: str, current_level: typing.Optional[str] = None):
-    
+
     current_dir = Path(current_level).parent
-    
+
     target = current_dir.joinpath(Path(target_filepath))
-    
+
     if not target.exists():
         ts_throw_error(TsErrCode.ERR_MMAP_4, target)
 
@@ -127,7 +127,12 @@ def load_yaml(target_filepath: str, current_level: typing.Optional[str] = None):
 
 
 def render_yaml_parent(
-    ordt_parms_file, top_level_filepath, lint:bool, latex_dir=None, xml_dir=None
+    ordt_parms_file,
+    top_level_filepath,
+    lint: bool,
+    latex_dir=None,
+    xml_dir=None,
+    do_not_clear: int = 0,
 ):
 
     rendered_yaml, tmp_current_level = load_yaml(top_level_filepath, current_level=None)
@@ -145,17 +150,19 @@ def render_yaml_parent(
 
     tree = Node.load_regions(rendered_yaml)
 
-    if lint is True: 
+    if lint:
         l = linter()
         l.lint(tree)
-        
+
     if latex_dir is not None:
         b = latex_builder(latex_dir, top_level_filepath, ordt_parms_file)
         b.build_output(tree)
+        b.clear(do_not_clear)
 
     if xml_dir is not None:
         r = xml_builder(xml_dir, top_level_filepath, ordt_parms_file)
         r.build_output(tree)
+        r.clear(do_not_clear)
 
     tree.draw()
 
@@ -188,13 +195,15 @@ class Node:
         return count
 
     @classmethod
-    def load_regions(cls, top: dict) -> "Node":
+    def load_regions(cls, top: Or(dict, str)) -> "Node":
         cls.nesting_level += 1
         cls.recursion_error_list.append(top["name"] + " ->")
 
         if cls.nesting_level > cls.MAX_NESTING_LEVEL:
             ts_print(*cls.recursion_error_list, color=TsColors.BLUE)
-            raise RecursionError(f"Nesting level: {cls.nesting_level} exceeds limit of {cls.MAX_NESTING_LEVEL}")
+            raise RecursionError(
+                f"Nesting level: {cls.nesting_level} exceeds limit of {cls.MAX_NESTING_LEVEL}"
+            )
 
         if "regions" in top and top["regions"] is not None:
             top_node = cls(
@@ -233,7 +242,9 @@ class Node:
 
                 elif "regions" in region:
 
-                    if isinstance(region["regions"], str) and is_yaml_file(region["regions"]):
+                    if isinstance(region["regions"], str) and is_yaml_file(
+                        region["regions"]
+                    ):
                         ts_debug("Opening YAML file: {}".format(region["regions"]))
 
                         temp_yaml, temp_current_level = load_yaml(
@@ -243,7 +254,7 @@ class Node:
                         current_level.append(temp_current_level)
 
                         child_node = cls.load_regions(temp_yaml)
-                        
+
                         current_level.pop()
 
                         # overwrite from same node in parent file
@@ -275,18 +286,10 @@ class Node:
         return top_node
 
 
-class linter: 
-    def absolute_start_addr(self, node):
+class linter:
+    def get_absolute_addr(self, node, start=True):
         temp = node.parent
-        addr = node.start_addr
-        while temp != None:
-            addr += temp.start_addr
-            temp = temp.parent
-        return addr        
-
-    def absolute_end_addr(self, node):
-        temp = node.parent
-        addr = node.end_addr
+        addr = node.start_addr if start else node.end_addr
         while temp != None:
             addr += temp.start_addr
             temp = temp.parent
@@ -294,21 +297,36 @@ class linter:
 
     def lint(self, tree):
         for child in tree.children:
-            
-            if not self.absolute_start_addr(tree) <= self.absolute_start_addr(child) <= self.absolute_end_addr(tree):
-                ts_throw_error(TsErrCode.GENERIC, f"Start address for sub-region: {child.name} is out of bounds of its parent: {tree.name}")
 
-            if not self.absolute_start_addr(tree) <= self.absolute_end_addr(child) <= self.absolute_end_addr(tree):
-                ts_throw_error(TsErrCode.GENERIC, f"End address for sub-region: {child.name} is out of bounds of its parent: {tree.name}")
-            
+            if (
+                not self.get_absolute_addr(tree)
+                <= self.get_absolute_addr(child)
+                <= self.get_absolute_addr(tree, start=False)
+            ):
+                ts_throw_error(
+                    TsErrCode.GENERIC,
+                    f"Start address for sub-region: {child.name} is out of bounds of its parent: {tree.name}",
+                )
+
+            if (
+                not self.get_absolute_addr(tree)
+                <= self.get_absolute_addr(child, start=False)
+                <= self.get_absolute_addr(tree, start=False)
+            ):
+                ts_throw_error(
+                    TsErrCode.GENERIC,
+                    f"End address for sub-region: {child.name} is out of bounds of its parent: {tree.name}",
+                )
+
             self.lint(child)
+
 
 class xml_builder:
     def __init__(self, output_dir, source_file, ordt_parms_file):
         self.output_dir = Path(output_dir)
         main_filename = Path(source_file).stem
-        
-        self.temp_rdl_files_path = self.output_dir / 'temp_rdl_files'
+
+        self.temp_rdl_files_path = self.output_dir / "temp_rdl_files"
         self.temp_rdl_files_path.mkdir(exist_ok=True)
 
         self.rdl_path = self.output_dir / f"{main_filename}.rdl"
@@ -319,17 +337,23 @@ class xml_builder:
         self.ordt_parms_path = ordt_parms_file
         self.rdl_list = []
 
+    def clear(self, do_not_clear):
+        if do_not_clear:
+            return
+
+        ts_print(
+            f"Removing temporary RDL files directory: {self.temp_rdl_files_path}",
+            color=TsColors.BLUE,
+        )
+        for temp_file in self.temp_rdl_files_path.glob("*"):
+            temp_file.unlink()
+        self.temp_rdl_files_path.rmdir()
+
     def is_leaf(self, node):
-        if len(node.children) == 0 and node.reg_map != "":
-            return True           
-        else:
-            return False
+        return len(node.children) == 0 and node.reg_map != ""
 
     def is_empty_region(self, node):
-        if len(node.children) == 0 and node.reg_map == "":
-            return True
-        else: 
-            return False
+        return len(node.children) == 0 and node.reg_map == ""
 
     def get_absolute_addr(self, node):
         temp = node.parent
@@ -359,40 +383,46 @@ class xml_builder:
 
         with open(self.rdl_path, "w") as output_file:
 
+            rdl_dupes_list = [rdl.name for rdl in self.rdl_list]
+
             for rdl in self.rdl_list:
 
                 with open(rdl.reg_map, "r") as rf:
                     lines = rf.readlines()
 
-                start_index = 0
-                end_index = -1
+                # search for start and end of addrmap element
+                start_index = next( (index for index, line in enumerate(lines) if startAddrMapPattern.match(line)), 0 )
+                end_index = next( (index for index, line in reversed(list(enumerate(lines))) if endAddrMapPattern.match(line)), -1 )
 
-                # search for start of addrmap element
-                for index, line in enumerate(lines):
-                    if startAddrMapPattern.match(line):
-                        start_index = index
-                        break
-                # search for end of addrmap element
-                for index, line in reversed(list(enumerate(lines))):
-                    if endAddrMapPattern.match(line):
-                        end_index = index
-                        break
+                # avoid ORDT duplicate regfile component error
+                # note: ORDT cares only about exact duplicates, case is irrelevant
+                if rdl_dupes_list.count(rdl.name) > 1:
+                    rf_name = f"{rdl.parent.name} {rdl.name}"
+                    ts_print(
+                        f"Changing duplicate component name: ({rdl.name}) -> ({rf_name})",
+                        color=TsColors.BLUE
+                    )
+                else:
+                    rf_name = rdl.name
+                    rdl_dupes_list.append(rdl.name)
 
-                rdl.name = "RF_"+self.ordt_valid_identifier(rdl.name)
+                rf_name = f"RF_{self.ordt_valid_identifier(rf_name)}"
 
-                lines[start_index] = f"regfile {rdl.name} {{"
+                lines[start_index] = f"regfile {rf_name} {{"
                 lines[end_index] = "};"
 
                 output_file.writelines(lines[start_index : end_index + 1])
 
                 # addrmap string instantiates all regfile objects with start addresses
                 addrMap_str += "\n\texternal {0} TOP_{0}@{1};".format(
-                    rdl.name, self.get_absolute_addr(rdl)
+                    rf_name, self.get_absolute_addr(rdl)
                 )
                 output_file.write("\n")
 
             # use output rdl file name as addrmap name
-            addrMap_str += f"\n}} {self.ordt_valid_identifier(Path(self.rdl_path).stem)};"
+            addrMap_str += (
+                f"\n}} {self.ordt_valid_identifier(Path(self.rdl_path).stem)};"
+            )
             output_file.write(addrMap_str)
 
         ordt_run(source=self.rdl_path, output=self.xml_path, parms=self.ordt_parms_path)
@@ -409,16 +439,18 @@ class xml_builder:
 
             self.walk_tree(child)
 
-    def make_empty_region_rdl (self, node):
-        
+    def make_empty_region_rdl(self, node):
+
         # output directory is always relative to where script is running
-        temp_empty_rdl = self.temp_rdl_files_path/ f'{self.ordt_valid_identifier(node.name)}.rdl'
- 
-        with open(temp_empty_rdl, 'w') as fr: 
+        temp_empty_rdl = (
+            self.temp_rdl_files_path / f"{self.ordt_valid_identifier(node.name)}.rdl"
+        )
+
+        with open(temp_empty_rdl, "w") as fr:
             fr.write(f"addrmap{{\n\n}} {self.ordt_valid_identifier(node.name)};")
 
         node.reg_map = str(temp_empty_rdl)
-       
+
 
 class latex_builder:
     def __init__(self, output_dir, source_file, ordt_parms_file):
@@ -431,6 +463,32 @@ class latex_builder:
 
         self.ordt_parms_path = ordt_parms_file
 
+        self.temp_parms_files_path = self.output_dir / "temp_parms_files"
+        self.temp_parms_files_path.mkdir(exist_ok=True)
+
+        self.temp_tex_files_path = self.output_dir / "temp_tex_files"
+        self.temp_tex_files_path.mkdir(exist_ok=True)
+
+    def clear(self, do_not_clear):
+        if do_not_clear:
+            return
+
+        ts_print(
+            f"Removing temporary TEX files directory: {self.temp_tex_files_path}",
+            color=TsColors.BLUE,
+        )
+        for temp_file in self.temp_parms_files_path.glob("*"):
+            temp_file.unlink()
+        self.temp_parms_files_path.rmdir()
+
+        ts_print(
+            f"Removing temporary PARMS files directory: {self.temp_parms_files_path}",
+            color=TsColors.BLUE,
+        )
+        for temp_file in self.temp_tex_files_path.glob("*"):
+            temp_file.unlink()
+        self.temp_tex_files_path.rmdir()
+
     def get_nesting_level(self, node):
         temp = node.parent
         count = 0
@@ -439,9 +497,9 @@ class latex_builder:
             temp = temp.parent
         return count
 
-    def get_absolute_addr(self, node):
+    def get_absolute_addr(self, node, start=True):
         temp = node.parent
-        addr = node.start_addr
+        addr = node.start_addr if start else node.end_addr
         while temp != None:
             addr += temp.start_addr
             temp = temp.parent
@@ -450,11 +508,7 @@ class latex_builder:
     def is_leaf(self, node):
         if len(node.children) == 0:
             # naive assumption b/c node was already validated in class Node
-            if node.reg_map != "":
-                return "rdl"
-
-            else:
-                return "empty"
+            return "rdl" if node.reg_map != "" else "empty"
 
     def build_output(self, tree):
         self.add_subregion_table(tree)
@@ -464,40 +518,38 @@ class latex_builder:
         for child in tree.children:
             if self.is_leaf(child) == "rdl":
                 self.add_texfile(child)
-            elif self.is_leaf(child) == "empty":
-                pass
-            else:
+            elif self.is_leaf(child) != "empty":
                 self.add_subregion_table(child)
                 self.walk_tree(child)
 
     def add_texfile(self, node):
-        tmp_output = f"{Path(node.reg_map).stem}.tex"
-        tmp_parms = f"{Path(node.reg_map).stem}.parms"
+        tmp_output = self.temp_tex_files_path / f"{Path(node.reg_map).stem}.tex"
+        tmp_parms = self.temp_parms_files_path / f"{Path(node.reg_map).stem}.parms"
 
         ordt_build_parms_file(
-            output_dir=self.output_dir,
-            ordt_parms_filename=tmp_parms,
+            output_parms_file=tmp_parms,
             base_address=hex(self.get_absolute_addr(node)),
         )
 
         ordt_run(
             source=node.reg_map,
-            output=self.output_dir / tmp_output,
-            parms=self.output_dir / tmp_parms,
+            output=tmp_output,
+            parms=tmp_parms,
         )
 
         self.add_subsection(node)
 
         # copy entire file instead of including
-        tmp_file = open(self.output_dir / tmp_output, "r")
-        write_line(self.latex_path, tmp_file.read())
-        tmp_file.close()
+        with open(tmp_output, "r") as tmp_file:
+            write_line(self.latex_path, tmp_file.read())
 
     def add_subregion_table(self, node):
 
         self.add_subsection(node)
 
         write_line(self.latex_path, latex_content.subregion_table_start())
+
+        temp_nesting_level = self.get_nesting_level(node) + 1
 
         for child in node.children:
             write_line(
@@ -506,6 +558,7 @@ class latex_builder:
                     latex_valid_identifier(child.name),
                     pretty_hex(child.start_addr),
                     pretty_hex(child.end_addr),
+                    temp_nesting_level,
                 ),
             )
 
@@ -519,7 +572,7 @@ class latex_builder:
 
         nesting_level = self.get_nesting_level(node)
 
-        # 0 -> section, 1 -> subsection, 1 -> subsubsection,
+        # 0 -> section, 1 -> subsection, 2 -> subsubsection
         if nesting_level >= 3:
             raise RecursionError("Latex subsection nesting limit reached.")
 
@@ -529,7 +582,8 @@ class latex_builder:
             latex_content.section_start(
                 nesting_level,
                 latex_valid_identifier(node.name),
-                pretty_hex(node.start_addr),
+                pretty_hex(self.get_absolute_addr(node)),
+                pretty_hex(self.get_absolute_addr(node, start=False)),
             ),
         )
 
@@ -537,12 +591,14 @@ class latex_builder:
 class latex_content(LogEnum):
 
     section_start = [
-        lambda nesting_level, block_name, start_addr: dedent(
+        lambda nesting_level, block_name, start_addr, end_addr: dedent(
             rf"""
         \pagebreak
         \Ts{'Sub'*nesting_level}Section {{{block_name}}}
-
-        \textbf{{Base Address:}} {{{start_addr}}}
+        
+        \textbf{{Base Address:}} {start_addr}
+        \newline
+        \textbf{{End Address:}} {end_addr}
         \vspace{{4mm}}
         """
         )
@@ -561,8 +617,8 @@ class latex_content(LogEnum):
     ]
 
     subregion_table_row = [
-        lambda block_name, start_addr, end_addr: rf"""
-        \multirow {{2}} {{*}} {{{block_name}}}             & {start_addr}     \\
+        lambda block_name, start_addr, end_addr, nesting_level: rf"""
+        \multirow {{2}} {{*}} {{\hyperref[{'sub'* nesting_level}sec:{block_name}] {{{block_name}}}}}            & {start_addr}     \\
                                                     & {end_addr}     \Ttlb%
         """
     ]

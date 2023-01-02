@@ -38,7 +38,8 @@ def main(raw_args=None):
 
     if args.xml_dir is not None and args.ordt_parms is None:
         ordt_parms_filename = f"{Path(args.source_file).stem}.parms"
-        ordt_parms_path = ordt_build_parms_file(args.xml_dir, ordt_parms_filename)
+        ordt_parms_path = os.path.join(args.xml_dir, ordt_parms_filename)
+        ordt_build_parms_file(ordt_parms_path)
     else:
         ordt_parms_path = args.ordt_parms
 
@@ -48,6 +49,7 @@ def main(raw_args=None):
         lint=args.lint,
         latex_dir=args.latex_dir,
         xml_dir=args.xml_dir,
+        do_not_clear = args.verbose,
     )
 
 
