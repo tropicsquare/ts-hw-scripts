@@ -1,0 +1,162 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% Copyright © 2022 Tropic Square s.r.o. (https://tropicsquare.com/)
+%%
+%% This work is subject to the license terms of the LICENSE.txt file in the
+%% root directory of this source tree.
+%%
+%% If a copy of the LICENSE file was not distributed with this work, you can
+%% obtain one at (https://tropicsquare.com/license).
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% This is user manual for Tropic Square Synthesis launch scrip.
+%
+% LaTex class:
+%    tropic_design_spec
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Specify Tropic Square document class
+\documentclass{tropic_design_spec}
+
+% Code samples
+\usepackage{listings}
+\lstset{backgroundcolor=\color{lightgray}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Document properties and title page
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\title{ts-hw-scripts: synthesis flow}
+\author{Jan Zapeca, Tropic Square}
+\date{October 2022}
+
+% Start of document
+\begin{document}
+
+% Parameters Needed by Design spec class (must be inside document)
+% Set these parameters according to your project.
+\def \projectname {ts-hw-scripts: synthesis flow}
+\def \documentname {user guide}
+\def \versionnumber {0.1}
+
+% Title page
+\maketitle
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Document revisions
+% We revision with GIT, however, it does not mean that major changes in the
+% document should not be kept also with document!
+% In general, when you increase document version number, add also entry to
+% this table with revisions saying what changed!
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section*{Version history}
+
+\begin{TropicRatioLongTable4Col}
+    {0.1}            {0.2}                {0.3}            {0.4}
+    {Version Tag     & Date                 & Author        &    Description                    }
+      0.1            & 19.10.2022           & Zapeca J.     &    Initial document version                   \Ttlb
+     \versionnumber  & 24.10.2022           & Ille O.       &    Minor clean-up, typo fixes.                \Ttlb
+\end{TropicRatioLongTable4Col}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Table of contents
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\pagebreak
+\tableofcontents
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Document
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Introduction
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\pagebreak
+\TsSection{Introduction}
+
+This document is a user guide for synthesis flow that is part of ts-hw-scripts. The flow consists of:
+
+\begin{itemize}
+    \item \textit{ts_syn_run.py} Main script of the ts-hw-scripts synthesis flow.
+\end{itemize}
+
+The synthesis flow expects input files:
+
+\begin{itemize}
+    \item \textit{ts_sim_config.yml} Simulation config file specifying an RTL target and source lists for the synthesis
+    \item \textit{ts_design_config.yml} Design config file specifying used IPs and design libraries
+    \item \textit{ts_pdk_config.yml} PDK config file specifying available PDK
+\end{itemize}
+
+The synthesis flow generates these files:
+
+\begin{itemize}
+    \item \textit{design_cfg.tcl} Auto-generated TCL script consists of available PDK digital views used by synthesis
+    \item \textit{synthesis_setup.tcl} Auto-generated TCL script replacing DCRM-flow "common_setup.tcl". Used as a bridge between TS-flow and DCRM-flow
+    \item \textit{source_rtl.tcl} Auto-generated TCL script for sourcing RTL for a synthesis run according to a target
+    \item \textit{ts_open_synthesis.tcl} Auto-generated TCL script for opening a synthesis results regarding a runcode.
+\end{itemize}
+
+\OpenIssue{It might be good to describe output of Synthesis flow briefly (netlist/reports/esported constraints/dont_touch list, etc...)}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Block diagram
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\TsSection{User Manual}
+
+\TsSubSection{Synthesis flow usage model}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics{%
+        \detokenize{img/model.pdf}%
+    }
+    \caption{\projectname\space- usage model}
+    \label{label}
+
+\end{figure}
+
+
+\TsSubSection{Command usage}
+
+Execute a command to list all available features:
+
+\begin{lstlisting}
+    ts_syn_run.py --help
+\end{lstlisting}
+
+Execute a command to run a new synthesis:
+
+\begin{lstlisting}
+    ts_syn_run.py --runcode <runcode>
+\end{lstlisting}
+
+Execute a command to open a synthesis result:
+
+\begin{lstlisting}
+    ts_syn_run.py --runcode <runcode> --open-result
+\end{lstlisting}
+
+
+\pagebreak
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Open issues
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\TsSection{Open Issues}
+
+\OpenIssue{The flow is not fully tested yet}
+
+\OpenIssue{Missing multi-mode multi-corner synthesis run}
+
+
+\PrintOpenIssueSummary
+
+\end{document}
