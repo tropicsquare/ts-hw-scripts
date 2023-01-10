@@ -1,0 +1,12 @@
+[tool.pytest.ini_options]
+testpaths = "tests"
+automark_dependency = true
+addopts = "--order-dependencies"
+
+[tool.coverage.run]
+branch = true
+omit = [
+    "*/__init__.py",
+    "*/__version__.py",
+]
+include = ["scripts/*"]
