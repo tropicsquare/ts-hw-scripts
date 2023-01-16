@@ -62,7 +62,7 @@ __SIMULATOR_COMMANDS = {
             # we set it automatically if user wants to go to GUI! The same goes for "dump_waves"
             "gui": "-debug_access+all -debug_region+cell",
             "dump_waves": "-debug_access+all -debug_region+cell",
-            "coverage": "-cm line+cond+fsm+tgl+branch+assert",
+            "coverage": "-cm line+cond+fsm+tgl+branch+assert -cm_hier vcs_coverage_spec",
             "verbose": "-v",
             "license_wait": "-licqueue",
             "log_file": "-l {}",
@@ -624,6 +624,26 @@ def __write_log_trailer(log_file_path, exit_code, run_time, log_type):
         log_file.write("TS_{}_RUN_TIME: {}\n".format(log_type, run_time))
 
 
+def __generate_coverage_spec_file(dir, top_entity):
+    """
+    """
+    if ts_get_cfg("simulator") == "vcs":
+        cs_file_path = os.path.join(dir, "vcs_coverage_spec")
+        split_entity = top_entity
+
+        # Parse out possible library name
+        if "." in top_entity:
+            split_entity = top_entity.split(".")[-1]
+
+        with open(cs_file_path, "w") as cs_file:
+            cs_file.write(f"+tree {split_entity}")
+
+        return cs_file_path
+    else:
+        ts_script_bug("Coverage specification not supported for other simulator than VCS!")
+
+
+
 def __build_elab_command(test: dict, top_entity: str, log_file_path: str = "") -> Tuple[str, str]:
     """
     Builds elaboration command.
@@ -799,6 +819,9 @@ def ts_sim_elaborate(test: dict) -> str:
     # Generate elaboration configuration file
     __generate_sim_config_file(elab_dir)
 
+    # Generate Coverage specification file
+    __generate_coverage_spec_file(elab_dir, top_entity)
+
     # Run elaboration in test specific directory
     run_time = time.time()
     elab_exit_code = exec_cmd_in_dir(elab_dir, elab_cmd + " " + log_file_opt,
@@ -942,9 +965,10 @@ def ts_sim_run(test: dict, elab_dir: str = "") -> str:
     """
     ts_print("Launching simulation", color=TsColors.PURPLE, big=True)
 
+    top_entity = ts_get_cfg("targets")[ts_get_cfg("target")]["top_entity"]
+
     if not elab_dir:
         # Build elaboration command
-        top_entity = ts_get_cfg("targets")[ts_get_cfg("target")]["top_entity"]
         elab_cmd, *_ = __build_elab_command(test, top_entity)
 
         # Scan all elab directories for simulation binary
