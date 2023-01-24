@@ -1,17 +1,34 @@
+# -*- coding: utf-8 -*-
+
+####################################################################################################
+# Functions for loading test list files.
+#
+# TODO: License
+####################################################################################################
+
 import os
 import re
-import yaml
-import typing
+import subprocess
+from typing import ClassVar, List, Optional, Union
+from dataclasses import dataclass, field
 from pathlib import Path
 from textwrap import dedent
-from pprint import pprint
-import subprocess
-from dataclasses import dataclass, field
-from schema import Schema, And, SchemaError, Optional
 
-from .ts_hw_logging import *
-from .ts_hw_common import *
-from .ts_grammar import *
+import yaml
+
+from .ts_grammar import GRAMMAR_MEM_MAP_CONFIG
+from .ts_hw_logging import (
+    LogEnum,
+    TsColors,
+    TsErrCode,
+    TsInfoCode,
+    TsWarnCode,
+    ts_debug,
+    ts_info,
+    ts_print,
+    ts_throw_error,
+    ts_warning,
+)
 
 current_level = []
 
@@ -99,7 +116,7 @@ def ordt_build_parms_file(output_parms_file, base_address=0):
         fp.write(default_parms)
 
 
-def load_rdl(target_filepath: str, current_level: typing.Optional[str] = None):
+def load_rdl(target_filepath: str, current_level: Optional[str] = None):
 
     current_dir = Path(current_level).parent
 
@@ -111,7 +128,7 @@ def load_rdl(target_filepath: str, current_level: typing.Optional[str] = None):
     return target
 
 
-def load_yaml(target_filepath: str, current_level: typing.Optional[str] = None):
+def load_yaml(target_filepath: str, current_level: Optional[str] = None):
 
     if current_level is None:
         current_dir = Path(target_filepath).parent
@@ -174,12 +191,12 @@ class Node:
     end_addr: int
     reg_map: str = ""
     parent: "Node" = field(init=False, default=None)
-    children: typing.List["Node"] = field(init=False, default_factory=list)
+    children: List["Node"] = field(init=False, default_factory=list)
 
-    nesting_level: typing.ClassVar[int] = 0
-    MAX_NESTING_LEVEL: typing.ClassVar[int] = 5
+    nesting_level: ClassVar[int] = 0
+    MAX_NESTING_LEVEL: ClassVar[int] = 5
 
-    recursion_error_list: typing.ClassVar[list] = []
+    recursion_error_list: ClassVar[list] = []
 
     def draw(self, level=0):
         ts_print("{}[L{}] {}".format("\t" * level, self.get_nesting_level(), self.name))
@@ -195,7 +212,7 @@ class Node:
         return count
 
     @classmethod
-    def load_regions(cls, top: Or(dict, str)) -> "Node":
+    def load_regions(cls, top: Union[dict, str]) -> "Node":
         cls.nesting_level += 1
         cls.recursion_error_list.append(top["name"] + " ->")
 

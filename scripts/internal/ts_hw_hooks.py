@@ -9,9 +9,8 @@
 import os
 from enum import Enum
 
-from .ts_hw_global_vars import *
-from .ts_hw_logging import *
-from .ts_hw_common import *
+from .ts_hw_common import exec_cmd_in_dir, ts_get_cfg, ts_get_root_rel_path
+from .ts_hw_logging import TsErrCode, TsInfoCode, ts_debug, ts_info, ts_throw_error
 
 
 class TsHooks(str, Enum):

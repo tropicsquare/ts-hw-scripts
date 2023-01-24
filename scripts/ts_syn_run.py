@@ -17,11 +17,54 @@ __copyright__ = "Tropic Square"
 __license___ = "TODO:"
 __maintainer__ = "Jan Zapeca"
 
-import shutil
 import os
-import argcomplete
-from internal import *
+import sys
 
+import argcomplete
+from internal.ts_hw_args import (
+    TsArgumentParser,
+    add_cfg_files_arg,
+    add_force_arg,
+    add_lic_wait_arg,
+    add_release_arg,
+    add_runcode_arg,
+    add_stayin_arg,
+    add_ts_common_args,
+    add_ts_syn_run_args,
+)
+from internal.ts_hw_cfg_parser import (
+    check_valid_design_target,
+    do_design_config_init,
+    do_sim_config_init,
+)
+from internal.ts_hw_common import init_signals_handler, ts_get_root_rel_path
+from internal.ts_hw_global_vars import TsGlobals
+from internal.ts_hw_logging import (
+    TsColors,
+    TsErrCode,
+    TsInfoCode,
+    ts_configure_logging,
+    ts_info,
+    ts_print,
+    ts_throw_error,
+)
+from internal.ts_hw_source_list_files import load_source_list_files
+from internal.ts_hw_syn_support import (
+    build_synthesis_cmd,
+    create_syn_sub_dirs,
+    delete_syn_sub_dir,
+    exec_cmd_in_dir_interactive,
+    open_result_test,
+    release,
+    set_license_queuing,
+    set_syn_global_vars,
+    syn_design_cfg_file,
+    syn_logging,
+    syn_mcmm_file,
+    syn_open_design,
+    syn_rtl_src_file,
+    syn_setup,
+)
 
 if __name__ == "__main__":
 
@@ -50,7 +93,7 @@ if __name__ == "__main__":
 
     # Do Config Init
     # Config for ts_design_cfg
-    #setattr(args, "design_cfg", join(get_repo_root_path(),TsGlobals.TS_DESIGN_CFG_PATH))
+    #setattr(args, "design_cfg", os.path.join(get_repo_root_path(),TsGlobals.TS_DESIGN_CFG_PATH))
     do_design_config_init(args, enforce=True)
     # Target need to be defined from TS_DESIGN_CFG (holder of value)
     setattr(args, "target", TsGlobals.TS_DESIGN_CFG["design"]["target"])
@@ -101,10 +144,10 @@ if __name__ == "__main__":
     syn_design_cfg_file(args)
 
     # Generate synthesis setup tcl file
-    syn_setup(join(TsGlobals.TS_SYN_RUN_DIR,TsGlobals.TS_SYN_SETUP_FILE), args)
+    syn_setup(os.path.join(TsGlobals.TS_SYN_RUN_DIR,TsGlobals.TS_SYN_SETUP_FILE), args)
 
     # Generate synthesis mmcm setup tcl file
-    syn_mcmm_file(join(TsGlobals.TS_SYN_RUN_DIR,TsGlobals.TS_SYN_MCMM_FILE), args)
+    syn_mcmm_file(os.path.join(TsGlobals.TS_SYN_RUN_DIR,TsGlobals.TS_SYN_MCMM_FILE), args)
 
     # Set enviromental variable for DC - license quering
     set_license_queuing(args,"dc_shell","SNPSLMD_QUEUE")
@@ -120,7 +163,7 @@ if __name__ == "__main__":
 
     # Release data to a given flow_dir - syn
     if args.release and TsGlobals.TS_DESIGN_CFG["design"]["flow_dirs"]["syn"] and not args.force:
-        TsGlobals.TS_SYN_RELEASE_DIR = join(ts_get_root_rel_path(TsGlobals.TS_DESIGN_CFG["design"]["flow_dirs"]["syn"],args.runcode))
+        TsGlobals.TS_SYN_RELEASE_DIR = os.path.join(ts_get_root_rel_path(TsGlobals.TS_DESIGN_CFG["design"]["flow_dirs"]["syn"],args.runcode))
         release(TsGlobals.TS_SYN_RUN_DIR,TsGlobals.TS_SYN_RELEASE_DIR,"syn")
 
 sys.exit(0)

@@ -5,12 +5,23 @@
 #
 # TODO: License
 ####################################################################################################
+import os
 import re
-from os.path import exists, basename
 
-from .ts_hw_logging import *
-from .ts_hw_common import *
-from .ts_grammar import *
+from .ts_grammar import (
+    BUILT_IN_UVM_IGNORE_START_PATTERN,
+    BUILT_IN_UVM_IGNORE_STOP_PATTERN,
+)
+from .ts_hw_common import ts_get_cfg, ts_is_at_least_verbose, ts_is_uvm_enabled
+from .ts_hw_logging import (
+    TsColors,
+    TsErrCode,
+    TsInfoCode,
+    ts_debug,
+    ts_info,
+    ts_print,
+    ts_throw_error,
+)
 
 
 class TSLogChecker:
@@ -116,7 +127,7 @@ class TSLogChecker:
             'warnings' - List of strings classified as warnings
             'errors' - List of strings classified as errors
         """
-        if not exists(log_file_path):
+        if not os.path.exists(log_file_path):
             ts_throw_error(TsErrCode.ERR_SIM_1, log_file_path)
 
         # -- To improve performances we copy all the instance variables locally
@@ -148,11 +159,11 @@ class TSLogChecker:
         post_sim_msg_found = False
         __ignore_errors = False
         __ignore_warnings = False
-        log_file_is_sim = basename(log_file_path).startswith("sim")
+        log_file_is_sim = os.path.basename(log_file_path).startswith("sim")
 
         # Expect test to 'pass' (return empty list)
         test_results = {
-            "log_file_name": basename(log_file_path),
+            "log_file_name": os.path.basename(log_file_path),
             "result": True,
             "errors": [],
             "warnings": [],

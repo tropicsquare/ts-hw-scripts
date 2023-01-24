@@ -6,10 +6,20 @@
 # TODO: License
 ####################################################################################################
 
-from .ts_hw_global_vars import *
-from .ts_hw_logging import *
-from .ts_hw_common import *
-from .ts_grammar import *
+import os
+
+from .ts_grammar import ALLOWED_DESIGN_OBJ_TYPES
+from .ts_hw_common import (
+    get_pdk_corners,
+    get_pdk_obj,
+    ts_get_cfg,
+    ts_get_curr_dir_rel_path,
+    ts_get_design_top,
+    ts_get_root_rel_path,
+    view_has_corner,
+)
+from .ts_hw_global_vars import TsGlobals
+from .ts_hw_logging import TsErrCode, TsWarnCode, ts_throw_error, ts_warning
 
 
 def __append_do_not_modify(lines: list):

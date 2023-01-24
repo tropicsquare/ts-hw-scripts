@@ -6,12 +6,10 @@
 # TODO: License
 ####################################################################################################
 
-import sys
 import logging
+import sys
 import traceback
 from enum import Enum
-
-from .ts_hw_global_vars import *
 
 
 class TsColors:

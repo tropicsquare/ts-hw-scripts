@@ -17,10 +17,18 @@ __copyright__ = "Tropic Square"
 __license___ = "TODO:"
 __maintainer__ = "Jan Zapeca"
 
-import shutil
 import os
+import sys
 import argcomplete
-from internal import *
+from internal.ts_hw_args import TsArgumentParser, add_cfg_files_arg, add_force_arg, add_lic_wait_arg, add_release_arg, add_runcode_arg, add_source_data_arg, add_stayin_arg, add_ts_common_args, add_ts_sta_run_args
+from scripts.internal.ts_hw_cfg_parser import check_valid_design_target, check_valid_mode_arg, check_valid_source_data_arg, do_design_config_init, do_sim_config_init
+
+from internal.ts_hw_common import init_signals_handler, ts_get_root_rel_path
+from internal.ts_hw_global_vars import TsGlobals
+from internal.ts_hw_logging import TsColors, TsErrCode, TsInfoCode, ts_configure_logging, ts_info, ts_print, ts_throw_error
+from internal.ts_hw_source_list_files import load_source_list_files
+from internal.ts_hw_sta_support import build_sta_cmd, create_sta_sub_dirs, runcode_dir_test, set_sta_global_vars, sta_design_cfg_file, sta_dmsa_file, sta_logging, sta_open_design, sta_setup
+from internal.ts_hw_syn_support import delete_syn_sub_dir, exec_cmd_in_dir_interactive, release, set_license_queuing
 
 
 if __name__ == "__main__":
@@ -87,7 +95,7 @@ if __name__ == "__main__":
         if args.force is True:
             ts_info(TsInfoCode.INFO_STA_2,TsGlobals.TS_STA_RUNCODE)
             # Delete DIR of runcode name if exists
-            delete_sta_sub_dir()
+            delete_syn_sub_dir()
         else:
             # Test if database already exists, otherwise create sub-folder
             if runcode_dir_test(args) is True:
@@ -131,7 +139,7 @@ if __name__ == "__main__":
 
     # Release data to a given flow_dir - sta
     if args.release and TsGlobals.TS_DESIGN_CFG["design"]["flow_dirs"]["sta"] and not args.force:
-        TsGlobals.TS_STA_RELEASE_DIR = join(ts_get_root_rel_path(TsGlobals.TS_DESIGN_CFG["design"]["flow_dirs"]["sta"],TsGlobals.TS_STA_RUNCODE))
+        TsGlobals.TS_STA_RELEASE_DIR = os.path.join(ts_get_root_rel_path(TsGlobals.TS_DESIGN_CFG["design"]["flow_dirs"]["sta"],TsGlobals.TS_STA_RUNCODE))
         release(TsGlobals.TS_STA_RUN_DIR,TsGlobals.TS_STA_RELEASE_DIR,"sta")
 
 sys.exit(0)

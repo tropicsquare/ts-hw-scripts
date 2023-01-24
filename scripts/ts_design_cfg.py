@@ -13,11 +13,35 @@ __copyright__ = "Tropic Square"
 __license___ = "TODO:"
 __maintainer__ = "Ondrej Ille"
 
-import shutil
-import os
-import argcomplete
+import sys
 
-from internal import *
+import argcomplete
+from internal.ts_grammar import PDK_VIEW_CONFIG
+from internal.ts_hw_args import (
+    TsArgumentParser,
+    add_cfg_files_arg,
+    add_pdk_cfg_args,
+    add_ts_common_args,
+)
+from internal.ts_hw_cfg_parser import (
+    check_valid_design_target,
+    do_design_config_init,
+    do_sim_config_init,
+)
+from internal.ts_hw_common import init_signals_handler, ts_get_cfg, view_has_corner
+from internal.ts_hw_design_config_file import check_export_view_types, print_pdk_obj
+from internal.ts_hw_export import export_dc_tcl, export_design_config, export_vivado_tcl
+from internal.ts_hw_global_vars import TsGlobals
+from internal.ts_hw_logging import (
+    TsColors,
+    TsInfoCode,
+    TsWarnCode,
+    ts_configure_logging,
+    ts_info,
+    ts_print,
+    ts_warning,
+)
+from internal.ts_hw_source_list_files import load_source_list_files
 
 if __name__ == "__main__":
 
@@ -27,9 +51,10 @@ if __name__ == "__main__":
     add_ts_common_args(parser)
     add_cfg_files_arg(parser)
     add_pdk_cfg_args(parser)
+    argcomplete.autocomplete(parser)
     args = parser.parse_args()
     ts_configure_logging(args)
-    
+
     # Load config files, merge with args and check configuration
     # Pass design target directly from design config file so that we don't need to
     # pass it from command line

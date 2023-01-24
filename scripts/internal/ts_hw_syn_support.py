@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# PYTHON_ARGCOMPLETE_OK
 # -*- coding: utf-8 -*-
 
 ####################################################################################################
@@ -11,21 +9,25 @@
 ####################################################################################################
 
 
+import logging
 import os
-from datetime import datetime
-import sys
+import pty
 import select
+import shutil
+import subprocess
+import sys
 import termios
 import tty
-import pty
+from datetime import datetime
 
-from internal import *
-from .ts_hw_common import *
-from .ts_hw_source_list_files import *
-from .ts_grammar import *
+from .ts_hw_common import get_env_var_path, get_repo_root_path, ts_get_design_top, ts_set_env_var
+from .ts_hw_design_config_file import check_export_view_types
+from .ts_hw_export import export_dc_tcl, export_design_config
+from .ts_hw_global_vars import TsGlobals
+from .ts_hw_logging import TsColors, TSFormatter, TsInfoCode, ts_info, ts_print
 
 
-def exec_cmd_in_dir_interactive(directory: str, command: str ) -> int:
+def exec_cmd_in_dir_interactive(directory: str, command: str) -> int:
     """
     Executes a command in a directory in pseudo-terminal interactively.
     :param directory: Directory in which command shall be executed
@@ -74,19 +76,19 @@ def set_syn_global_vars(args):
     # Set synthesis run dir according to runcode
     TsGlobals.TS_SYN_RUN_DIR = get_syn_rundir(args)
     # Set sythesis dirs for purpose of the run
-    TsGlobals.TS_SYN_LOGS_DIR = join(TsGlobals.TS_SYN_RUN_DIR,TsGlobals.TS_SYN_LOGS_DIR)
-    TsGlobals.TS_SYN_RESULTS_DIR = join(TsGlobals.TS_SYN_RUN_DIR,TsGlobals.TS_SYN_RESULTS_DIR)
-    TsGlobals.TS_SYN_REPORTS_DIR = join(TsGlobals.TS_SYN_RUN_DIR,TsGlobals.TS_SYN_REPORTS_DIR)
+    TsGlobals.TS_SYN_LOGS_DIR = os.path.join(TsGlobals.TS_SYN_RUN_DIR,TsGlobals.TS_SYN_LOGS_DIR)
+    TsGlobals.TS_SYN_RESULTS_DIR = os.path.join(TsGlobals.TS_SYN_RUN_DIR,TsGlobals.TS_SYN_RESULTS_DIR)
+    TsGlobals.TS_SYN_REPORTS_DIR = os.path.join(TsGlobals.TS_SYN_RUN_DIR,TsGlobals.TS_SYN_REPORTS_DIR)
     # Setting paths for open synthesis database
-    TsGlobals.TS_SYN_DC_RM_OPENFILE = join(TsGlobals.TS_SYN_RUN_DIR,TsGlobals.TS_SYN_DC_RM_OPENFILE)
+    TsGlobals.TS_SYN_DC_RM_OPENFILE = os.path.join(TsGlobals.TS_SYN_RUN_DIR,TsGlobals.TS_SYN_DC_RM_OPENFILE)
     # Setting path for run sythesis
-    TsGlobals.TS_SYN_DC_RM_RUNFILE =  join(get_env_var_path(TsGlobals.TS_SYN_FLOW_PATH),TsGlobals.TS_SYN_DC_RM_RUNFILE)
+    TsGlobals.TS_SYN_DC_RM_RUNFILE =  os.path.join(get_env_var_path(TsGlobals.TS_SYN_FLOW_PATH),TsGlobals.TS_SYN_DC_RM_RUNFILE)
     # Setting synthesis build dir for rtl sub-blocks compilation
-    TsGlobals.TS_SYN_BUILD_DIR = join(TsGlobals.TS_SYN_RUN_DIR,"build")
+    TsGlobals.TS_SYN_BUILD_DIR = os.path.join(TsGlobals.TS_SYN_RUN_DIR,"build")
     # Setting design_cfg file path and name
-    TsGlobals.TS_SYN_DESIGN_CFG_FILE = join(TsGlobals.TS_SYN_RUN_DIR,TsGlobals.TS_SYN_DESIGN_CFG_FILE)
+    TsGlobals.TS_SYN_DESIGN_CFG_FILE = os.path.join(TsGlobals.TS_SYN_RUN_DIR,TsGlobals.TS_SYN_DESIGN_CFG_FILE)
     # Setting mcmm setup file path and name
-    TsGlobals.TS_SYN_MCMM_FILE = join(TsGlobals.TS_SYN_RUN_DIR,TsGlobals.TS_SYN_MCMM_FILE)
+    TsGlobals.TS_SYN_MCMM_FILE = os.path.join(TsGlobals.TS_SYN_RUN_DIR,TsGlobals.TS_SYN_MCMM_FILE)
 
 
 def create_syn_sub_dirs():

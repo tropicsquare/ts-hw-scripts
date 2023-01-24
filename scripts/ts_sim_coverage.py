@@ -14,17 +14,37 @@ __license___ = "TODO:"
 __maintainer__ = "Henri LHote"
 
 import os
-import sys
-import time
 import pickle
 import shutil
+import sys
+import time
+
 import argcomplete
-
-from internal import *
-
+from internal.ts_hw_args import (
+    TsArgumentParser,
+    add_cfg_files_arg,
+    add_ts_common_args,
+    add_ts_sim_coverage_args,
+)
+from internal.ts_hw_cfg_parser import do_sim_config_init
+from internal.ts_hw_common import (
+    exec_cmd_in_dir,
+    init_signals_handler,
+    ts_get_cfg,
+    ts_get_root_rel_path,
+)
+from internal.ts_hw_global_vars import TsGlobals
+from internal.ts_hw_logging import (
+    TsErrCode,
+    TsInfoCode,
+    ts_configure_logging,
+    ts_debug,
+    ts_info,
+    ts_throw_error,
+)
 
 COVERAGE_OUTPUT_DIR = ts_get_root_rel_path(TsGlobals.TS_COVERAGE_DIR_PATH)
-DEFAULT_OUTPUT_DB   = "coverage_merge"
+DEFAULT_OUTPUT_DB = "coverage_merge"
 
 
 def __merge_databases(args):

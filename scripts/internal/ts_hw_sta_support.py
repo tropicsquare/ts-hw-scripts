@@ -10,14 +10,17 @@
 ####################################################################################################
 
 
+import logging
 import os
 from datetime import datetime
-import sys
+import shutil
 
-from internal import *
-from .ts_hw_common import *
-from .ts_hw_source_list_files import *
-from .ts_grammar import *
+from .ts_hw_common import get_env_var_path, get_repo_root_path, ts_get_design_top, ts_get_root_rel_path
+from .ts_hw_design_config_file import check_export_view_types
+from .ts_hw_export import export_design_config
+from .ts_hw_global_vars import TsGlobals
+from .ts_hw_logging import TSFormatter, TsColors, TsErrCode, TsInfoCode, ts_debug, ts_info, ts_print, ts_throw_error
+from .ts_hw_cfg_parser import parse_runcode_arg
 
 def set_sta_global_vars(args):
     """
@@ -28,26 +31,26 @@ def set_sta_global_vars(args):
     # Set synthesis run dir according to runcode
     TsGlobals.TS_STA_RUN_DIR = get_sta_rundir(TsGlobals.TS_STA_RUNCODE)
     # Set sythesis dirs for purpose of the run
-    TsGlobals.TS_STA_LOGS_DIR = join(TsGlobals.TS_STA_RUN_DIR,TsGlobals.TS_STA_LOGS_DIR)
-    TsGlobals.TS_STA_RESULTS_DIR = join(TsGlobals.TS_STA_RUN_DIR,TsGlobals.TS_STA_RESULTS_DIR)
-    TsGlobals.TS_STA_REPORTS_DIR = join(TsGlobals.TS_STA_RUN_DIR,TsGlobals.TS_STA_REPORTS_DIR)
+    TsGlobals.TS_STA_LOGS_DIR = os.path.join(TsGlobals.TS_STA_RUN_DIR,TsGlobals.TS_STA_LOGS_DIR)
+    TsGlobals.TS_STA_RESULTS_DIR = os.path.join(TsGlobals.TS_STA_RUN_DIR,TsGlobals.TS_STA_RESULTS_DIR)
+    TsGlobals.TS_STA_REPORTS_DIR = os.path.join(TsGlobals.TS_STA_RUN_DIR,TsGlobals.TS_STA_REPORTS_DIR)
     # Setting paths for open synthesis database
-    TsGlobals.TS_STA_DC_RM_OPENFILE = join(TsGlobals.TS_STA_RUN_DIR,TsGlobals.TS_STA_DC_RM_OPENFILE)
+    TsGlobals.TS_STA_DC_RM_OPENFILE = os.path.join(TsGlobals.TS_STA_RUN_DIR,TsGlobals.TS_STA_DC_RM_OPENFILE)
     # Setting path for run sythesis
-    TsGlobals.TS_STA_DC_RM_RUNFILE =  join(get_env_var_path(TsGlobals.TS_STA_FLOW_PATH),TsGlobals.TS_STA_DC_RM_RUNFILE)
+    TsGlobals.TS_STA_DC_RM_RUNFILE =  os.path.join(get_env_var_path(TsGlobals.TS_STA_FLOW_PATH),TsGlobals.TS_STA_DC_RM_RUNFILE)
     # Setting synthesis build dir for rtl sub-blocks compilation
-    TsGlobals.TS_STA_BUILD_DIR = join(TsGlobals.TS_STA_RUN_DIR,"build")
+    TsGlobals.TS_STA_BUILD_DIR = os.path.join(TsGlobals.TS_STA_RUN_DIR,"build")
     # Setting design_cfg file path and name
-    TsGlobals.TS_STA_DESIGN_CFG_FILE = join(TsGlobals.TS_STA_RUN_DIR,TsGlobals.TS_STA_DESIGN_CFG_FILE)
+    TsGlobals.TS_STA_DESIGN_CFG_FILE = os.path.join(TsGlobals.TS_STA_RUN_DIR,TsGlobals.TS_STA_DESIGN_CFG_FILE)
     # Setting DMSA setup file path and name
-    TsGlobals.TS_STA_DMSA_FILE = join(TsGlobals.TS_STA_RUN_DIR,TsGlobals.TS_STA_DMSA_FILE)
+    TsGlobals.TS_STA_DMSA_FILE = os.path.join(TsGlobals.TS_STA_RUN_DIR,TsGlobals.TS_STA_DMSA_FILE)
     # Setting the netlist
     if not args.open_result:
         TsGlobals.TS_STA_DC_RM_NETLIST = __sta_netlist_selection(args)
     # STA setup file path
-    TsGlobals.TS_STA_SETUP_FILE = join(TsGlobals.TS_STA_RUN_DIR,TsGlobals.TS_STA_SETUP_FILE)
+    TsGlobals.TS_STA_SETUP_FILE = os.path.join(TsGlobals.TS_STA_RUN_DIR,TsGlobals.TS_STA_SETUP_FILE)
     # STA DMSA file path
-    TsGlobals.TS_STA_DMSA_FILE = join(TsGlobals.TS_STA_RUN_DIR,TsGlobals.TS_STA_DMSA_FILE)
+    TsGlobals.TS_STA_DMSA_FILE = os.path.join(TsGlobals.TS_STA_RUN_DIR,TsGlobals.TS_STA_DMSA_FILE)
 
 
 def create_sta_sub_dirs():
@@ -107,7 +110,7 @@ def build_sta_cmd(args):
     else:
         # Path DC_RM_RUNFILE
         if args.dmsa:
-            pt_cfg_args += f'-multi_scenario -f {join(TsGlobals.TS_STA_RUN_DIR,TsGlobals.TS_STA_DMSA_FILE)} '
+            pt_cfg_args += f'-multi_scenario -f {os.path.join(TsGlobals.TS_STA_RUN_DIR,TsGlobals.TS_STA_DMSA_FILE)} '
         else:
             pt_cfg_args += f'-f {TsGlobals.TS_STA_DC_RM_RUNFILE} '
 
