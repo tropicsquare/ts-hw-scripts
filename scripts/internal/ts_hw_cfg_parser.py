@@ -8,6 +8,7 @@
 
 import copy
 import os
+import re
 
 from schema import SchemaError
 
