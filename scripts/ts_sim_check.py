@@ -13,18 +13,30 @@ __copyright__ = "Tropic Square"
 __license___ = "TODO:"
 __maintainer__ = "Ondrej Ille"
 
-import junit_xml
 import argcomplete
-
-from internal import *
+import junit_xml
+from internal.ts_hw_args import (
+    TsArgumentParser,
+    add_cfg_files_arg,
+    add_target_arg,
+    add_ts_common_args,
+    add_ts_sim_check_args,
+)
+from internal.ts_hw_cfg_parser import do_design_config_init, do_sim_config_init
+from internal.ts_hw_check import TSLogChecker
+from internal.ts_hw_common import (
+    generate_junit_test_object,
+    init_signals_handler,
+    ts_get_curr_dir_rel_path,
+    ts_get_root_rel_path,
+)
+from internal.ts_hw_global_vars import TsGlobals
+from internal.ts_hw_logging import ts_configure_logging
 
 
 def sim_check(arguments, log_files):
 
-    args = {
-        "exp_junit_logs": False,
-        **vars(arguments)
-    }
+    args = {"exp_junit_logs": False, **vars(arguments)}
 
     junit_tests = []
 

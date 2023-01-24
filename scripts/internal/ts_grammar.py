@@ -10,14 +10,21 @@
 ####################################################################################################
 # Common grammar
 ####################################################################################################
+import os
 
-from os.path import isfile, isdir
-#https://github.com/keleshev/schema
-from schema import Schema, And, Regex, Optional, Or, Use, SchemaError
+from schema import And, Optional, Or, Regex, Schema, SchemaError, Use
 
-from .ts_hw_common import *
-from .ts_hw_logging import *
-
+from .ts_hw_common import ts_get_curr_dir_rel_path, ts_get_root_rel_path
+from .ts_hw_global_vars import TsGlobals
+from .ts_hw_logging import (
+    TsColors,
+    TsErrCode,
+    TsWarnCode,
+    ts_debug,
+    ts_print,
+    ts_throw_error,
+    ts_warning,
+)
 
 ###################################################################################################
 #
@@ -190,8 +197,8 @@ class GRAMMAR_SIM_CFG:
         Optional("dump_waves", default=False): bool,
         Optional("enable_uvm", default=False): bool,
         Optional("simulation_resolution"): _sim_time_res_regex,
-        Optional("session_file", default=None): And(str, Use(ts_get_curr_dir_rel_path), isfile),
-        Optional("do_file"): And(str, Use(ts_get_root_rel_path), isfile),
+        Optional("session_file", default=None): And(str, Use(ts_get_curr_dir_rel_path), os.path.isfile),
+        Optional("do_file"): And(str, Use(ts_get_root_rel_path), os.path.isfile),
         Optional("generics"): _key_val_dict,
         Optional("parameters"): _key_val_dict,
         Optional("license_wait", default=False): bool,
@@ -208,7 +215,7 @@ class GRAMMAR_SIM_CFG:
         Optional("add_elab_options", default=""): str,
         Optional("sim_options"): _simulator_comp_sim_elab_opts,
         Optional("add_sim_options", default=""): str,
-        Optional("test_list_file"): And(_yaml_file_regex, Use(ts_get_root_rel_path), isfile),
+        Optional("test_list_file"): And(_yaml_file_regex, Use(ts_get_root_rel_path), os.path.isfile),
         Optional("build_dir", default=ts_get_root_rel_path(TsGlobals.TS_SIM_BUILD_PATH)): str,
         Optional("include_dirs"): [str],
         Optional("pre_compile_hook"): str,
@@ -225,7 +232,7 @@ class GRAMMAR_SIM_CFG:
                 Optional("inherits"): str,
                 "source_list_files": [str],
                 "top_entity": Regex('^[a-zA-Z0-9_]+(\.[a-zA-Z0-9_]+)?$'),
-                Optional("test_list_file"): And(_yaml_file_regex, Use(ts_get_root_rel_path), isfile),
+                Optional("test_list_file"): And(_yaml_file_regex, Use(ts_get_root_rel_path), os.path.isfile),
                 Optional("comp_options"): _simulator_comp_sim_elab_opts,
                 Optional("sim_options"): _simulator_comp_sim_elab_opts,
                 Optional("elab_options"): _simulator_comp_sim_elab_opts,
@@ -237,7 +244,7 @@ class GRAMMAR_SIM_CFG:
                 Optional("test_name_generic"): str,
                 Optional("test_name_parameter"): str,
                 Optional("include_dirs"): [str],
-                Optional("do_file"): And(str, Use(ts_get_root_rel_path), isfile)
+                Optional("do_file"): And(str, Use(ts_get_root_rel_path), os.path.isfile)
             }
         },
         Optional("error_patterns", default=BUILT_IN_PATTERNS["error_patterns"]): Patterns("error_patterns"),

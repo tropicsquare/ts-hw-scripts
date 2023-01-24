@@ -14,13 +14,41 @@ __license___ = "TODO:"
 __maintainer__ = "Ondrej Ille"
 
 import shutil
-import os
-import argcomplete
+import sys
 
-from internal import *
+import argcomplete
+from internal.ts_hw_args import (
+    TsArgumentParser,
+    add_cfg_files_arg,
+    add_target_arg,
+    add_ts_common_args,
+    add_ts_sim_run_args,
+)
+from internal.ts_hw_cfg_parser import do_design_config_init, do_sim_config_init
+from internal.ts_hw_common import (
+    check_target,
+    create_sim_sub_dir,
+    init_signals_handler,
+    ts_generate_seed,
+    ts_get_cfg,
+    ts_get_root_rel_path,
+)
+from internal.ts_hw_global_vars import TsGlobals
+from internal.ts_hw_hooks import TsHooks, ts_call_global_hook, ts_call_local_hook
+from internal.ts_hw_logging import (
+    TsColors,
+    TsErrCode,
+    TsInfoCode,
+    ts_configure_logging,
+    ts_debug,
+    ts_info,
+    ts_print,
+    ts_throw_error,
+)
+from internal.ts_hw_simulator_ifc import ts_sim_elaborate, ts_sim_run
+from internal.ts_hw_test_list_files import get_test_list, get_tests_to_run, load_tests
 from ts_sim_check import sim_check
 from ts_sim_compile import sim_compile
-
 
 if __name__ == "__main__":
 

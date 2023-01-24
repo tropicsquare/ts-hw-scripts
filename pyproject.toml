@@ -1,7 +1,7 @@
 [tool.pytest.ini_options]
 testpaths = "tests"
 automark_dependency = true
-addopts = "--order-dependencies"
+addopts = "--order-dependencies -rA"
 
 [tool.coverage.run]
 branch = true
@@ -10,3 +10,12 @@ omit = [
     "*/__version__.py",
 ]
 include = ["scripts/*"]
+
+[tool.pycln]
+all = true
+
+[tool.isort]
+profile = "black"
+
+[tool.black]
+target-version = ['py38']

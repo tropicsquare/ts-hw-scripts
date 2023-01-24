@@ -6,13 +6,22 @@
 # TODO: License
 ####################################################################################################
 
+import contextlib
 import os
 import re
-import contextlib
+
 from schema import SchemaError
 
-from .ts_hw_common import *
-from .ts_grammar import *
+from .ts_grammar import GRAMMAR_TST_LST
+from .ts_hw_common import (
+    expand_vars,
+    load_yaml_file,
+    ts_get_cfg,
+    ts_get_file_rel_path,
+    ts_get_root_rel_path,
+)
+from .ts_hw_global_vars import TsGlobals
+from .ts_hw_logging import TsErrCode, ts_debug, ts_script_bug, ts_throw_error
 
 
 def __load_test_list(src: dict, path: str) -> list:

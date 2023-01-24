@@ -6,12 +6,30 @@
 # TODO: License
 ####################################################################################################
 
-import os
 import contextlib
+import os
+
 from schema import SchemaError
 
-from .ts_hw_common import *
-from .ts_grammar import *
+from .ts_grammar import ALLOWED_DESIGN_OBJ_TYPES, GRAMMAR_SRC_LST
+from .ts_hw_common import (
+    expand_vars,
+    get_pdk_obj,
+    load_yaml_file,
+    ts_get_cfg,
+    ts_get_file_rel_path,
+    ts_get_root_rel_path,
+)
+from .ts_hw_global_vars import TsGlobals
+from .ts_hw_logging import (
+    TsErrCode,
+    TsInfoCode,
+    ts_debug,
+    ts_info,
+    ts_print,
+    ts_script_bug,
+    ts_throw_error,
+)
 
 
 def __merge_global_to_local_dict(global_cfg: dict, local_cfg: dict):

@@ -6,34 +6,53 @@
 # TODO: License
 ####################################################################################################
 
+import logging
 import os
+import re
 from datetime import datetime
 
-from internal import *
-from .ts_hw_common import *
-from .ts_hw_source_list_files import *
-from .ts_grammar import *
+from .ts_hw_common import (
+    exec_cmd_in_dir,
+    get_repo_root_path,
+    load_yaml_file,
+    ts_get_root_rel_path,
+    ts_get_test_dir,
+    ts_set_cfg,
+    ts_set_env_var,
+)
+from .ts_hw_global_vars import TsGlobals
+from .ts_hw_logging import (
+    TsColors,
+    TsErrCode,
+    TSFormatter,
+    TsInfoCode,
+    TsWarnCode,
+    ts_debug,
+    ts_info,
+    ts_print,
+    ts_script_bug,
+    ts_throw_error,
+    ts_warning,
+)
+from .ts_hw_source_list_files import get_netlist_from_slf
 
-#TODO: solve how to get to spef files from some config file and not hardcoded
-#SPEF_PATH = "/projects/tropic01/pnr_export/ICC2_topo31_v1_sdc26_rev1_holdFix2/results/"
-#SPEF_WC = "write_data.TLUP_MAX_125.spef"
-#SPEF_TYP = "write_data.TLUP_TYP_25.spef"
-#SPEF_BC = "write_data.TLUP_MIN_-40.spef"
+# TODO: solve how to get to spef files from some config file and not hardcoded
+# SPEF_PATH = "/projects/tropic01/pnr_export/ICC2_topo31_v1_sdc26_rev1_holdFix2/results/"
+# SPEF_WC = "write_data.TLUP_MAX_125.spef"
+# SPEF_TYP = "write_data.TLUP_TYP_25.spef"
+# SPEF_BC = "write_data.TLUP_MIN_-40.spef"
 #
-#SPEF_DICT = {
+# SPEF_DICT = {
 #    "func_wc"   :   SPEF_WC,
 #    "func_typ"  :   SPEF_TYP,
 #    "func_bc"   :   SPEF_BC
-#}
+# }
 
-CORNER_DICT = {
-    "bc"    : "TLUP_MIN_-40",
-    "tc"    : "TLUP_TYP_25",
-    "wc"    : "TLUP_MAX_125"
-}
+CORNER_DICT = {"bc": "TLUP_MIN_-40", "tc": "TLUP_TYP_25", "wc": "TLUP_MAX_125"}
 
 RUNCODE_RESULTS_DIR = "results"
 RUNCODE_FILE_PREFIX = "write_data"
+
 
 def load_pwr_config_file(pwr_cfg_path: str):
     """
@@ -92,13 +111,13 @@ def create_pwr_run_dir(pwr_scenario: str, seed: int):
     :param pwr_scenario: Power scenario.
     :param seed: Simulation seed.
     """
-    runs_dir = join(ts_get_root_rel_path(TsGlobals.TS_PWR_DIR), "runs")
+    runs_dir = os.path.join(ts_get_root_rel_path(TsGlobals.TS_PWR_DIR), "runs")
     os.makedirs(runs_dir, exist_ok=True)
     now = datetime.now().strftime("%Y%m%d.%H%M")
     run_dir_name = "{}_{}_{}_{}".format(pwr_scenario, seed, TsGlobals.TS_RUNCODE, now)
-    TsGlobals.TS_PWR_RUN_DIR = join(runs_dir, run_dir_name)
+    TsGlobals.TS_PWR_RUN_DIR = os.path.join(runs_dir, run_dir_name)
     os.makedirs(TsGlobals.TS_PWR_RUN_DIR, exist_ok=True)
-    os.makedirs(join(TsGlobals.TS_PWR_RUN_DIR, "tmp"), exist_ok=True)
+    os.makedirs(os.path.join(TsGlobals.TS_PWR_RUN_DIR, "tmp"), exist_ok=True)
 
 def find_list(lst: list, key: str, val: str):
     """
@@ -121,17 +140,17 @@ def find_list(lst: list, key: str, val: str):
 
 def get_netlist_file() -> str:
     #TODO: This will be switched once pnr export directory structure and naming is solved
-    #return join(TsGlobals.TS_RUNCODE_DIR, RUNCODE_RESULTS_DIR, f"{RUNCODE_FILE_PREFIX}.v")
+    #return os.path.join(TsGlobals.TS_RUNCODE_DIR, RUNCODE_RESULTS_DIR, f"{RUNCODE_FILE_PREFIX}.v")
     return get_netlist_from_slf("pnr_export/slf_netlist.yml")
 
 def get_parasitic_file(mode: dict) -> str:
-    return join(TsGlobals.TS_RUNCODE_DIR, RUNCODE_RESULTS_DIR,
+    return os.path.join(TsGlobals.TS_RUNCODE_DIR, RUNCODE_RESULTS_DIR,
                 "{}.{}.spef".format(RUNCODE_FILE_PREFIX, CORNER_DICT[mode["corner"]]))
 
 def get_vcd_file(scenario: dict, seed):
     ts_set_cfg("target", scenario["simulation_target"])
     sim_test = {"name": scenario["test_name"], "seed": seed}
-    return join(ts_get_test_dir("sim", sim_test), "inter.vcd")
+    return os.path.join(ts_get_test_dir("sim", sim_test), "inter.vcd")
 
 def get_pdk_views_for_common_config() -> str:
     """
@@ -206,7 +225,7 @@ def build_prime_time_cmd():
     :return: command tu run
     """
     pt_shell_cmd_args = "-f {}".format(TsGlobals.TS_PWR_RUN_FILE)
-    log_file = join(TsGlobals.TS_PWR_RUN_DIR, "pt_shell.log")
+    log_file = os.path.join(TsGlobals.TS_PWR_RUN_DIR, "pt_shell.log")
     pt_shell_cmd_args += f" -output_log_file {log_file}"
 
     set_args = "set RUN_DIR {}".format(TsGlobals.TS_PWR_RUN_DIR)
@@ -379,7 +398,7 @@ def check_pwr_args(args):
             ts_throw_error(TsErrCode.ERR_PWR_7)
         else:
             TsGlobals.TS_RUNCODE = args.runcode
-            TsGlobals.TS_RUNCODE_DIR = join(TsGlobals.TS_PNR_EXPORT_PATH, TsGlobals.TS_RUNCODE)
+            TsGlobals.TS_RUNCODE_DIR = os.path.join(TsGlobals.TS_PNR_EXPORT_PATH, TsGlobals.TS_RUNCODE)
 
 def check_runcode_dir(scenarios):
     ts_debug(f"Checking runcode directory {TsGlobals.TS_RUNCODE_DIR}")
@@ -414,7 +433,7 @@ def get_pwr_waves_path():
     """
     Gets path to power waves.
     """
-    return join(TsGlobals.TS_PWR_RUN_DIR, "reports", "wave.fsdb")
+    return os.path.join(TsGlobals.TS_PWR_RUN_DIR, "reports", "wave.fsdb")
 
 def get_optional_key(dictionary: dict, key: str):
     """

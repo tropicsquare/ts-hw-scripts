@@ -29,9 +29,61 @@ __copyright__ = "Tropic Square"
 __license___ = "TODO"
 __maintainer__ = "TODO"
 
+import os
 import shutil
+import sys
+
 import argcomplete
-from internal import *
+from internal.ts_hw_args import (
+    TsArgumentParser,
+    add_cfg_files_arg,
+    add_ts_common_args,
+    add_ts_pwr_run_args,
+)
+from internal.ts_hw_cfg_parser import (
+    do_design_config_init,
+    do_power_config_init,
+    do_sim_config_init,
+)
+from internal.ts_hw_common import (
+    exec_cmd_in_dir,
+    init_signals_handler,
+    ts_generate_seed,
+    ts_get_root_rel_path,
+    ts_unset_env_var,
+)
+from internal.ts_hw_global_vars import TsGlobals
+from internal.ts_hw_logging import (
+    TsColors,
+    TsErrCode,
+    TsInfoCode,
+    TsWarnCode,
+    ts_configure_logging,
+    ts_debug,
+    ts_info,
+    ts_print,
+    ts_throw_error,
+    ts_warning,
+)
+from internal.ts_hw_pwr_support import (
+    build_prime_time_cmd,
+    build_run_sim_cmd,
+    check_primetime_run_script,
+    check_pwr_args,
+    check_runcode_dir,
+    check_vcd,
+    create_pwr_run_dir,
+    generate_common_setup,
+    generate_post_pwr_hook,
+    generate_specific_pwr_setup,
+    get_optional_key,
+    get_pwr_waves_path,
+    get_scenarios_to_run,
+    pwr_logging,
+    set_prime_time_license_queuing,
+    set_verdi_license_queuing,
+    ts_print_available_scenarios,
+)
 
 if __name__ == "__main__":
 
@@ -69,7 +121,10 @@ if __name__ == "__main__":
     # Clear previous pwr runs
     if args.clear_pwr:
         ts_info(TsInfoCode.GENERIC, "Clearing pwr/runs directory.")
-        shutil.rmtree(join(ts_get_root_rel_path(TsGlobals.TS_PWR_DIR), "runs"), ignore_errors=True)
+        shutil.rmtree(
+            os.path.join(ts_get_root_rel_path(TsGlobals.TS_PWR_DIR), "runs"),
+            ignore_errors=True,
+        )
 
     # Print scenarios to run
     ts_info(TsInfoCode.GENERIC, "Scenarios to run:")

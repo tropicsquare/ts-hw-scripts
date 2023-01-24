@@ -13,28 +13,68 @@ __copyright__ = "Tropic Square"
 __license___ = "TODO:"
 __maintainer__ = "Ondrej Ille"
 
-import logging
 import os
+import shutil
+import sys
 from concurrent.futures import ProcessPoolExecutor, wait
 from copy import deepcopy
-import argcomplete
 
-from internal import *
+import argcomplete
+from internal.ts_hw_args import (
+    TsArgumentParser,
+    add_cfg_files_arg,
+    add_target_arg,
+    add_ts_common_args,
+    add_ts_sim_regress_args,
+)
+from internal.ts_hw_cfg_parser import (
+    do_design_config_init,
+    do_sim_config_init,
+    fill_default_config_regress_values,
+)
+from internal.ts_hw_common import (
+    check_target,
+    create_sim_sub_dir,
+    get_regression_dest_dir_name,
+    init_signals_handler,
+    ts_generate_seed,
+    ts_get_cfg,
+    ts_get_root_rel_path,
+)
+from internal.ts_hw_global_vars import TsGlobals
+from internal.ts_hw_hooks import TsHooks, ts_call_global_hook, ts_call_local_hook
+from internal.ts_hw_logging import (
+    TsColors,
+    TsErrCode,
+    TsInfoCode,
+    ts_configure_logging,
+    ts_debug,
+    ts_info,
+    ts_print,
+    ts_throw_error,
+)
+from internal.ts_hw_simulator_ifc import ts_sim_elaborate
+from internal.ts_hw_test_list_files import get_test_list, get_tests_to_run, load_tests
 from ts_sim_check import sim_check
 from ts_sim_compile import sim_compile
+from ts_sim_run import ts_sim_run
 
 
 def elaborate_regression_test(test, loop_index):
     """
     Elaborate single test.
     """
-    ts_print(f"Starting test: {test['name']}-{loop_index}", color=TsColors.PURPLE, big=True)
+    ts_print(
+        f"Starting test: {test['name']}-{loop_index}", color=TsColors.PURPLE, big=True
+    )
 
     test["seed"] = ts_generate_seed()
 
     # Call pre-test hooks
     ts_call_global_hook(TsHooks.PRE_TEST, test["name"], test["seed"], loop_index)
-    ts_call_local_hook(TsHooks.PRE_TEST_SPECIFIC, test, test["name"], test["seed"], loop_index)
+    ts_call_local_hook(
+        TsHooks.PRE_TEST_SPECIFIC, test, test["name"], test["seed"], loop_index
+    )
 
     #######################################################################################
     # Run elaboration
@@ -54,7 +94,9 @@ def run_regression_test(test, loop_index, elab_dir):
     sim_log_file = ts_sim_run(test, elab_dir)
 
     # Call post-test hooks
-    ts_call_local_hook(TsHooks.POST_TEST_SPECIFIC, test, test["name"], test["seed"], loop_index)
+    ts_call_local_hook(
+        TsHooks.POST_TEST_SPECIFIC, test, test["name"], test["seed"], loop_index
+    )
     ts_call_global_hook(TsHooks.POST_TEST, test["name"], test["seed"], loop_index)
 
     return sim_log_file

@@ -2,23 +2,35 @@
 # -*- coding: utf-8 -*-
 
 import os
-from internal.ts_mem_map_builder import *
-from internal.ts_hw_args import *
+from pathlib import Path
+
+from internal.ts_hw_args import (
+    TsArgumentParser,
+    add_ts_common_args,
+    add_ts_mem_map_generator_args,
+)
+from internal.ts_hw_logging import TsErrCode, ts_configure_logging, ts_throw_error
+from internal.ts_mem_map_builder import (
+    is_yaml_file,
+    ordt_build_parms_file,
+    render_yaml_parent,
+)
 
 
 def main(raw_args=None):
 
     # Add script arguments
-    parser = TsArgumentParser(description="Memory map generator script")    
+    parser = TsArgumentParser(description="Memory map generator script")
     add_ts_common_args(parser)
     add_ts_mem_map_generator_args(parser)
 
-    # arguments passed from another script 
-    if raw_args is not None: 
+    # arguments passed from another script
+    if raw_args is not None:
         args = parser.parse_args(raw_args)
 
     # arguments passed from command line
-    else: args = parser.parse_args()
+    else:
+        args = parser.parse_args()
 
     ts_configure_logging(args)
 

@@ -6,23 +6,20 @@
 # TODO: License
 ####################################################################################################
 
-from os.path import join, normpath
+import os
+from argparse import SUPPRESS, ArgumentParser, RawTextHelpFormatter
 from textwrap import dedent
-from argparse import ArgumentParser, RawTextHelpFormatter, SUPPRESS
 
 from .__version__ import __version__
-from .ts_hw_global_vars import *
-from .ts_hw_common import *
+from .ts_hw_common import ts_get_root_rel_path
+from .ts_hw_global_vars import TsGlobals
 
-
-__norm_join = lambda *paths: normpath(join(*paths))
+__norm_join = lambda *paths: os.path.normpath(os.path.join(*paths))
 
 
 class TsArgumentParser(ArgumentParser):
-
     def __init__(self, description):
-        super().__init__(description=description,
-                        formatter_class=RawTextHelpFormatter)
+        super().__init__(description=description, formatter_class=RawTextHelpFormatter)
 
 
 def add_ts_common_args(parser):

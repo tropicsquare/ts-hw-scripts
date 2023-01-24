@@ -13,23 +13,53 @@ __copyright__ = "Tropic Square"
 __license___ = "TODO:"
 __maintainer__ = "Ondrej Ille"
 
-import shutil
 import os
+import shutil
 import sys
-import argcomplete
 
-from internal import *
+import argcomplete
+from internal.ts_hw_args import (
+    TsArgumentParser,
+    add_cfg_files_arg,
+    add_target_arg,
+    add_ts_common_args,
+    add_ts_sim_compile_args,
+)
+from internal.ts_hw_cfg_parser import (
+    do_design_config_init,
+    do_sim_config_init,
+    print_target_list,
+)
+from internal.ts_hw_common import check_target, init_signals_handler, ts_get_cfg
+from internal.ts_hw_export import export_dc_tcl, export_vivado_tcl
+from internal.ts_hw_global_vars import TsGlobals
+from internal.ts_hw_hooks import TsHooks, ts_call_global_hook
+from internal.ts_hw_logging import (
+    TsColors,
+    TsErrCode,
+    TsInfoCode,
+    ts_configure_logging,
+    ts_debug,
+    ts_info,
+    ts_print,
+    ts_throw_error,
+)
+from internal.ts_hw_simulator_ifc import ts_sim_compile
+from internal.ts_hw_source_list_files import (
+    load_source_list_files,
+    print_source_file_list,
+)
 
 
 def sim_compile(arguments):
 
     args = {
-        'clear': False,
-        'list_targets': False,
-        'list_sources': False,
-        'exp_tcl_file_dc': False,
-        'exp_tcl_file_vivado': False,
-        **vars(arguments)
+        "clear": False,
+        "list_targets": False,
+        "list_sources": False,
+        "exp_tcl_file_dc": False,
+        "exp_tcl_file_vivado": False,
+        **vars(arguments),
     }
 
     # Check target
