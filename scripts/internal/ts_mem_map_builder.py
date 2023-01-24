@@ -9,10 +9,10 @@
 import os
 import re
 import subprocess
-from typing import ClassVar, List, Optional, Union
 from dataclasses import dataclass, field
 from pathlib import Path
 from textwrap import dedent
+from typing import ClassVar, List, Optional, Union
 
 import yaml
 
@@ -408,8 +408,22 @@ class xml_builder:
                     lines = rf.readlines()
 
                 # search for start and end of addrmap element
-                start_index = next( (index for index, line in enumerate(lines) if startAddrMapPattern.match(line)), 0 )
-                end_index = next( (index for index, line in reversed(list(enumerate(lines))) if endAddrMapPattern.match(line)), -1 )
+                start_index = next(
+                    (
+                        index
+                        for index, line in enumerate(lines)
+                        if startAddrMapPattern.match(line)
+                    ),
+                    0,
+                )
+                end_index = next(
+                    (
+                        index
+                        for index, line in reversed(list(enumerate(lines)))
+                        if endAddrMapPattern.match(line)
+                    ),
+                    -1,
+                )
 
                 # avoid ORDT duplicate regfile component error
                 # note: ORDT cares only about exact duplicates, case is irrelevant
@@ -417,7 +431,7 @@ class xml_builder:
                     rf_name = f"{rdl.parent.name} {rdl.name}"
                     ts_print(
                         f"Changing duplicate component name: ({rdl.name}) -> ({rf_name})",
-                        color=TsColors.BLUE
+                        color=TsColors.BLUE,
                     )
                 else:
                     rf_name = rdl.name

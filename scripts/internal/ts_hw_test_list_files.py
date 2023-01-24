@@ -50,7 +50,7 @@ def __load_test_list(src: dict, path: str) -> list:
             continue
 
         for hook_name in ("pre_test_hook", "post_test_hook"):
-            tmp_path = ts_get_file_rel_path(path, test.get(hook_name, ''))
+            tmp_path = ts_get_file_rel_path(path, test.get(hook_name, ""))
             if os.path.isfile(tmp_path):
                 test[hook_name] = tmp_path
 
@@ -79,8 +79,10 @@ def __load_test_list_file(list_file_path: str) -> list:
         ts_throw_error(TsErrCode.ERR_SLF_18, e, list_file_path)
     ts_debug("List file valid!")
 
-    for phase, options in (("elaboration", "elab_options"),
-                            ("simulation", "sim_options")):
+    for phase, options in (
+        ("elaboration", "elab_options"),
+        ("simulation", "sim_options"),
+    ):
         ts_debug(f"Merging {phase} options in test file")
         root_options = list_file.pop(options, {})
         for k, v in root_options.items():
@@ -103,7 +105,7 @@ def load_tests():
     """
     TsGlobals.TS_TEST_LIST = []
     for cfg in (ts_get_cfg(), ts_get_cfg("targets")[ts_get_cfg("target")]):
-        list_file = ts_get_root_rel_path(cfg.get("test_list_file", ''))
+        list_file = ts_get_root_rel_path(cfg.get("test_list_file", ""))
         if os.path.isfile(list_file):
             TsGlobals.TS_TEST_LIST.extend(__load_test_list_file(list_file))
 
@@ -114,17 +116,12 @@ def get_tests_to_run(test_names: list) -> list:
     like star completion.
     :param test_names: List of test names to be queried, may contain wild-cards.
     """
-    regex = re.compile(
-        "^("
-        + "|".join(x.replace("*", ".*") for x in test_names)
-        + ")$"
-    )
+    regex = re.compile("^(" + "|".join(x.replace("*", ".*") for x in test_names) + ")$")
 
     ts_debug(f"Test regex: {regex.pattern}")
 
     TsGlobals.TS_TEST_RUN_LIST = [
-        test for test in TsGlobals.TS_TEST_LIST
-        if regex.match(test["name"])
+        test for test in TsGlobals.TS_TEST_LIST if regex.match(test["name"])
     ]
 
     ts_debug(f"Chosen tests are: {TsGlobals.TS_TEST_RUN_LIST}")
@@ -158,6 +155,7 @@ def get_test_list(test_list: list, get_repeat: bool = False) -> list:
         else:
             list_to_print.append(test["name"])
     return list_to_print
+
 
 def check_test(test_name: str):
     if not test_name in get_test_list(TsGlobals.TS_TEST_LIST):

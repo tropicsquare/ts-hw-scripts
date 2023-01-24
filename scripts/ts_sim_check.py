@@ -47,14 +47,17 @@ def sim_check(arguments, log_files):
 
             results = checker.check_single_test(log_file)
 
-            junit_tests.append(generate_junit_test_object(results, log_file, args["exp_junit_logs"]))
+            junit_tests.append(
+                generate_junit_test_object(results, log_file, args["exp_junit_logs"])
+            )
 
     # Create JUnit test collection and export it
     ts = junit_xml.TestSuite("Test results", junit_tests)
-    with open(ts_get_root_rel_path(TsGlobals.TS_SIM_JUNIT_SUMMARY_PATH), 'w') as f:
+    with open(ts_get_root_rel_path(TsGlobals.TS_SIM_JUNIT_SUMMARY_PATH), "w") as f:
         junit_xml.TestSuite.to_file(f, [ts])
 
     return checker.cnt_failures
+
 
 if __name__ == "__main__":
 

@@ -151,15 +151,22 @@ if __name__ == "__main__":
         test.setdefault("regress_loops", 1)
 
     # Print tests to be executed
-    ts_info(TsInfoCode.INFO_CMN_13, get_test_list(TsGlobals.TS_TEST_RUN_LIST, get_repeat=True))
+    ts_info(
+        TsInfoCode.INFO_CMN_13,
+        get_test_list(TsGlobals.TS_TEST_RUN_LIST, get_repeat=True),
+    )
     ts_info(TsInfoCode.GENERIC, "Number of parallel jobs: {ts_get_cfg('regress_jobs')}")
 
     ts_call_global_hook(TsHooks.PRE_RUN)
 
     # Clear log directories always. This makes sure that only logs from this regression
     # are backed up.
-    shutil.rmtree(ts_get_root_rel_path(TsGlobals.TS_ELAB_LOG_DIR_PATH), ignore_errors=True)
-    shutil.rmtree(ts_get_root_rel_path(TsGlobals.TS_SIM_LOG_DIR_PATH), ignore_errors=True)
+    shutil.rmtree(
+        ts_get_root_rel_path(TsGlobals.TS_ELAB_LOG_DIR_PATH), ignore_errors=True
+    )
+    shutil.rmtree(
+        ts_get_root_rel_path(TsGlobals.TS_SIM_LOG_DIR_PATH), ignore_errors=True
+    )
 
     # Create sim_logs, elab_logs directories
     ts_debug("Create 'sim_logs' directory (if it does not exist)")
@@ -221,7 +228,8 @@ if __name__ == "__main__":
 
     os.mkdir(reg_dir)
     shutil.copytree(sim_logs_dir, os.path.join(reg_dir, os.path.basename(sim_logs_dir)))
-    shutil.copytree(elab_logs_dir, os.path.join(reg_dir, os.path.basename(elab_logs_dir)))
+    shutil.copytree(
+        elab_logs_dir, os.path.join(reg_dir, os.path.basename(elab_logs_dir))
+    )
 
     sys.exit(ret_val)
-

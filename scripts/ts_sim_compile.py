@@ -90,20 +90,25 @@ def sim_compile(arguments):
     ts_debug("Clear build directory before building")
     if args["clear"]:
         shutil.rmtree(ts_get_cfg("build_dir"), ignore_errors=True)
-    
 
     ################################################################################################
     # Export of synthesis TCL files
     ################################################################################################
     if args["exp_tcl_file_dc"]:
-        ts_print(f"Exporting dc_shell TCL file: {args['exp_tcl_file_dc']}",
-                    color=TsColors.PURPLE, big=True)
+        ts_print(
+            f"Exporting dc_shell TCL file: {args['exp_tcl_file_dc']}",
+            color=TsColors.PURPLE,
+            big=True,
+        )
         export_dc_tcl(args["exp_tcl_file_dc"])
         return 0
 
     if args["exp_tcl_file_vivado"]:
-        ts_print(f"Exporting vivado TCL file: {args['exp_tcl_file_vivado']}",
-                    color=TsColors.PURPLE, big=True)
+        ts_print(
+            f"Exporting vivado TCL file: {args['exp_tcl_file_vivado']}",
+            color=TsColors.PURPLE,
+            big=True,
+        )
         export_vivado_tcl(args["exp_tcl_file_vivado"])
         return 0
 
@@ -139,4 +144,3 @@ if __name__ == "__main__":
 
     # Launch compilation
     sys.exit(sim_compile(args))
-

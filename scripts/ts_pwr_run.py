@@ -145,7 +145,9 @@ if __name__ == "__main__":
     ################################################################################################
     for pwr_scenario in scenarios_to_run:
         this_loop = args.loop
-        if (not get_optional_key(pwr_scenario, "randomized") or (hasattr(args, "seed"))) and this_loop > 1:
+        if (
+            not get_optional_key(pwr_scenario, "randomized") or (hasattr(args, "seed"))
+        ) and this_loop > 1:
             ts_warning(TsWarnCode.WARN_PWR_0, pwr_scenario["name"])
             this_loop = 1
 
@@ -154,10 +156,12 @@ if __name__ == "__main__":
             # Simulate the scenario target and test
             ########################################################################################
             if not args.no_sim:
-                ts_print("Running simulation for '{}'.".format(pwr_scenario["name"]),
-                        color=TsColors.PURPLE,
-                        big=True)
-                
+                ts_print(
+                    "Running simulation for '{}'.".format(pwr_scenario["name"]),
+                    color=TsColors.PURPLE,
+                    big=True,
+                )
+
                 # Set seed
                 if not hasattr(args, "seed"):
                     if get_optional_key(pwr_scenario, "randomized"):
@@ -174,19 +178,27 @@ if __name__ == "__main__":
 
                 # Run simulation
                 ts_debug(f"Running command {run_sim_cmd}")
-                sim_exit_code = exec_cmd_in_dir(TsGlobals.TS_PWR_DIR,
-                                                run_sim_cmd,
-                                                args.no_pwr_out, args.no_pwr_out)
+                sim_exit_code = exec_cmd_in_dir(
+                    TsGlobals.TS_PWR_DIR, run_sim_cmd, args.no_pwr_out, args.no_pwr_out
+                )
 
                 ts_debug(f"Simulation exit code: {sim_exit_code}")
 
                 if sim_exit_code:
                     if not args.fail_fast:
-                        ts_warning(TsWarnCode.GENERIC,
-                            "Simulation failed on scenario {}... Continue...".format(pwr_scenario["name"]))
+                        ts_warning(
+                            TsWarnCode.GENERIC,
+                            "Simulation failed on scenario {}... Continue...".format(
+                                pwr_scenario["name"]
+                            ),
+                        )
                     else:
-                        ts_throw_error(TsErrCode.GENERIC,
-                            "Simulation failed on scenario {}... Failing fast!".format(pwr_scenario["name"]))
+                        ts_throw_error(
+                            TsErrCode.GENERIC,
+                            "Simulation failed on scenario {}... Failing fast!".format(
+                                pwr_scenario["name"]
+                            ),
+                        )
 
             check_vcd(pwr_scenario, seed)
 
@@ -194,12 +206,18 @@ if __name__ == "__main__":
             create_pwr_run_dir(pwr_scenario["name"], seed)
 
             # Generate common design setup
-            design_common_setup_path = "{}/tmp/common_setup.tcl".format(TsGlobals.TS_PWR_RUN_DIR)
+            design_common_setup_path = "{}/tmp/common_setup.tcl".format(
+                TsGlobals.TS_PWR_RUN_DIR
+            )
             generate_common_setup(design_common_setup_path, args)
-                
+
             # Generate specific power setup
-            pwr_specific_setup_path = "{}/tmp/pwr_setup.tcl".format(TsGlobals.TS_PWR_RUN_DIR)
-            generate_specific_pwr_setup(pwr_specific_setup_path, args, pwr_scenario, seed)
+            pwr_specific_setup_path = "{}/tmp/pwr_setup.tcl".format(
+                TsGlobals.TS_PWR_RUN_DIR
+            )
+            generate_specific_pwr_setup(
+                pwr_specific_setup_path, args, pwr_scenario, seed
+            )
 
             # Generate post PrimeTime hook file
             post_pwr_hook_path = "{}/tmp/post_hook.tcl".format(TsGlobals.TS_PWR_RUN_DIR)
@@ -208,23 +226,33 @@ if __name__ == "__main__":
             # Generate PrimeTime command
             pt_shell_cmd = build_prime_time_cmd()
 
-            ts_print("Running power analysis for \'{}\'.".format(pwr_scenario["name"]),
-                    color=TsColors.PURPLE,
-                    big=True)
+            ts_print(
+                "Running power analysis for '{}'.".format(pwr_scenario["name"]),
+                color=TsColors.PURPLE,
+                big=True,
+            )
 
             # Run PrimeTime
-            pwr_exit_code = exec_cmd_in_dir(TsGlobals.TS_PWR_RUN_DIR,
-                                            pt_shell_cmd,
-                                            args.no_pwr_out, args.no_pwr_out)
+            pwr_exit_code = exec_cmd_in_dir(
+                TsGlobals.TS_PWR_RUN_DIR, pt_shell_cmd, args.no_pwr_out, args.no_pwr_out
+            )
 
             ts_debug(f"PrimeTime exit code: {pwr_exit_code}")
             if pwr_exit_code:
                 if not args.fail_fast:
-                    ts_warning(TsWarnCode.GENERIC,
-                        "Power analysis failed on scenario {}... Continue".format(pwr_scenario["name"]))
+                    ts_warning(
+                        TsWarnCode.GENERIC,
+                        "Power analysis failed on scenario {}... Continue".format(
+                            pwr_scenario["name"]
+                        ),
+                    )
                 else:
-                    ts_throw_error(TsErrCode.GENERIC,
-                        "Power analysis failed on scenario {}... Failing fast".format(pwr_scenario["name"]))
+                    ts_throw_error(
+                        TsErrCode.GENERIC,
+                        "Power analysis failed on scenario {}... Failing fast".format(
+                            pwr_scenario["name"]
+                        ),
+                    )
 
     ts_print("Power Analysis Done!", color=TsColors.PURPLE, big=True)
 
@@ -234,12 +262,16 @@ if __name__ == "__main__":
     if args.gui == "verdi":
         # Set license queuing for Verdi
         set_verdi_license_queuing(args.license_wait)
-        
+
         # Build command for Verdi and launch it
         pwr_wave_path = get_pwr_waves_path()
         verdi_cmd = f"verdi {pwr_wave_path}"
-        verdi_exit_code = exec_cmd_in_dir(TsGlobals.TS_PWR_RUN_DIR, f"verdi -sx {pwr_wave_path}",
-                                          args.no_pwr_out, args.no_pwr_out)
+        verdi_exit_code = exec_cmd_in_dir(
+            TsGlobals.TS_PWR_RUN_DIR,
+            f"verdi -sx {pwr_wave_path}",
+            args.no_pwr_out,
+            args.no_pwr_out,
+        )
 
         ts_debug(f"Verdi exit code: {verdi_exit_code}")
         if verdi_exit_code:

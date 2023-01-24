@@ -128,14 +128,22 @@ def __finalize_config():
         return result_dict
 
     _MAX_INHERITANCE_LEVEL = 5
+
     def _solve_inheritance(target, level=0):
         if level > _MAX_INHERITANCE_LEVEL:
-            raise RecursionError(f"Exceeded maximum inheritance level: {_MAX_INHERITANCE_LEVEL}")
+            raise RecursionError(
+                f"Exceeded maximum inheritance level: {_MAX_INHERITANCE_LEVEL}"
+            )
         if "inherits" in TsGlobals.TS_SIM_CFG["targets"][target]:
-            _solve_inheritance(TsGlobals.TS_SIM_CFG["targets"][target]["inherits"], level + 1)
+            _solve_inheritance(
+                TsGlobals.TS_SIM_CFG["targets"][target]["inherits"], level + 1
+            )
             TsGlobals.TS_SIM_CFG["targets"][target] = __inherit_dict(
-                TsGlobals.TS_SIM_CFG["targets"][TsGlobals.TS_SIM_CFG["targets"][target]["inherits"]],
-                TsGlobals.TS_SIM_CFG["targets"][target])
+                TsGlobals.TS_SIM_CFG["targets"][
+                    TsGlobals.TS_SIM_CFG["targets"][target]["inherits"]
+                ],
+                TsGlobals.TS_SIM_CFG["targets"][target],
+            )
             del TsGlobals.TS_SIM_CFG["targets"][target]["inherits"]
 
     for target in TsGlobals.TS_SIM_CFG.get("targets", []):
@@ -158,21 +166,25 @@ def __check_sim_config():
     ts_debug("Checking test strategy parameters")
     for to_test in (TsGlobals.TS_SIM_CFG, *TsGlobals.TS_SIM_CFG["targets"].values()):
         if to_test.get("test_name_strategy") == "generic_parameter":
-            if (to_test.get("test_name_generic"), to_test.get("test_name_parameter")) == (None, None):
+            if (
+                to_test.get("test_name_generic"),
+                to_test.get("test_name_parameter"),
+            ) == (None, None):
                 ts_throw_error(TsErrCode.ERR_CFG_22)
 
     ts_debug("Checking coupling of 'ignore_start' and 'ignore_stop' patterns")
     config_keys = set(TsGlobals.TS_SIM_CFG.keys())
-    for kwd_pair in ({"error_ignore_start", "error_ignore_stop"},
-                    {"warning_ignore_start", "warning_ignore_stop"}):
+    for kwd_pair in (
+        {"error_ignore_start", "error_ignore_stop"},
+        {"warning_ignore_start", "warning_ignore_stop"},
+    ):
         # start and stop cannot be one without the other
         if len(kwd_pair - config_keys) == 1:
             ts_throw_error(TsErrCode.ERR_CFG_13, *kwd_pair)
 
 
 def __check_design_config():
-    """
-    """
+    """ """
     try:
         TsGlobals.TS_DESIGN_CFG = GRAMMAR_DSG_CONFIG.validate(TsGlobals.TS_DESIGN_CFG)
     except SchemaError as e:
@@ -192,16 +204,22 @@ def do_sim_config_init(args, skip_check=False):
     ts_info(TsInfoCode.INFO_CMN_0, TsGlobals.TS_SIM_CFG_PATH)
 
     try:
-        TsGlobals.TS_SIM_CFG = __load_sim_config_file(ts_get_curr_dir_rel_path(args.sim_cfg))
+        TsGlobals.TS_SIM_CFG = __load_sim_config_file(
+            ts_get_curr_dir_rel_path(args.sim_cfg)
+        )
     except AttributeError:
-        ts_script_bug("Command line arguments shall have 'sim_cfg' defined "
-                        "either explicitly or by default value!")
+        ts_script_bug(
+            "Command line arguments shall have 'sim_cfg' defined "
+            "either explicitly or by default value!"
+        )
 
     ts_debug(f"Simulation config file: {ts_get_cfg()}")
 
     # Merging command line arguments with config file
     __merge_args_with_config(args)
-    ts_debug("Simulation configuration (merged config file and command-line arguments):")
+    ts_debug(
+        "Simulation configuration (merged config file and command-line arguments):"
+    )
     ts_debug(ts_get_cfg())
 
     # Finalize configuration
@@ -218,8 +236,7 @@ def do_sim_config_init(args, skip_check=False):
 
 
 def do_design_config_init(args, skip_check=False, enforce=False):
-    """
-    """
+    """ """
     # Load Design config file
     cfg_file_path = ts_get_curr_dir_rel_path(args.design_cfg)
     ts_info(TsInfoCode.INFO_PDK_1, cfg_file_path)
@@ -227,7 +244,7 @@ def do_design_config_init(args, skip_check=False, enforce=False):
         if os.path.exists(cfg_file_path):
             TsGlobals.TS_DESIGN_CFG = load_design_config_file(cfg_file_path)
         else:
-            if (enforce):
+            if enforce:
                 ts_throw_error(TsErrCode.ERR_PDK_24, cfg_file_path)
             else:
                 ts_warning(TsWarnCode.WARN_PDK_1)
@@ -252,34 +269,53 @@ def __check_pwr_scenarios():
     ts_debug("Checking power scenarios.")
     scenarios = ts_get_pwr_cfg("scenarios")
 
-    #check target and test name
+    # check target and test name
     for s in scenarios:
-        ts_debug("Checking simulation target \'{}\' of scenario \'{}\'".format(s["simulation_target"], s["name"]))
+        ts_debug(
+            "Checking simulation target '{}' of scenario '{}'".format(
+                s["simulation_target"], s["name"]
+            )
+        )
         check_target(s["simulation_target"])
         ts_set_cfg("target", s["simulation_target"])
         load_tests()
-        ts_debug("Checking test name \'{}\' of scenario \'{}\'".format(s["test_name"], s["name"]))
+        ts_debug(
+            "Checking test name '{}' of scenario '{}'".format(s["test_name"], s["name"])
+        )
         check_test(s["test_name"])
 
-    #check times
+    # check times
     for s in scenarios:
-        ts_debug("Checking time interval for scenario \'{}\'".format(s["name"]))
+        ts_debug("Checking time interval for scenario '{}'".format(s["name"]))
         if s["from"] > s["to"]:
-            ts_throw_error(TsErrCode.GENERIC,
-                "Invalid time interval <{}, {}> for scenario \'{}\'!".format(s["from"], s["to"], s["name"]))
+            ts_throw_error(
+                TsErrCode.GENERIC,
+                "Invalid time interval <{}, {}> for scenario '{}'!".format(
+                    s["from"], s["to"], s["name"]
+                ),
+            )
         if s["from"] == s["to"]:
-            ts_warning(TsWarnCode.GENERIC,
-                "Zero time interval <{}, {}> for scenario \'{}\'.".format(s["from"], s["to"], s["name"]))
+            ts_warning(
+                TsWarnCode.GENERIC,
+                "Zero time interval <{}, {}> for scenario '{}'.".format(
+                    s["from"], s["to"], s["name"]
+                ),
+            )
 
-    #check mode
+    # check mode
     modes = []
     for m in TsGlobals.TS_DESIGN_CFG["design"]["modes"]:
         modes.append(m["name"])
     for s in scenarios:
-        ts_debug("Checking mode \'{}\' for scenario \'{}\'".format(s["mode"], s["name"]))
+        ts_debug("Checking mode '{}' for scenario '{}'".format(s["mode"], s["name"]))
         if s["mode"] not in modes:
-            ts_throw_error(TsErrCode.GENERIC,
-                "Invalid mode \'{}\' for scenario \'{}\'! Available modes: {}".format(s["mode"], s["name"], modes))
+            ts_throw_error(
+                TsErrCode.GENERIC,
+                "Invalid mode '{}' for scenario '{}'! Available modes: {}".format(
+                    s["mode"], s["name"], modes
+                ),
+            )
+
 
 def __check_pwr_config():
     """
@@ -314,10 +350,13 @@ def do_power_config_init(args, skip_check=False):
 
 
 def check_valid_design_target():
-    """
-    """
+    """ """
     if TsGlobals.TS_DESIGN_CFG["design"]["target"] not in ts_get_cfg("targets"):
-        ts_throw_error(TsErrCode.ERR_PDK_15, TsGlobals.TS_DESIGN_CFG["design"]["target"], str(list(ts_get_cfg("targets").keys())) )
+        ts_throw_error(
+            TsErrCode.ERR_PDK_15,
+            TsGlobals.TS_DESIGN_CFG["design"]["target"],
+            str(list(ts_get_cfg("targets").keys())),
+        )
 
 
 def print_target_list():
@@ -333,10 +372,14 @@ def check_valid_source_data_arg(args):
     """
     if args.source_data:
         if "flow_dirs" in TsGlobals.TS_DESIGN_CFG["design"]:
-            if args.source_data not in TsGlobals.TS_DESIGN_CFG["design"]["flow_dirs"].keys():
-                ts_throw_error(TsErrCode.ERR_STA_3,args.source_data)
+            if (
+                args.source_data
+                not in TsGlobals.TS_DESIGN_CFG["design"]["flow_dirs"].keys()
+            ):
+                ts_throw_error(TsErrCode.ERR_STA_3, args.source_data)
         else:
-                ts_throw_error(TsErrCode.ERR_STA_3,args.source_data)
+            ts_throw_error(TsErrCode.ERR_STA_3, args.source_data)
+
 
 def check_valid_mode_arg(args):
     """
@@ -347,7 +390,7 @@ def check_valid_mode_arg(args):
         for i, mode in enumerate(TsGlobals.TS_DESIGN_CFG["design"]["modes"]):
             modes_names.append(mode["name"])
         if args.mode not in modes_names:
-            ts_throw_error(TsErrCode.ERR_STA_5,args.mode)
+            ts_throw_error(TsErrCode.ERR_STA_5, args.mode)
 
 
 def parse_runcode_arg(args):
@@ -359,14 +402,14 @@ def parse_runcode_arg(args):
         return f"{args.runcode}"
 
     if args.runcode:
-        root_dir    = os.getcwd()
-        result      = None
-        suffix      = None 
+        root_dir = os.getcwd()
+        result = None
+        suffix = None
 
         regex = re.compile(rf"({args.runcode})(_*)([0-9]*)$")
         for dir in os.listdir(root_dir):
-           result = regex.search(dir)
-           if result:
+            result = regex.search(dir)
+            if result:
                 if suffix is None:
                     suffix = 0
                 if result.group(3):
@@ -379,4 +422,3 @@ def parse_runcode_arg(args):
             return f"{args.runcode}"
     else:
         return None
-

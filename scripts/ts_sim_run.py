@@ -97,13 +97,19 @@ if __name__ == "__main__":
 
     # Print tests to be executed
     ts_info(TsInfoCode.INFO_CMN_13, get_test_list(TsGlobals.TS_TEST_RUN_LIST))
-    ts_info(TsInfoCode.GENERIC, f"Each test will be executed {ts_get_cfg('loop')} time(s)")
+    ts_info(
+        TsInfoCode.GENERIC, f"Each test will be executed {ts_get_cfg('loop')} time(s)"
+    )
     ts_call_global_hook(TsHooks.PRE_RUN)
 
     # Clear log directories if user wants
     if ts_get_cfg("clear_logs"):
-        shutil.rmtree(ts_get_root_rel_path(TsGlobals.TS_ELAB_LOG_DIR_PATH), ignore_errors=True)
-        shutil.rmtree(ts_get_root_rel_path(TsGlobals.TS_SIM_LOG_DIR_PATH), ignore_errors=True)
+        shutil.rmtree(
+            ts_get_root_rel_path(TsGlobals.TS_ELAB_LOG_DIR_PATH), ignore_errors=True
+        )
+        shutil.rmtree(
+            ts_get_root_rel_path(TsGlobals.TS_SIM_LOG_DIR_PATH), ignore_errors=True
+        )
 
     # Create sim_logs, elab_logs directories
     ts_debug("Create 'sim_logs' directory (if it does not exist)")
@@ -125,7 +131,9 @@ if __name__ == "__main__":
 
             # Call pre-test hooks
             ts_call_global_hook(TsHooks.PRE_TEST, test["name"], test["seed"], i)
-            ts_call_local_hook(TsHooks.PRE_TEST_SPECIFIC, test, test["name"], test["seed"], i)
+            ts_call_local_hook(
+                TsHooks.PRE_TEST_SPECIFIC, test, test["name"], test["seed"], i
+            )
 
             if not args.sim_only:
 
@@ -135,7 +143,9 @@ if __name__ == "__main__":
                 elab_log_file, elab_dir = ts_sim_elaborate(test)
                 all_elab_log_files.append(elab_log_file)
 
-                if TsGlobals.TS_SIM_CFG.get("fail_fast") and ts_get_cfg("check_elab_log"):
+                if TsGlobals.TS_SIM_CFG.get("fail_fast") and ts_get_cfg(
+                    "check_elab_log"
+                ):
                     result = sim_check(args, elab_log_file)
                     if result != 0:
                         break
@@ -148,11 +158,13 @@ if __name__ == "__main__":
             # Run simulation
             #######################################################################################
             ts_call_global_hook(TsHooks.PRE_SIM)
-            
+
             sim_log_file = ts_sim_run(test, elab_dir)
             all_sim_log_files.append(sim_log_file)
 
-            ts_call_local_hook(TsHooks.POST_TEST_SPECIFIC, test, test["name"], test["seed"], i)
+            ts_call_local_hook(
+                TsHooks.POST_TEST_SPECIFIC, test, test["name"], test["seed"], i
+            )
             ts_call_global_hook(TsHooks.POST_TEST, test["name"], test["seed"], i)
 
             # Check result of single test and abort if there is fail-fast!
@@ -165,7 +177,7 @@ if __name__ == "__main__":
 
     ret_val = 0
     if not ts_get_cfg("no_check"):
-        
+
         # Check elab log files
         if ts_get_cfg("check_elab_log"):
             all_sim_log_files.extend(all_elab_log_files)
@@ -177,8 +189,7 @@ if __name__ == "__main__":
         # Check sim log files
         ts_print("Checking log files", color=TsColors.PURPLE, big=True)
         ret_val = sim_check(args, all_sim_log_files)
-        
+
         ts_call_global_hook(TsHooks.POST_CHECK)
 
     sys.exit(ret_val)
-

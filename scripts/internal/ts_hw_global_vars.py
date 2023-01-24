@@ -104,40 +104,40 @@ class TsGlobals:
     TS_RUNCODE_DIR = None
 
     # Enviromantal variable for synthesis flow root directory ts-synthesis-flow
-    TS_SYN_FLOW_PATH = 'TS_SYN_FLOW_PATH'
+    TS_SYN_FLOW_PATH = "TS_SYN_FLOW_PATH"
 
     # File path of dc.tcl to run synthesis
-    TS_SYN_DC_RM_RUNFILE = 'ts_dc_syn_script.tcl'
+    TS_SYN_DC_RM_RUNFILE = "ts_dc_syn_script.tcl"
 
     # File path of dc.tcl to run synthesis
-    TS_SYN_DC_RM_OPENFILE = 'ts_dc_open_script.tcl'
+    TS_SYN_DC_RM_OPENFILE = "ts_dc_open_script.tcl"
 
     # Synthesis run dir
     TS_SYN_RUN_DIR = None
 
     # Synthesis sub-blocks build dir
-    TS_SYN_BUILD_DIR = '.'
+    TS_SYN_BUILD_DIR = "."
 
     # Synthesis log dir
-    TS_SYN_LOGS_DIR = 'logs' 
+    TS_SYN_LOGS_DIR = "logs"
 
     # Synthesis results dir
-    TS_SYN_RESULTS_DIR = 'results'
+    TS_SYN_RESULTS_DIR = "results"
 
     # Synthesis reports dir
-    TS_SYN_REPORTS_DIR = 'reports'
+    TS_SYN_REPORTS_DIR = "reports"
 
     # Synthesis design_cfg file
-    TS_SYN_DESIGN_CFG_FILE = 'design_cfg.tcl'
+    TS_SYN_DESIGN_CFG_FILE = "design_cfg.tcl"
 
     # Synthesis setup.tcl file
-    TS_SYN_SETUP_FILE = 'syn_setup.tcl'
+    TS_SYN_SETUP_FILE = "syn_setup.tcl"
 
     # Synthesis source rtl tcl file
-    TS_SYN_SRC_RTL_FILE = 'src_rtl.tcl'
+    TS_SYN_SRC_RTL_FILE = "src_rtl.tcl"
 
     # Synthesis multi-corner multi-mode setup file
-    TS_SYN_MCMM_FILE = 'mcmm_setup.tcl'
+    TS_SYN_MCMM_FILE = "mcmm_setup.tcl"
 
     # Synthesis RTL target
     TS_SYN_TARGET = None
@@ -146,16 +146,16 @@ class TsGlobals:
     TS_SYN_RELEASE_DIR = None
 
     # Enviromantal variable for synthesis flow root directory ts-synthesis-flow
-    TS_STA_FLOW_PATH = 'TS_STA_FLOW_PATH'
+    TS_STA_FLOW_PATH = "TS_STA_FLOW_PATH"
 
     # Runcode
     TS_STA_RUNCODE = None
 
     # File path of dc.tcl to run synthesis
-    TS_STA_DC_RM_RUNFILE = 'ts_pt_sta_script.tcl'
+    TS_STA_DC_RM_RUNFILE = "ts_pt_sta_script.tcl"
 
     # File path of dc.tcl to run synthesis
-    TS_STA_DC_RM_OPENFILE = 'ts_pt_open_script.tcl'
+    TS_STA_DC_RM_OPENFILE = "ts_pt_open_script.tcl"
 
     # Netlist file
     TS_STA_DC_RM_NETLIST = None
@@ -164,25 +164,25 @@ class TsGlobals:
     TS_STA_RUN_DIR = None
 
     # Synthesis sub-blocks build dir
-    TS_STA_BUILD_DIR = '.'
+    TS_STA_BUILD_DIR = "."
 
     # Synthesis log dir
-    TS_STA_LOGS_DIR = 'logs' 
+    TS_STA_LOGS_DIR = "logs"
 
     # Synthesis results dir
-    TS_STA_RESULTS_DIR = 'results'
+    TS_STA_RESULTS_DIR = "results"
 
     # Synthesis reports dir
-    TS_STA_REPORTS_DIR = 'reports'
+    TS_STA_REPORTS_DIR = "reports"
 
     # Synthesis design_cfg file
-    TS_STA_DESIGN_CFG_FILE = 'design_cfg.tcl'
+    TS_STA_DESIGN_CFG_FILE = "design_cfg.tcl"
 
     # Synthesis setup.tcl file
-    TS_STA_SETUP_FILE = 'sta_setup.tcl'
+    TS_STA_SETUP_FILE = "sta_setup.tcl"
 
     # Synthesis multi-corner multi-mode setup file
-    TS_STA_DMSA_FILE = 'dmsa_setup.tcl'
+    TS_STA_DMSA_FILE = "dmsa_setup.tcl"
 
     # Synthesis release dir
     TS_STA_RELEASE_DIR = None

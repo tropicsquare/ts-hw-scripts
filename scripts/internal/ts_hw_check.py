@@ -31,7 +31,9 @@ class TSLogChecker:
 
     RESULT_FORMAT = "{:95}{:14}{:10}{:12}{:10}{:12}{:15}"
     # small trick so the separator has always the same length as the lines of the result summary
-    SEPARATOR = '*' * len(RESULT_FORMAT.format(*(" " for i in range(len(RESULT_FORMAT)))))
+    SEPARATOR = "*" * len(
+        RESULT_FORMAT.format(*(" " for i in range(len(RESULT_FORMAT))))
+    )
 
     LINES_AFTER = 1
 
@@ -53,15 +55,23 @@ class TSLogChecker:
             self.post_sim_msg_regex = None
 
         if "error_ignore_start" in global_config:
-            self.error_ignore_start_regex = re.compile(global_config["error_ignore_start"])
-            self.error_ignore_stop_regex = re.compile(global_config["error_ignore_stop"])
+            self.error_ignore_start_regex = re.compile(
+                global_config["error_ignore_start"]
+            )
+            self.error_ignore_stop_regex = re.compile(
+                global_config["error_ignore_stop"]
+            )
         else:
             self.error_ignore_start_regex = None
             self.error_ignore_stop_regex = None
 
         if "warning_ignore_start" in global_config:
-            self.warning_ignore_start_regex = re.compile(global_config["warning_ignore_start"])
-            self.warning_ignore_stop_regex = re.compile(global_config["warning_ignore_stop"])
+            self.warning_ignore_start_regex = re.compile(
+                global_config["warning_ignore_start"]
+            )
+            self.warning_ignore_stop_regex = re.compile(
+                global_config["warning_ignore_stop"]
+            )
         else:
             self.warning_ignore_start_regex = None
             self.warning_ignore_stop_regex = None
@@ -72,13 +82,16 @@ class TSLogChecker:
 
         self.use_color = not global_config["no_color"]
         if self.use_color:
-            self._to_text = lambda x: (f"{TsColors.GREEN}PASS{TsColors.END}"
-                                        if x else f"{TsColors.RED}FAIL{TsColors.END}")
+            self._to_text = lambda x: (
+                f"{TsColors.GREEN}PASS{TsColors.END}"
+                if x
+                else f"{TsColors.RED}FAIL{TsColors.END}"
+            )
         else:
             self._to_text = lambda x: "PASS" if x else "FAIL"
 
         # Initialize counters
-        self.cnt_total_run_time = .0
+        self.cnt_total_run_time = 0.0
         self.cnt_errors = 0
         self.cnt_warnings = 0
         self.cnt_ignored_errors = 0
@@ -114,7 +127,7 @@ class TSLogChecker:
                 regex_list.extend(patterns.get(item, []))
 
             if regex_list:
-                yield re.compile('|'.join(regex_list))
+                yield re.compile("|".join(regex_list))
             else:
                 yield None
 
@@ -136,7 +149,7 @@ class TSLogChecker:
         UVM_IGNORE_START_PATTERN_REGEX = self.UVM_IGNORE_START_PATTERN_REGEX
         UVM_IGNORE_STOP_PATTERN_REGEX = self.UVM_IGNORE_STOP_PATTERN_REGEX
 
-        errors_regex =  self.errors_regex
+        errors_regex = self.errors_regex
         warnings_regex = self.warnings_regex
 
         uvm_is_enabled = self.uvm_is_enabled
@@ -170,7 +183,7 @@ class TSLogChecker:
             "ignored_errors": [],
             "ignored_warnings": [],
             "sim_exit_code": 0,
-            "run_time": None
+            "run_time": None,
         }
 
         with open(log_file_path, encoding="latin-1") as fd:
@@ -180,20 +193,29 @@ class TSLogChecker:
         ts_debug("Check that sim exit code is appended!")
         if len(lines) < 2 or self.LOG_TRAILER_REGEX.search(lines[-2]) is None:
             test_results["sim_exit_code"] = -1
-            test_results["run_time"] = .0
+            test_results["run_time"] = 0.0
         else:
             test_results["sim_exit_code"] = int(lines[-2].split()[1])
             test_results["run_time"] = float(lines[-1].split()[1])
 
         if test_results["sim_exit_code"] != 0:
             test_results["result"] = False
-            test_results["errors"].append({"line_number": 0,
-                                            "line": "Simulation failed with exit code: {}".format(
-                                                        test_results["sim_exit_code"])})
+            test_results["errors"].append(
+                {
+                    "line_number": 0,
+                    "line": "Simulation failed with exit code: {}".format(
+                        test_results["sim_exit_code"]
+                    ),
+                }
+            )
             if test_results["sim_exit_code"] == -1:
-                test_results["errors"].append({"line_number": 0,
-                                                "line": "Exit code -1 means that simulation exit code "
-                                                        "was not written to log file properly!"})
+                test_results["errors"].append(
+                    {
+                        "line_number": 0,
+                        "line": "Exit code -1 means that simulation exit code "
+                        "was not written to log file properly!",
+                    }
+                )
 
         # Check errors and warnings for each line, appends match to results dictionary
         for line_number, line in enumerate(lines):
@@ -215,9 +237,11 @@ class TSLogChecker:
                         continue
 
             # Look for post_sim_msg
-            if post_sim_msg_regex \
-                and not post_sim_msg_found \
-                and post_sim_msg_regex.search(line):
+            if (
+                post_sim_msg_regex
+                and not post_sim_msg_found
+                and post_sim_msg_regex.search(line)
+            ):
                 post_sim_msg_found = True
                 continue
 
@@ -225,12 +249,16 @@ class TSLogChecker:
             if error_ignore_start_regex:
                 if not __ignore_errors:
                     if error_ignore_start_regex.search(line):
-                        ts_debug(f"Starting error patterns ignore from line: '{line.strip()}'")
+                        ts_debug(
+                            f"Starting error patterns ignore from line: '{line.strip()}'"
+                        )
                         __ignore_errors = True
                         continue
                 else:
                     if error_ignore_stop_regex.search(line):
-                        ts_debug(f"Stopping error patterns ignore from line: '{line.strip()}'")
+                        ts_debug(
+                            f"Stopping error patterns ignore from line: '{line.strip()}'"
+                        )
                         __ignore_errors = False
                         continue
 
@@ -238,28 +266,38 @@ class TSLogChecker:
             if warning_ignore_start_regex:
                 if not __ignore_warnings:
                     if warning_ignore_start_regex.search(line):
-                        ts_debug(f"Starting warning patterns ignore from line: '{line.strip()}'")
+                        ts_debug(
+                            f"Starting warning patterns ignore from line: '{line.strip()}'"
+                        )
                         __ignore_warnings = True
                         continue
                 else:
                     if warning_ignore_stop_regex.search(line):
-                        ts_debug(f"Stopping warning patterns ignore from line: '{line.strip()}'")
+                        ts_debug(
+                            f"Stopping warning patterns ignore from line: '{line.strip()}'"
+                        )
                         __ignore_warnings = False
                         continue
 
             # Look for patterns, errors first then warnings
-            for severity, regex, ignore in (("errors", errors_regex, __ignore_errors),
-                                            ("warnings", warnings_regex, __ignore_warnings)):
+            for severity, regex, ignore in (
+                ("errors", errors_regex, __ignore_errors),
+                ("warnings", warnings_regex, __ignore_warnings),
+            ):
                 if not regex:
                     continue
                 match = regex.search(line)
                 if match:
                     if use_color:
-                        line = line.replace(match.group(), TsColors.RED + match.group() + TsColors.END)
+                        line = line.replace(
+                            match.group(), TsColors.RED + match.group() + TsColors.END
+                        )
                     log_line = {
                         "line": line,
                         "line_number": line_number,
-                        "after_lines": lines[line_number + 1 : line_number + 1 + LINES_AFTER]
+                        "after_lines": lines[
+                            line_number + 1 : line_number + 1 + LINES_AFTER
+                        ],
                     }
                     if ignore:
                         test_results[f"ignored_{severity}"].append(log_line)
@@ -269,34 +307,43 @@ class TSLogChecker:
                             test_results["result"] = False
                         else:
                             # Warnings cause test to fail only when error severity is warning.
-                            if (check_severity_is_warning):
+                            if check_severity_is_warning:
                                 test_results["result"] = False
                     break
 
         # Check that both ignore errors and ignore warnings are not set at the end of the parsing
         if __ignore_errors or __ignore_warnings:
             test_results["result"] = False
-            test_results["errors"].append({
-                        "line": "Simulation ended with ignoring errors and/or warnings! This is forbidden!",
-                        "line_number": 0})
+            test_results["errors"].append(
+                {
+                    "line": "Simulation ended with ignoring errors and/or warnings! This is forbidden!",
+                    "line_number": 0,
+                }
+            )
 
         # Check that post_sim_msg has been found, if defined beforehand
         if post_sim_msg_regex and not post_sim_msg_found:
             test_results["result"] = False
-            test_results["errors"].append({
-                        "line": "Simulation ended without printing '{0}' into log. '{0}' is value " \
-                               "of 'post_sim_msg' keyword. If you set this keyword, testbench must print " \
-                               "this value to simulation log file, otherwise test will be marked " \
-                               "as failed!".format(post_sim_msg_regex.pattern),
-                        "line_number": 0})
+            test_results["errors"].append(
+                {
+                    "line": "Simulation ended without printing '{0}' into log. '{0}' is value "
+                    "of 'post_sim_msg' keyword. If you set this keyword, testbench must print "
+                    "this value to simulation log file, otherwise test will be marked "
+                    "as failed!".format(post_sim_msg_regex.pattern),
+                    "line_number": 0,
+                }
+            )
 
         # Make sure that UVM report summary has been found in a UVM test
         # UVM report summaries are only in simulation logs
         if log_file_is_sim and uvm_is_enabled and not uvm_report_summary_found:
             test_results["result"] = False
-            test_results["errors"].append({
-                        "line": "UVM simulation ended without UVM report summary!",
-                        "line_number": 0})
+            test_results["errors"].append(
+                {
+                    "line": "UVM simulation ended without UVM report summary!",
+                    "line_number": 0,
+                }
+            )
 
         # Update counters
         self.cnt_total_run_time += test_results["run_time"]
@@ -314,54 +361,78 @@ class TSLogChecker:
         # Return results
         return test_results
 
-
     def _print_test_result(self, test_results: dict):
         """
         Prints result of a single test.
         :param test_result: Results objet of single test
         """
-        ts_print(self.RESULT_FORMAT.format(*map(str, (
-                                        test_results["log_file_name"],
-                                        "{:.1f}".format(test_results["run_time"]),
-                                        len(test_results["errors"]),
-                                        len(test_results["warnings"]),
-                                        len(test_results["ignored_errors"]),
-                                        len(test_results["ignored_warnings"]),
-                                        self._to_text(test_results["result"])))))
+        ts_print(
+            self.RESULT_FORMAT.format(
+                *map(
+                    str,
+                    (
+                        test_results["log_file_name"],
+                        "{:.1f}".format(test_results["run_time"]),
+                        len(test_results["errors"]),
+                        len(test_results["warnings"]),
+                        len(test_results["ignored_errors"]),
+                        len(test_results["ignored_warnings"]),
+                        self._to_text(test_results["result"]),
+                    ),
+                )
+            )
+        )
 
         if self.verbose:
             for item in ("errors", "warnings", "ignored_errors", "ignored_warnings"):
                 ts_print(f"List of {item.replace('_', ' ')}:", color=TsColors.PURPLE)
                 for entry in test_results[item]:
-                    ts_print(f"Line {entry['line_number']}: {entry['line'].rstrip()}",
-                                *map(lambda x: "\t" + x.rstrip(),
-                                    entry.get("after_lines", [])),
-                                sep="\n")
+                    ts_print(
+                        f"Line {entry['line_number']}: {entry['line'].rstrip()}",
+                        *map(lambda x: "\t" + x.rstrip(), entry.get("after_lines", [])),
+                        sep="\n",
+                    )
 
     def _print_test_result_header(self):
         """
         Prints test results header.
         """
-        ts_print(self.SEPARATOR,
-                self.RESULT_FORMAT.format("Test log file", "Run-time", "Errors", "Warnings",
-                                          "Ignored", "Ignored", "Result"),
-                self.RESULT_FORMAT.format("", "", "", "", "Errors", "Warnings", ""),
-                self.SEPARATOR,
-                sep="\n")
+        ts_print(
+            self.SEPARATOR,
+            self.RESULT_FORMAT.format(
+                "Test log file",
+                "Run-time",
+                "Errors",
+                "Warnings",
+                "Ignored",
+                "Ignored",
+                "Result",
+            ),
+            self.RESULT_FORMAT.format("", "", "", "", "Errors", "Warnings", ""),
+            self.SEPARATOR,
+            sep="\n",
+        )
 
     def _print_test_summary(self):
         """
         Prints test summary with total number of errors/warnings, passed/failed tests, etc.
         """
-        ts_print(self.SEPARATOR,
-                self.RESULT_FORMAT.format(*map(str, (
-                                        "Summary",
-                                        "{:.1f}".format(self.cnt_total_run_time),
-                                        self.cnt_errors,
-                                        self.cnt_warnings,
-                                        self.cnt_ignored_errors,
-                                        self.cnt_ignored_warnings,
-                                        "PASS: {}/{}".format(self.cnt_successes, self.cnt_total)))),
-                self.SEPARATOR,
-                sep="\n")
-
+        ts_print(
+            self.SEPARATOR,
+            self.RESULT_FORMAT.format(
+                *map(
+                    str,
+                    (
+                        "Summary",
+                        "{:.1f}".format(self.cnt_total_run_time),
+                        self.cnt_errors,
+                        self.cnt_warnings,
+                        self.cnt_ignored_errors,
+                        self.cnt_ignored_warnings,
+                        "PASS: {}/{}".format(self.cnt_successes, self.cnt_total),
+                    ),
+                )
+            ),
+            self.SEPARATOR,
+            sep="\n",
+        )

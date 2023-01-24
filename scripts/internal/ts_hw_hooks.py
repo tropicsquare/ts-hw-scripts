@@ -51,8 +51,10 @@ def __call_hook(hook: TsHooks, root_dict: dict, *args):
 
     # If hook does not exist, try to execute it on system console
     if not os.path.isfile(abs_hook_path):
-        ts_debug(f"File '{abs_hook_path}' does not exist, "
-                    f"hook '{hook_path}' will be executed as bash command...")
+        ts_debug(
+            f"File '{abs_hook_path}' does not exist, "
+            f"hook '{hook_path}' will be executed as bash command..."
+        )
         if exec_cmd_in_dir(os.getcwd(), hook_path) != 0:
             ts_throw_error(TsErrCode.ERR_HOK_0, hook_path, hook_type)
 
@@ -82,4 +84,3 @@ def ts_call_local_hook(hook: TsHooks, local_dict: dict, *args):
     """
     ts_debug("Calling local hook")
     __call_hook(hook, local_dict, *args)
-

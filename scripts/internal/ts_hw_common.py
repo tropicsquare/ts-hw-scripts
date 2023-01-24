@@ -27,7 +27,7 @@ def concat_keys(in_lst: list, key: str, sep: str):
     Concatenate key values from list of dictionaries
     """
     ret_val = ""
-    #print(in_lst)
+    # print(in_lst)
     for obj in in_lst:
         if key in obj:
             ret_val += obj[key]
@@ -57,8 +57,10 @@ def __beautify_path(function):
     Return a beautiful, normalized path
     Used as a decorator
     """
+
     def new_function(*args):
         return os.path.normpath(function(*map(expand_vars, args)))
+
     return new_function
 
 
@@ -69,10 +71,12 @@ def get_repo_root_path():
     """
     repo_root = os.getenv(TsGlobals.TS_REPO_ROOT)
     if not repo_root:
-        ts_throw_error(TsErrCode.GENERIC,
-                        "${} is not defined! Run '{}' script.".format(
-                            TsGlobals.TS_REPO_ROOT,
-                            TsGlobals.TS_CONFIG_ENV_SCRIPT))
+        ts_throw_error(
+            TsErrCode.GENERIC,
+            "${} is not defined! Run '{}' script.".format(
+                TsGlobals.TS_REPO_ROOT, TsGlobals.TS_CONFIG_ENV_SCRIPT
+            ),
+        )
     return repo_root
 
 
@@ -83,7 +87,7 @@ def get_env_var_path(env_variable):
     """
     env_var = os.getenv(env_variable)
     if not env_var:
-        ts_throw_error(TsErrCode.GENERIC,f'{env_variable} is not defined!')
+        ts_throw_error(TsErrCode.GENERIC, f"{env_variable} is not defined!")
 
     return env_var
 
@@ -97,7 +101,7 @@ def ts_get_env_var_path(env_variable, *paths):
             1. If input path is absolute, treat it as it is (return itself)
             2. If input path is relative, treat is as relative to to enviromental variable which is parameter
     """
-    return os.path.join(get_env_var_path(env_variable),*paths)
+    return os.path.join(get_env_var_path(env_variable), *paths)
 
 
 @__beautify_path
@@ -143,19 +147,25 @@ def load_yaml_file(yaml_file: str) -> dict:
     Utility to load a yaml file
     """
     if not yaml_file.endswith(".yml"):
-        ts_throw_error(TsErrCode.GENERIC,
-                        f"File name '{yaml_file}' shall end with '.yml' suffix (YAML file extension).")
+        ts_throw_error(
+            TsErrCode.GENERIC,
+            f"File name '{yaml_file}' shall end with '.yml' suffix (YAML file extension).",
+        )
 
     try:
         with open(yaml_file) as f:
             return yaml.safe_load(f)
     except FileNotFoundError:
-        ts_throw_error(TsErrCode.GENERIC,
-                       f"{yaml_file} config file was not found. Make sure it exists!")
+        ts_throw_error(
+            TsErrCode.GENERIC,
+            f"{yaml_file} config file was not found. Make sure it exists!",
+        )
     except:
-        ts_throw_error(TsErrCode.GENERIC,
-                        f"Failed to load {yaml_file} config file probably due "
-                        "to incorrect YAML syntax.")
+        ts_throw_error(
+            TsErrCode.GENERIC,
+            f"Failed to load {yaml_file} config file probably due "
+            "to incorrect YAML syntax.",
+        )
 
 
 def check_target(design_target: str):
@@ -165,8 +175,9 @@ def check_target(design_target: str):
     """
     ts_debug(f"Checking target: {design_target}")
     if design_target not in ts_get_cfg("targets"):
-        ts_throw_error(TsErrCode.ERR_CFG_8,
-                        design_target, list(ts_get_cfg("targets").keys()))
+        ts_throw_error(
+            TsErrCode.ERR_CFG_8, design_target, list(ts_get_cfg("targets").keys())
+        )
 
 
 def create_sim_sub_dir(name: str):
@@ -205,7 +216,10 @@ def ts_is_uvm_enabled():
     """
     Checks if UVM is enabled (globally, or per-target)
     """
-    return ts_get_cfg("enable_uvm") or ts_get_cfg("targets")[ts_get_cfg("target")]["enable_uvm"]
+    return (
+        ts_get_cfg("enable_uvm")
+        or ts_get_cfg("targets")[ts_get_cfg("target")]["enable_uvm"]
+    )
 
 
 def create_log_file_name(log_file_type, test=None):
@@ -233,16 +247,18 @@ def create_log_file_name(log_file_type, test=None):
         raise NotImplementedError(f"Unsupported log file type '{log_file_type}'")
 
     return ts_get_root_rel_path(
-            directory,
-            "{}_{}{}{}.log".format(log_file_type, ts_get_cfg("target"), test_info, timestamp)
-        )
+        directory,
+        "{}_{}{}{}.log".format(
+            log_file_type, ts_get_cfg("target"), test_info, timestamp
+        ),
+    )
 
 
 def get_regression_dest_dir_name():
     return ts_get_root_rel_path(
-            TsGlobals.TS_SIM_DIR,
-            "regression_{}".format(datetime.now().strftime("%Y_%m_%d_%H_%M_%S_%f"))
-        )
+        TsGlobals.TS_SIM_DIR,
+        "regression_{}".format(datetime.now().strftime("%Y_%m_%d_%H_%M_%S_%f")),
+    )
 
 
 def ts_is_at_least_verbose():
@@ -277,32 +293,38 @@ def ts_get_test_dir(dir_type, test):
     """
     if dir_type == "sim":
         return os.path.join(
-                ts_get_cfg("build_dir"),
-                "{}_{}_{}_{}".format(dir_type, ts_get_cfg("target"), test["name"], test["seed"])
-            )
+            ts_get_cfg("build_dir"),
+            "{}_{}_{}_{}".format(
+                dir_type, ts_get_cfg("target"), test["name"], test["seed"]
+            ),
+        )
     elif dir_type == "elab":
         dir_path_base = os.path.join(
-                        ts_get_cfg("build_dir"),
-                        "{}_{}_{}_{{:0=3d}}".format(dir_type, ts_get_cfg("target"), test["name"])
-                )
+            ts_get_cfg("build_dir"),
+            "{}_{}_{}_{{:0=3d}}".format(dir_type, ts_get_cfg("target"), test["name"]),
+        )
         for i in range(1000):
             dir_path = dir_path_base.format(i)
             if not os.path.isdir(dir_path):
                 return dir_path
         else:
-            ts_throw_error(TsErrCode.GENERIC,
-                f"Reached the limit of '{i+1}' elaboration directories!")
+            ts_throw_error(
+                TsErrCode.GENERIC,
+                f"Reached the limit of '{i+1}' elaboration directories!",
+            )
     else:
         ts_script_bug(f"Directory type '{dir_type}' not supported!")
 
 
 # Warning: make sure you know what you are doing!
 __FORBIDDEN_LINES = {
-'/tools/synopsys/vcs/R-2020.12-SP2-0/bin/vlogan: line 137: /tools/synopsys/vcs/R-2020.12-SP2-0/linux/bin/vcsparse: No such file or directory\n'
+    "/tools/synopsys/vcs/R-2020.12-SP2-0/bin/vlogan: line 137: /tools/synopsys/vcs/R-2020.12-SP2-0/linux/bin/vcsparse: No such file or directory\n"
 }
 
 
-def exec_cmd_in_dir(directory: str, command: str, no_std_out: bool = False, no_std_err: bool = False) -> int:
+def exec_cmd_in_dir(
+    directory: str, command: str, no_std_out: bool = False, no_std_err: bool = False
+) -> int:
     """
     Executes a command in a directory.
     :param directory: Directory in which command shall be executed
@@ -323,15 +345,16 @@ def exec_cmd_in_dir(directory: str, command: str, no_std_out: bool = False, no_s
     elif (no_std_out, no_std_err) == (False, True):
         opts = {"stdout": subprocess.PIPE, "stderr": subprocess.DEVNULL}
         output = "stdout"
-    else: # (no_std_out, no_std_err) == (True, True):
+    else:  # (no_std_out, no_std_err) == (True, True):
         opts = {"stdout": subprocess.DEVNULL, "stderr": subprocess.DEVNULL}
         output = ""
 
     ts_debug(f"Executing command in directory '{directory}'")
 
     # Launch the command
-    p = subprocess.Popen(command, shell=True, encoding="latin-1",
-                            cwd=directory, env=os.environ, **opts)
+    p = subprocess.Popen(
+        command, shell=True, encoding="latin-1", cwd=directory, env=os.environ, **opts
+    )
 
     with contextlib.suppress(AttributeError):
         signal.signal(signal.SIGALRM, __raise_timeout)
@@ -355,12 +378,14 @@ def exec_cmd_in_dir(directory: str, command: str, no_std_out: bool = False, no_s
             if no_color:
                 line = color_regex.sub("", line)
             # Display
-            ts_print(line, end='')
+            ts_print(line, end="")
     signal.alarm(0)
     return p.wait()
 
 
-def generate_junit_test_object(test_result: dict, log_file_path: str, export_logs=False):
+def generate_junit_test_object(
+    test_result: dict, log_file_path: str, export_logs=False
+):
     """
     Generates JUnit report which can be parsed by Gitlab
     :param export_logs: Is set, simulation/elaboration log files will be exported.
@@ -373,8 +398,11 @@ def generate_junit_test_object(test_result: dict, log_file_path: str, export_log
     else:
         sim_logs = "Log file not exported! Run with '--junit-exp-logs' "
 
-    test = junit_xml.TestCase(test_result["log_file_name"], elapsed_sec=test_result["run_time"],
-                              stdout=sim_logs)
+    test = junit_xml.TestCase(
+        test_result["log_file_name"],
+        elapsed_sec=test_result["run_time"],
+        stdout=sim_logs,
+    )
 
     for err in test_result["errors"]:
         test.add_error_info(err)
@@ -425,9 +453,8 @@ def init_signals_handler():
 
 
 def get_pdk_obj(obj_type: str, target_obj_name: str, target_obj_version: str) -> dict:
-    """
-    """
-    assert(obj_type == "std_cells" or obj_type == "ips")
+    """ """
+    assert obj_type == "std_cells" or obj_type == "ips"
 
     pdk_name = TsGlobals.TS_DESIGN_CFG["design"]["pdk"]
     target_pdk = None
@@ -436,49 +463,52 @@ def get_pdk_obj(obj_type: str, target_obj_name: str, target_obj_version: str) ->
         if pdk_name == pdk["name"]:
             target_pdk = pdk
 
-    assert (target_pdk is not None)
+    assert target_pdk is not None
 
     for obj in target_pdk[obj_type]:
-        #print(obj)
-        if obj["name"] == target_obj_name and \
-           obj["version"] == target_obj_version:
+        # print(obj)
+        if obj["name"] == target_obj_name and obj["version"] == target_obj_version:
             return obj
 
     # We should never get here since loading of design config file guarantees that
     # std_cells and IPs referred to are consistent
-    assert (False)
+    assert False
+
 
 def get_pdk_corners() -> dict:
-    """
-    """
+    """ """
     pdk_name = TsGlobals.TS_DESIGN_CFG["design"]["pdk"]
 
     for pdk in TsGlobals.TS_PDK_CFGS:
         if pdk_name == pdk["name"]:
             target_pdk = pdk
 
-    assert (target_pdk is not None)
+    assert target_pdk is not None
 
     return target_pdk["corners"]
 
     # We should never get here since loading of design config file guarantees that
     # std_cells and IPs referred to are consistent
-    assert (False)
+    assert False
+
 
 def view_has_corner(pdk_view: str):
     """
     Returns True if given view shall have per-corner value, False otherwise
     :param pdk_view: Name of the view
     """
-    if pdk_view == "nldm_lib" or pdk_view == "nldm_db" or \
-       pdk_view == "ccs_lib" or pdk_view == "ccs_db":
-       return True
+    if (
+        pdk_view == "nldm_lib"
+        or pdk_view == "nldm_db"
+        or pdk_view == "ccs_lib"
+        or pdk_view == "ccs_db"
+    ):
+        return True
     return False
 
 
 def is_used_corner(corner: str):
-    """
-    """
+    """ """
     for mode in TsGlobals.TS_DESIGN_CFG["modes"]:
         if mode["corner"] == corner:
             return True
@@ -486,8 +516,7 @@ def is_used_corner(corner: str):
 
 
 def get_used_corners():
-    """
-    """
+    """ """
     raw_list = []
     filtered_list = []
     for mode in TsGlobals.TS_DESIGN_CFG["modes"]:
@@ -497,18 +526,22 @@ def get_used_corners():
 
 
 def get_mode_for_corner(corner: str):
-    """
-    """
+    """ """
     for mode in TsGlobals.TS_DESIGN_CFG["modes"]:
         if mode["corner"] == corner:
             return mode
-    ts_script_bug("Mode not found for corner -> Was the Design config file checked properly during parsing?")
+    ts_script_bug(
+        "Mode not found for corner -> Was the Design config file checked properly during parsing?"
+    )
 
 
 def ts_get_design_top():
-    """
-    """
-    return ts_get_cfg()["targets"][ts_get_cfg()["target"]]["top_entity"].split(".")[-1].upper()
+    """ """
+    return (
+        ts_get_cfg()["targets"][ts_get_cfg()["target"]]["top_entity"]
+        .split(".")[-1]
+        .upper()
+    )
 
 
 def ts_set_env_var(var: str, val: str):
@@ -516,8 +549,10 @@ def ts_set_env_var(var: str, val: str):
     if (not var in os.environ) or (os.environ[var] != val):
         ts_throw_error(TsErrCode.GENERIC, f"Failed to set environment variable {var}!")
 
-        
+
 def ts_unset_env_var(var: str):
     os.environ.pop(var, None)
     if var in os.environ:
-        ts_throw_error(TsErrCode.GENERIC, f"Failed to unset environment variable {var}!")
+        ts_throw_error(
+            TsErrCode.GENERIC, f"Failed to unset environment variable {var}!"
+        )

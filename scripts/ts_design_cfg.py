@@ -88,13 +88,13 @@ if __name__ == "__main__":
             else:
                 print("        No IPs in this PDK.")
         sys.exit(0)
-    
+
     if args.list_supported_views:
         print("List of views supported by PDK / Design configs:")
         for view, view_value in PDK_VIEW_CONFIG.schema.items():
-            #print(view)
-            #print(view_value)
-            #print(dir(view))
+            # print(view)
+            # print(view_value)
+            # print(dir(view))
             if view_has_corner(str(view.schema)):
                 corn = "Single view for each PDK corner"
             else:
@@ -102,13 +102,19 @@ if __name__ == "__main__":
             print("    - {} : {}".format(view.schema.ljust(15), corn))
 
     if args.exp_tcl_file_dc:
-        ts_print(f"Exporting dc_shell TCL file: {args.exp_tcl_file_dc}",
-                    color=TsColors.PURPLE, big=True)
+        ts_print(
+            f"Exporting dc_shell TCL file: {args.exp_tcl_file_dc}",
+            color=TsColors.PURPLE,
+            big=True,
+        )
         export_dc_tcl(args.exp_tcl_file_dc)
 
     if args.exp_tcl_file_vivado:
-        ts_print(f"Exporting vivado TCL file: {args.exp_tcl_file_vivado}",
-                    color=TsColors.PURPLE, big=True)
+        ts_print(
+            f"Exporting vivado TCL file: {args.exp_tcl_file_vivado}",
+            color=TsColors.PURPLE,
+            big=True,
+        )
         export_vivado_tcl(args.exp_tcl_file_vivado)
 
     if args.add_views:
@@ -120,4 +126,3 @@ if __name__ == "__main__":
         ts_warning(TsWarnCode.WARN_PDK_6)
 
     sys.exit(0)
-

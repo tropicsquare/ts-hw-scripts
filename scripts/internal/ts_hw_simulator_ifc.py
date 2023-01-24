@@ -47,19 +47,15 @@ __SIMULATOR_COMMANDS = {
             "languages": {
                 "vhdl": "vhdlan",
                 "verilog": "vlogan -incr_vlogan +lint=all,noNS +warn=all,noLCA_FEATURES_ENABLED",
-                "system_verilog": "vlogan -incr_vlogan -sverilog +lint=all,noNS +warn=all,noLCA_FEATURES_ENABLED -assert svaext"
+                "system_verilog": "vlogan -incr_vlogan -sverilog +lint=all,noNS +warn=all,noLCA_FEATURES_ENABLED -assert svaext",
             },
             "vhdl_std": {
                 "vhdl87": "-vhdl87",
                 "vhdl93": "",
                 "vhdl02": "-vhdl02",
-                "vhdl08": "-vhdl08"
+                "vhdl08": "-vhdl08",
             },
-            "verilog_std": {
-                "v95": "-v95",
-                "v01": "",
-                "v05": "-v2005"
-            },
+            "verilog_std": {"v95": "-v95", "v01": "", "v05": "-v2005"},
             "library": "-work {}",
             "define": "+define+{}",
             "define_val": "+define+{}={}",
@@ -68,16 +64,14 @@ __SIMULATOR_COMMANDS = {
             "verbose": "-verbose",
             "log_file": "-l {}",
             "include_dirs": "+incdir+{}",
-            "enable_uvm":"-ntb_opts uvm"
+            "enable_uvm": "-ntb_opts uvm",
         },
         "elaborate": {
             "command": "vcs +plusarg_save",
             "common_options": "-lca -notice -psl +warn=all,noLCA_FEATURES_ENABLED +lint=TFIPC-L +lint=PCWM",
             "compile_debug": "-debug_access+all",
-
             # This overrides rules for searching finest Verilog resolution or default VHDL resolution
             "simulation_resolution": "-sim_res=1{}",
-
             # To run in GUI mode, debug access must be set! We don't leave it to user to set it, but
             # we set it automatically if user wants to go to GUI! The same goes for "dump_waves"
             "gui": "-debug_access+all -debug_region+cell",
@@ -86,7 +80,7 @@ __SIMULATOR_COMMANDS = {
             "verbose": "-v",
             "license_wait": "-licqueue",
             "log_file": "-l {}",
-            "enable_uvm":"$VCS_HOME/etc/uvm/dpi/uvm_dpi.cc"
+            "enable_uvm": "$VCS_HOME/etc/uvm/dpi/uvm_dpi.cc",
         },
         "simulate": {
             "binary": "simv",
@@ -97,8 +91,8 @@ __SIMULATOR_COMMANDS = {
             "seed": "+ntb_random_seed={}",
             "exitstatus": "-exitstatus",
             "license_wait": "-licqueue",
-            "uvm_test_name": "+UVM_TESTNAME={}"
-        }
+            "uvm_test_name": "+UVM_TESTNAME={}",
+        },
     }
 }
 
@@ -108,16 +102,16 @@ __ALLOWED_FILE_EXTENSIONS = {
     ".sv": "system_verilog",
     ".svh": "system_verilog",
     ".svi": "system_verilog",
-    ".svp": "system_verilog"
+    ".svp": "system_verilog",
 }
 
-__SIM_CONFIG_FILES = lambda x, y: os.path.join(y, {\
-                                                    "vcs": "synopsys_sim.setup"\
-                                                }[x])
+__SIM_CONFIG_FILES = lambda x, y: os.path.join(y, {"vcs": "synopsys_sim.setup"}[x])
 
 __LIB_FILE_LIST = lambda x: os.path.join(x, "_ts_flow_files_list")
 
-__TARGET_LIBS_LIST = lambda x: os.path.join(ts_get_cfg("build_dir"), f"_ts_flow_{x}_libs_list")
+__TARGET_LIBS_LIST = lambda x: os.path.join(
+    ts_get_cfg("build_dir"), f"_ts_flow_{x}_libs_list"
+)
 
 __ELAB_CMD_FILE = lambda x: os.path.join(x, "_ts_flow_elaboration_command")
 
@@ -130,24 +124,25 @@ __GUI_COMPILE_OPTIONS = {
         "languages": {
             "vhdl": "-psl -assert psl_in_block",
             "verilog": "",
-            "system_verilog": ""
+            "system_verilog": "",
         }
     },
     "dve": {
         "languages": {
             "vhdl": "-psl -assert psl_in_block",
             "verilog": "",
-            "system_verilog": ""
+            "system_verilog": "",
         }
     },
     "verdi": {
         "languages": {
             "vhdl": "-kdb",
             "verilog": "-kdb -lca",
-            "system_verilog": "-kdb -lca"
+            "system_verilog": "-kdb -lca",
         }
-    }
+    },
 }
+
 
 def __get_gui_simulation_options() -> list:
     gui_opts = []
@@ -215,10 +210,12 @@ def __generate_sim_config_file(directory: str):
             lines.append(f"{lib} : {lib_dir}")
 
         with open(__SIM_CONFIG_FILES(simulator, directory), "w") as fd:
-            fd.writelines(map(lambda x: x + '\n', lines))
+            fd.writelines(map(lambda x: x + "\n", lines))
 
     else:
-        ts_script_bug(f"Simulator '{simulator}' not supported in function '__generate_sim_config_file'")
+        ts_script_bug(
+            f"Simulator '{simulator}' not supported in function '__generate_sim_config_file'"
+        )
 
 
 def __add_comp_sim_elab_opts(cfg_dict: dict, kwd: str) -> list:
@@ -277,7 +274,9 @@ def __add_generics(cfg_dict: dict) -> list:
             cmd.append(f"-gvalue {gen_name}={gen_val}")
 
     else:
-        ts_script_bug(f"Simulator '{simulator}' not supported in function '__add_generics'")
+        ts_script_bug(
+            f"Simulator '{simulator}' not supported in function '__add_generics'"
+        )
 
     return cmd
 
@@ -305,13 +304,16 @@ def __add_parameters(cfg_dict: dict) -> list:
             cmd.append(f"-pvalue+{param_name}={param_val}")
 
     else:
-        ts_script_bug(f"Simulator '{simulator}' not supported in function '__add_parameters'")
+        ts_script_bug(
+            f"Simulator '{simulator}' not supported in function '__add_parameters'"
+        )
 
     return cmd
 
 
-def __build_compile_command(language: str, sim_cmds_dict: dict,
-                            source_file_dict: dict, log_file_path: str) -> str:
+def __build_compile_command(
+    language: str, sim_cmds_dict: dict, source_file_dict: dict, log_file_path: str
+) -> str:
     """
     Builds compile command.
     :param language: Language of source file
@@ -319,16 +321,19 @@ def __build_compile_command(language: str, sim_cmds_dict: dict,
     :param source_file_dict: Source file dictionary (entry of "source_list" list)
     :param log_file_path: Path to compile log file
     """
+
     def __add_define(config_dict, comp_cmds_dict):
         try:
             config_dict["define"]
         except (TypeError, KeyError):
             return []
 
-        return [comp_cmds_dict["define"].format(k)
-                if v is None
-                else comp_cmds_dict["define_val"].format(k, v)
-                for k, v in config_dict["define"].items()]
+        return [
+            comp_cmds_dict["define"].format(k)
+            if v is None
+            else comp_cmds_dict["define_val"].format(k, v)
+            for k, v in config_dict["define"].items()
+        ]
 
     def __add_include_dirs(config_dict, comp_cmds_dict):
         try:
@@ -338,9 +343,10 @@ def __build_compile_command(language: str, sim_cmds_dict: dict,
 
         # We can afford to expand relative to TS_REPO_ROOT because all include directories
         # relative to source list files were expanded upon list file load!
-        return [comp_cmds_dict["include_dirs"].format(ts_get_root_rel_path(inc_dir))
-                for inc_dir in config_dict["include_dirs"]]
-
+        return [
+            comp_cmds_dict["include_dirs"].format(ts_get_root_rel_path(inc_dir))
+            for inc_dir in config_dict["include_dirs"]
+        ]
 
     comp_cmds_dict = sim_cmds_dict["compile"]
 
@@ -350,8 +356,12 @@ def __build_compile_command(language: str, sim_cmds_dict: dict,
         comp_cmd.append(__GUI_COMPILE_OPTIONS[ts_get_cfg("gui")]["languages"][language])
     except KeyError:
         # Language not supported
-        ts_throw_error(TsErrCode.ERR_CMP_1, language, ts_get_cfg("simulator"),
-            list(comp_cmds_dict["languages"].keys()))
+        ts_throw_error(
+            TsErrCode.ERR_CMP_1,
+            language,
+            ts_get_cfg("simulator"),
+            list(comp_cmds_dict["languages"].keys()),
+        )
 
     # Check compile command can be found
     comp_cmd_short, *_ = comp_cmd[0].split(maxsplit=1)
@@ -365,9 +375,11 @@ def __build_compile_command(language: str, sim_cmds_dict: dict,
     if language in ("verilog", "system_verilog"):
         # Add Global, target-specific and file-specific defines and include directories
         for function in (__add_define, __add_include_dirs):
-            for cfg_dict in (ts_get_cfg(),
-                            ts_get_cfg("targets")[ts_get_cfg("target")],
-                            source_file_dict):
+            for cfg_dict in (
+                ts_get_cfg(),
+                ts_get_cfg("targets")[ts_get_cfg("target")],
+                source_file_dict,
+            ):
                 comp_cmd.extend(function(cfg_dict, comp_cmds_dict))
 
     # VHDL language standard
@@ -397,9 +409,11 @@ def __build_compile_command(language: str, sim_cmds_dict: dict,
         comp_cmd.append(comp_cmds_dict["verbose"])
 
     # Add Global, Target specific and file specific compile options
-    for cfg_dict in (ts_get_cfg(),
-                        ts_get_cfg("targets")[ts_get_cfg("target")],
-                        source_file_dict):
+    for cfg_dict in (
+        ts_get_cfg(),
+        ts_get_cfg("targets")[ts_get_cfg("target")],
+        source_file_dict,
+    ):
         comp_cmd.extend(__add_comp_sim_elab_opts(cfg_dict, "comp_options"))
 
     # Add Extra compile options from command line
@@ -431,16 +445,20 @@ def __run_uvm_compile() -> int:
         # VCS needs one call of vlogan with no file path provided to enable UVM
         # compilation. To do this, we build a "dummy file" dictionary and place
         # the compilation into UVM library!
-        cmd = __build_compile_command("system_verilog",
-                                    __SIMULATOR_COMMANDS[simulator],
-                                    {"library": "uvm"},
-                                    ts_get_root_rel_path(TsGlobals.TS_TMP_LOG_FILE_PATH))
+        cmd = __build_compile_command(
+            "system_verilog",
+            __SIMULATOR_COMMANDS[simulator],
+            {"library": "uvm"},
+            ts_get_root_rel_path(TsGlobals.TS_TMP_LOG_FILE_PATH),
+        )
 
         ts_info(TsInfoCode.GENERIC, "UVM compile command:")
         ts_info(TsInfoCode.GENERIC, cmd)
 
     else:
-        ts_script_bug(f"Simulator '{simulator}' not supported in function '__run_uvm_compile'")
+        ts_script_bug(
+            f"Simulator '{simulator}' not supported in function '__run_uvm_compile'"
+        )
 
     return exec_cmd_in_dir(ts_get_cfg("build_dir"), cmd)
 
@@ -454,13 +472,18 @@ def __compile_all_files():
         included_dirs = set()
         for element in elements:
             with contextlib.suppress(KeyError):
-                included_dirs.update(set(ts_get_root_rel_path(d) for d in element["include_dirs"]))
+                included_dirs.update(
+                    set(ts_get_root_rel_path(d) for d in element["include_dirs"])
+                )
 
         included_files = []
         for d in included_dirs:
             for f in os.scandir(d):
-                if os.path.splitext(f)[1] in (".v", ".sv", ".svh", ".svi", ".pkg") \
-                and os.path.isfile(f) and not os.path.islink(f):
+                if (
+                    os.path.splitext(f)[1] in (".v", ".sv", ".svh", ".svi", ".pkg")
+                    and os.path.isfile(f)
+                    and not os.path.islink(f)
+                ):
                     included_files.append(os.path.join(d, f))
         return included_files
 
@@ -470,7 +493,9 @@ def __compile_all_files():
     tmp_log_file_path = ts_get_root_rel_path(TsGlobals.TS_TMP_LOG_FILE_PATH)
 
     # Get included files (relevant for Verilog and SystemVerilog)
-    included_files = _get_included_files(ts_get_cfg(), ts_get_cfg("targets")[ts_get_cfg("target")])
+    included_files = _get_included_files(
+        ts_get_cfg(), ts_get_cfg("targets")[ts_get_cfg("target")]
+    )
 
     libs_to_compile = {}
 
@@ -488,25 +513,29 @@ def __compile_all_files():
         # For each library, draw a list of the files to be compiled
         # and the associated compilation command
         libs_to_compile[lib] = {
-            "compilation_commands": [] ,
+            "compilation_commands": [],
             "files_to_compile": [],
             # Maintain a list of the files which have already been compiled
             # so we can skip them if they have not changed
-            "list_of_files": __LIB_FILE_LIST(lib_dir)
+            "list_of_files": __LIB_FILE_LIST(lib_dir),
         }
 
         # Get list of the files that have been already compiled
         try:
             with open(libs_to_compile[lib]["list_of_files"], "rb") as fd:
                 already_compiled_files = pickle.load(fd)
-            lib_last_modification_time = os.path.getmtime(libs_to_compile[lib]["list_of_files"])
+            lib_last_modification_time = os.path.getmtime(
+                libs_to_compile[lib]["list_of_files"]
+            )
         except FileNotFoundError:
             already_compiled_files = set()
             lib_last_modification_time = 0.0
 
         # If any globally included file is newer than last compilation
         # force compilation (Verilog and SystemVerilog)
-        force_verilog = any(os.path.getmtime(f) > lib_last_modification_time for f in included_files)
+        force_verilog = any(
+            os.path.getmtime(f) > lib_last_modification_time for f in included_files
+        )
 
         current_comp_cmd = ""
         current_file_list = []
@@ -521,11 +550,19 @@ def __compile_all_files():
                 try:
                     language = __ALLOWED_FILE_EXTENSIONS[file_ext]
                 except KeyError:
-                    ts_throw_error(TsErrCode.ERR_CMP_0, file_ext, source_file_dict["full_path"],
-                                   list(__ALLOWED_FILE_EXTENSIONS.keys()))
+                    ts_throw_error(
+                        TsErrCode.ERR_CMP_0,
+                        file_ext,
+                        source_file_dict["full_path"],
+                        list(__ALLOWED_FILE_EXTENSIONS.keys()),
+                    )
             elif language not in __ALLOWED_FILE_EXTENSIONS.values():
-                ts_throw_error(TsErrCode.ERR_CMP_1, language, ts_get_cfg("simulator"),
-                                list(__ALLOWED_FILE_EXTENSIONS.values()))
+                ts_throw_error(
+                    TsErrCode.ERR_CMP_1,
+                    language,
+                    ts_get_cfg("simulator"),
+                    list(__ALLOWED_FILE_EXTENSIONS.values()),
+                )
 
             if language != "vhdl":
                 vhdl_only = False
@@ -534,21 +571,37 @@ def __compile_all_files():
             if source_file_dict["full_path"] in already_compiled_files:
                 # Do not compile file if it has not changed since last compilation of the lib
                 # or if any of its includes has changed (only Verilog and SystemVerilog)
-                if os.path.getmtime(source_file_dict["full_path"]) < lib_last_modification_time:
-                    if language == "vhdl" \
-                        or (not force_verilog
-                            and all(map(lambda f: os.path.getmtime(f) < lib_last_modification_time,
-                                    _get_included_files(source_file_dict)))):
-                            ts_info(TsInfoCode.GENERIC, f"Skipping unchanged file {source_file_dict['full_path']}")
-                            continue
+                if (
+                    os.path.getmtime(source_file_dict["full_path"])
+                    < lib_last_modification_time
+                ):
+                    if language == "vhdl" or (
+                        not force_verilog
+                        and all(
+                            map(
+                                lambda f: os.path.getmtime(f)
+                                < lib_last_modification_time,
+                                _get_included_files(source_file_dict),
+                            )
+                        )
+                    ):
+                        ts_info(
+                            TsInfoCode.GENERIC,
+                            f"Skipping unchanged file {source_file_dict['full_path']}",
+                        )
+                        continue
 
             # Get compilation command of individual file
-            local_comp_cmd = __build_compile_command(language, sim_cmds_dict, source_file_dict, tmp_log_file_path)
+            local_comp_cmd = __build_compile_command(
+                language, sim_cmds_dict, source_file_dict, tmp_log_file_path
+            )
 
             # If file compilation command is different from latest file's add it to list of commands
             if local_comp_cmd != current_comp_cmd:
                 if current_comp_cmd != "":
-                    libs_to_compile[lib]["compilation_commands"].append(current_comp_cmd)
+                    libs_to_compile[lib]["compilation_commands"].append(
+                        current_comp_cmd
+                    )
                     libs_to_compile[lib]["files_to_compile"].append(current_file_list)
                 current_comp_cmd = local_comp_cmd
                 current_file_list = [source_file_dict["full_path"]]
@@ -568,8 +621,11 @@ def __compile_all_files():
                 pass
 
     # Filter out the libs that do not need to be compiled
-    libs_to_compile = {lib: lib_dict for lib, lib_dict in libs_to_compile.items()
-                        if lib_dict["compilation_commands"]}
+    libs_to_compile = {
+        lib: lib_dict
+        for lib, lib_dict in libs_to_compile.items()
+        if lib_dict["compilation_commands"]
+    }
 
     if libs_to_compile:
         ts_info(TsInfoCode.GENERIC, "Compilation is needed.")
@@ -586,8 +642,9 @@ def __compile_all_files():
             ts_print(f"Compiling files for library: '{lib}'", color=TsColors.PURPLE)
 
             # Compile files in batches (command, list of files)
-            for comp_cmd, comp_file_list in zip(lib_dict["compilation_commands"],
-                                                lib_dict["files_to_compile"]):
+            for comp_cmd, comp_file_list in zip(
+                lib_dict["compilation_commands"], lib_dict["files_to_compile"]
+            ):
 
                 final_comp_cmd = comp_cmd + " " + " ".join(comp_file_list)
 
@@ -597,10 +654,14 @@ def __compile_all_files():
 
                 # Finally, call the compile command and evaluate it
                 # Stash stderr. Error message is anyway printed to stdout too.
-                comp_res = exec_cmd_in_dir(ts_get_cfg("build_dir"), final_comp_cmd, no_std_err=True)
+                comp_res = exec_cmd_in_dir(
+                    ts_get_cfg("build_dir"), final_comp_cmd, no_std_err=True
+                )
 
                 # Append temporary log file to global log file
-                with open(log_file_path, "a") as log_file, open(tmp_log_file_path, "r") as tmp_log_file:
+                with open(log_file_path, "a") as log_file, open(
+                    tmp_log_file_path, "r"
+                ) as tmp_log_file:
                     shutil.copyfileobj(tmp_log_file, log_file)
 
                 # Check compilation result
@@ -645,8 +706,7 @@ def __write_log_trailer(log_file_path, exit_code, run_time, log_type):
 
 
 def __generate_coverage_spec_file(dir, top_entity):
-    """
-    """
+    """ """
     if ts_get_cfg("simulator") == "vcs":
         cs_file_path = os.path.join(dir, "vcs_coverage_spec")
         split_entity = top_entity
@@ -660,11 +720,14 @@ def __generate_coverage_spec_file(dir, top_entity):
 
         return cs_file_path
     else:
-        ts_script_bug("Coverage specification not supported for other simulator than VCS!")
+        ts_script_bug(
+            "Coverage specification not supported for other simulator than VCS!"
+        )
 
 
-
-def __build_elab_command(test: dict, top_entity: str, log_file_path: str = "") -> Tuple[str, str]:
+def __build_elab_command(
+    test: dict, top_entity: str, log_file_path: str = ""
+) -> Tuple[str, str]:
     """
     Builds elaboration command.
     :param test: Test object/dictionary (from test list file)
@@ -702,10 +765,12 @@ def __build_elab_command(test: dict, top_entity: str, log_file_path: str = "") -
     elab_cmd.append(elab_dict["common_options"])
 
     # Add Global, Target specific, Test specific and Verbosity level specific elab. options
-    for cfg_dict in (ts_get_cfg(),
-                        ts_get_cfg("targets")[ts_get_cfg("target")],
-                        get_test(test["name"], TsGlobals.TS_TEST_LIST),
-                        ts_get_cfg("sim_verbosity_levels")[ts_get_cfg("sim_verbosity")]):
+    for cfg_dict in (
+        ts_get_cfg(),
+        ts_get_cfg("targets")[ts_get_cfg("target")],
+        get_test(test["name"], TsGlobals.TS_TEST_LIST),
+        ts_get_cfg("sim_verbosity_levels")[ts_get_cfg("sim_verbosity")],
+    ):
         elab_cmd.extend(__add_comp_sim_elab_opts(cfg_dict, "elab_options"))
 
     # Add extra options passed from command line
@@ -713,23 +778,33 @@ def __build_elab_command(test: dict, top_entity: str, log_file_path: str = "") -
 
     # Add global, target, test  and verbosity level specific generics and parameters
     for function in (__add_generics, __add_parameters):
-        for cfg_dict in (ts_get_cfg(),
-                            ts_get_cfg("targets")[ts_get_cfg("target")],
-                            test,
-                            ts_get_cfg("sim_verbosity_levels")[ts_get_cfg("sim_verbosity")]):
+        for cfg_dict in (
+            ts_get_cfg(),
+            ts_get_cfg("targets")[ts_get_cfg("target")],
+            test,
+            ts_get_cfg("sim_verbosity_levels")[ts_get_cfg("sim_verbosity")],
+        ):
             elab_cmd.extend(function(cfg_dict))
 
     # Add test name generic/parameter (if set)
     for single_dict in (ts_get_cfg(), ts_get_cfg("targets")[ts_get_cfg("target")]):
         if single_dict["test_name_strategy"] == "generic_parameter":
-            for param, item, function in (("test_name_generic", "generics", __add_generics),
-                                        ("test_name_parameter", "parameters", __add_parameters)):
+            for param, item, function in (
+                ("test_name_generic", "generics", __add_generics),
+                ("test_name_parameter", "parameters", __add_parameters),
+            ):
                 with contextlib.suppress(KeyError):
-                    elab_cmd.extend(function({item : {single_dict[param]: test["base_name"]}}))
+                    elab_cmd.extend(
+                        function({item: {single_dict[param]: test["base_name"]}})
+                    )
 
     # Add simulation resolution
     if "simulation_resolution" in ts_get_cfg():
-        elab_cmd.append(elab_dict["simulation_resolution"].format(ts_get_cfg("simulation_resolution")))
+        elab_cmd.append(
+            elab_dict["simulation_resolution"].format(
+                ts_get_cfg("simulation_resolution")
+            )
+        )
 
     # Add UVM elab options
     if ts_is_uvm_enabled():
@@ -738,7 +813,9 @@ def __build_elab_command(test: dict, top_entity: str, log_file_path: str = "") -
     # Append top entity
     elab_cmd.append(top_entity)
 
-    return " ".join(filter(str.strip, elab_cmd)), elab_dict["log_file"].format(log_file_path)
+    return " ".join(filter(str.strip, elab_cmd)), elab_dict["log_file"].format(
+        log_file_path
+    )
 
 
 def ts_sim_compile():
@@ -757,7 +834,9 @@ def ts_sim_compile():
 
     ts_debug("Create 'comp_log' directory (if it does not exist)")
     if ts_get_cfg("clear_logs"):
-        shutil.rmtree(ts_get_root_rel_path(TsGlobals.TS_COMP_LOG_DIR_PATH), ignore_errors=True)
+        shutil.rmtree(
+            ts_get_root_rel_path(TsGlobals.TS_COMP_LOG_DIR_PATH), ignore_errors=True
+        )
     create_sim_sub_dir(TsGlobals.TS_COMP_LOG_DIR_PATH)
 
     __compile_all_files()
@@ -793,7 +872,9 @@ def ts_sim_elaborate(test: dict) -> str:
     ts_info(TsInfoCode.GENERIC, elab_cmd)
 
     # Scan all elab directories for simulation binary
-    ts_info(TsInfoCode.GENERIC, "Scanning elaboration directories for elaboration command.")
+    ts_info(
+        TsInfoCode.GENERIC, "Scanning elaboration directories for elaboration command."
+    )
     for dir_path in __find_elab_dirs():
         ts_debug(f"Scanning {dir_path}")
 
@@ -814,17 +895,21 @@ def ts_sim_elaborate(test: dict) -> str:
         for lib_name, lib_dir in target_libs_list:
             ts_debug(f"Checking library compilation directory. '{lib_name}': {lib_dir}")
             if not os.path.isdir(lib_dir):
-                ts_throw_error(TsErrCode.GENERIC,
-                                f"Library compilation directory not found! '{lib_name}': {lib_dir}")
+                ts_throw_error(
+                    TsErrCode.GENERIC,
+                    f"Library compilation directory not found! '{lib_name}': {lib_dir}",
+                )
             if lib_name.lower() == "uvm":
                 continue
-            if os.path.getmtime(sim_cfg_file) < os.path.getmtime(__LIB_FILE_LIST(lib_dir)):
+            if os.path.getmtime(sim_cfg_file) < os.path.getmtime(
+                __LIB_FILE_LIST(lib_dir)
+            ):
                 ts_info(TsInfoCode.GENERIC, "Elaboration needed")
                 break
         else:
             with open(log_file_path, "w") as fd:
                 fd.write(f"Elaboration up-to-date: {elab_dir}")
-            __write_log_trailer(log_file_path, 0, .0, "ELAB")
+            __write_log_trailer(log_file_path, 0, 0.0, "ELAB")
             ts_print("Elaboration up-to-date", color=TsColors.PURPLE, big=True)
             return log_file_path, elab_dir
         break
@@ -844,8 +929,12 @@ def ts_sim_elaborate(test: dict) -> str:
 
     # Run elaboration in test specific directory
     run_time = time.time()
-    elab_exit_code = exec_cmd_in_dir(elab_dir, elab_cmd + " " + log_file_opt,
-                            ts_get_cfg("no_sim_out"), ts_get_cfg("no_sim_out"))
+    elab_exit_code = exec_cmd_in_dir(
+        elab_dir,
+        elab_cmd + " " + log_file_opt,
+        ts_get_cfg("no_sim_out"),
+        ts_get_cfg("no_sim_out"),
+    )
     run_time = time.time() - run_time
 
     # Append log trailer
@@ -912,13 +1001,17 @@ def __create_sim_command_file(directory: str, sim_cmd_file: str):
             lines.append("exit")
 
         with open(sim_cmd_file, "w") as fd:
-            fd.writelines(map(lambda x: x + '\n', lines))
+            fd.writelines(map(lambda x: x + "\n", lines))
 
     else:
-        ts_script_bug(f"Simulator '{simulator}' not supported in function '__create_sim_command_file'")
+        ts_script_bug(
+            f"Simulator '{simulator}' not supported in function '__create_sim_command_file'"
+        )
 
 
-def __build_sim_command(test: dict, elab_dir: str, sim_dir: str, log_file_path: str, no_seed: bool = False) -> str:
+def __build_sim_command(
+    test: dict, elab_dir: str, sim_dir: str, log_file_path: str, no_seed: bool = False
+) -> str:
     """
     Builds simulation command.
     :param sim_binary: Simulator specific command to launch simulation
@@ -949,10 +1042,12 @@ def __build_sim_command(test: dict, elab_dir: str, sim_dir: str, log_file_path: 
     sim_cmd.append(sim_cmds["common_options"])
 
     # Add Global, Target specific and Test specific simulation options
-    for cfg_dict in (ts_get_cfg(),
-                        ts_get_cfg("targets")[ts_get_cfg("target")],
-                        get_test(test["name"], TsGlobals.TS_TEST_LIST),
-                        ts_get_cfg("sim_verbosity_levels")[ts_get_cfg("sim_verbosity")]):
+    for cfg_dict in (
+        ts_get_cfg(),
+        ts_get_cfg("targets")[ts_get_cfg("target")],
+        get_test(test["name"], TsGlobals.TS_TEST_LIST),
+        ts_get_cfg("sim_verbosity_levels")[ts_get_cfg("sim_verbosity")],
+    ):
         sim_cmd.extend(__add_comp_sim_elab_opts(cfg_dict, "sim_options"))
 
     # Add extra options passed from command line
@@ -1041,8 +1136,9 @@ def ts_sim_run(test: dict, elab_dir: str = "") -> str:
 
     # Run simulation
     run_time = time.time()
-    sim_exit_code = exec_cmd_in_dir(sim_dir, sim_cmd,
-                                ts_get_cfg("no_sim_out"), ts_get_cfg("no_sim_out"))
+    sim_exit_code = exec_cmd_in_dir(
+        sim_dir, sim_cmd, ts_get_cfg("no_sim_out"), ts_get_cfg("no_sim_out")
+    )
     run_time = time.time() - run_time
     ts_print("Simulation Done", color=TsColors.PURPLE, big=True)
 
@@ -1053,4 +1149,3 @@ def ts_sim_run(test: dict, elab_dir: str = "") -> str:
 
     # Return path to log file for checking results!
     return log_file_path
-

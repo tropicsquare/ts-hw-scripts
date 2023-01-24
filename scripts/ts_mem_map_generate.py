@@ -61,10 +61,9 @@ def main(raw_args=None):
         lint=args.lint,
         latex_dir=args.latex_dir,
         xml_dir=args.xml_dir,
-        do_not_clear = args.verbose,
+        do_not_clear=args.verbose,
     )
 
 
 if __name__ == "__main__":
     main()
- 

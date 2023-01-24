@@ -116,8 +116,10 @@ def __load_source_list_file(list_file_path: str, current_depth: int = 1) -> list
 
         # Expand local include directories (per-file) to absolute path!
         with contextlib.suppress(KeyError):
-            file_dict["include_dirs"] = [ts_get_file_rel_path(list_file_path, inc_dir)
-                                            for inc_dir in file_dict["include_dirs"]]
+            file_dict["include_dirs"] = [
+                ts_get_file_rel_path(list_file_path, inc_dir)
+                for inc_dir in file_dict["include_dirs"]
+            ]
 
         ts_debug(f"Returned file is: {file_dict}")
         ret_val.append(file_dict)
@@ -131,6 +133,7 @@ def load_source_list_files(design_target: str):
     :param design_target: Current design target
     """
     _MAX_NESTING_LEVEL = 5
+
     def _get_all_sources_for_target(target, level=0):
         if level >= _MAX_NESTING_LEVEL:
             raise RecursionError(f"Maximum nesting level reached: {_MAX_NESTING_LEVEL}")
@@ -141,8 +144,10 @@ def load_source_list_files(design_target: str):
 
             # Reference to SLF view of PDK object
             if source.startswith(":"):
-                ts_debug("Searching PDK object source list file from: {}".format(source))
-                
+                ts_debug(
+                    "Searching PDK object source list file from: {}".format(source)
+                )
+
                 # For backwards compatibility most of repositories do not have design config
                 # available at the time of implementation! So we must avoid bug if we tried
                 # to reference PDK object without any design config file loaded!
@@ -158,7 +163,7 @@ def load_source_list_files(design_target: str):
                 # Find PDK object matching to first word in the path
                 pdk_obj = None
                 for obj_type in ALLOWED_DESIGN_OBJ_TYPES:
-                    if (obj_type in TsGlobals.TS_DESIGN_CFG["design"]):
+                    if obj_type in TsGlobals.TS_DESIGN_CFG["design"]:
                         for obj in TsGlobals.TS_DESIGN_CFG["design"][obj_type]:
                             obj_name = list(obj.keys())[0]
                             obj_version = list(obj.values())[0]
@@ -168,32 +173,40 @@ def load_source_list_files(design_target: str):
                 if pdk_obj:
                     try:
                         found = False
-                        
+
                         # Make sure we iterate list, slf view can be also only string!
                         avail_lst = pdk_obj["views"]["slf"]
-                        if (type(avail_lst) != list):
+                        if type(avail_lst) != list:
                             avail_lst = [avail_lst]
 
                         for src in avail_lst:
                             if os.path.basename(src) == split_name[-1]:
-                                ts_debug("Appending source list file: {} from PDK object: {}\n".format(src, pdk_obj["name"]))
+                                ts_debug(
+                                    "Appending source list file: {} from PDK object: {}\n".format(
+                                        src, pdk_obj["name"]
+                                    )
+                                )
                                 sources.append(src)
                                 found = True
                         if not found:
                             raise Exception
                     except:
                         if "slf" in pdk_obj["views"]:
-                            filt = [os.path.basename(x) for x in pdk_obj["views"]["slf"]]
+                            filt = [
+                                os.path.basename(x) for x in pdk_obj["views"]["slf"]
+                            ]
                         else:
                             filt = []
-                        ts_throw_error(TsErrCode.ERR_SLF_20, split_name[-1], split_name[0], filt)
-                    
+                        ts_throw_error(
+                            TsErrCode.ERR_SLF_20, split_name[-1], split_name[0], filt
+                        )
+
                 else:
                     ts_throw_error(TsErrCode.ERR_SLF_19, split_name[0], design_target)
 
-                #except:
+                # except:
                 #    pass
-            
+
             # Regular YAML file
             elif source.endswith(".yml"):
                 sources.append(source)
@@ -204,9 +217,11 @@ def load_source_list_files(design_target: str):
                 try:
                     sources.extend(_get_all_sources_for_target(source, level + 1))
                 except Exception as e:
-                    ts_throw_error(TsErrCode.GENERIC,
-                                    f"An issue occurred while parsing target '{source}' "
-                                    f"on which depends target '{target}': {e}")
+                    ts_throw_error(
+                        TsErrCode.GENERIC,
+                        f"An issue occurred while parsing target '{source}' "
+                        f"on which depends target '{target}': {e}",
+                    )
         return sources
 
     target_cfg = ts_get_cfg("targets")[design_target]
@@ -214,12 +229,12 @@ def load_source_list_files(design_target: str):
         ts_script_bug("Target whose source list file you are trying to load is empty!")
 
     source_lists = []
-    #try:
+    # try:
     for source_list_path in _get_all_sources_for_target(design_target):
         # Remove duplicates
         if source_list_path not in source_lists:
             source_lists.append(source_list_path)
-    #except Exception as e:
+    # except Exception as e:
     #    ts_throw_error(TsErrCode.GENERIC,
     #                    f"An issue occurred while parsing target '{design_target}': {e}")
 
@@ -228,7 +243,9 @@ def load_source_list_files(design_target: str):
     src_list = []
     for source_list_path in source_lists:
         if not source_list_path.startswith("::"):
-            src_list.extend(__load_source_list_file(ts_get_root_rel_path(source_list_path)))
+            src_list.extend(
+                __load_source_list_file(ts_get_root_rel_path(source_list_path))
+            )
 
     # Create two lists of source files: flat and library-wise hierarchical
     TsGlobals.TS_SIM_SRCS = []
@@ -249,16 +266,19 @@ def print_source_file_list(print_full_path: bool = True):
     """
     ts_print("List of available source files:")
     for lib, files in TsGlobals.TS_SIM_SRCS_BY_LIB.items():
-        ts_print(lib,
-                *map(lambda f: f["full_path"] if print_full_path else f["file"],
-                    files),
-                sep="\n\t- ")
+        ts_print(
+            lib,
+            *map(lambda f: f["full_path"] if print_full_path else f["file"], files),
+            sep="\n\t- ",
+        )
+
 
 def get_netlist_from_slf(list_file_path: str):
-    """
-    """
+    """ """
     src_list = __load_source_list_file(ts_get_root_rel_path(list_file_path))
     if os.path.exists(src_list[0]["full_path"]):
         return src_list[0]["full_path"]
     else:
-        ts_throw_error(TsErrCode.GENERIC("netlist {} not found!".format(src_list[0]["full_path"])))
+        ts_throw_error(
+            TsErrCode.GENERIC("netlist {} not found!".format(src_list[0]["full_path"]))
+        )

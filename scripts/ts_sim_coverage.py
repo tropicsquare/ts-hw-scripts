@@ -70,21 +70,29 @@ def __merge_databases(args):
             #   - path relative to TS_SIM_BUILD_PATH, e.g. sim_rtl_test_525447/simv.vdb
             #   - absolute path, e.g. /projects/tropic01/sim/build/sim_rtl_test_525447/simv.vdb
             if not test.endswith("simv.vdb"):
-                input_db = ts_get_root_rel_path(TsGlobals.TS_SIM_BUILD_PATH, test, "simv.vdb")
+                input_db = ts_get_root_rel_path(
+                    TsGlobals.TS_SIM_BUILD_PATH, test, "simv.vdb"
+                )
             else:
                 input_db = ts_get_root_rel_path(TsGlobals.TS_SIM_BUILD_PATH, test)
             ts_debug(f"Checking existence of '{input_db}'")
             if not os.path.exists(input_db):
-                ts_throw_error(TsErrCode.GENERIC, f"Input database '{input_db}' does not exist! "
-                                        "Make sure you ran the simulation with the '--coverage' option.")
+                ts_throw_error(
+                    TsErrCode.GENERIC,
+                    f"Input database '{input_db}' does not exist! "
+                    "Make sure you ran the simulation with the '--coverage' option.",
+                )
             ts_debug("OK")
             input_dbs.add(input_db)
     else:
         # Else take all databases available in build directory
         build_dir = ts_get_root_rel_path(TsGlobals.TS_SIM_BUILD_PATH)
         if not os.path.isdir(build_dir):
-            ts_throw_error(TsErrCode.GENERIC, f"Build directory '{build_dir}' does not exist! "
-                                        "Make sure to run some simulation before launching coverage tool.")
+            ts_throw_error(
+                TsErrCode.GENERIC,
+                f"Build directory '{build_dir}' does not exist! "
+                "Make sure to run some simulation before launching coverage tool.",
+            )
         for dir_entry in os.scandir(build_dir):
             if dir_entry.is_dir() and dir_entry.name.startswith("sim"):
                 sim_db = os.path.join(dir_entry.path, "simv.vdb")
@@ -96,8 +104,12 @@ def __merge_databases(args):
 
     # Add elaboration coverage databases associated to simulation databases
     for sim_db in input_dbs.copy():
-        with open(os.path.join(os.path.dirname(sim_db),
-                                "_ts_flow_reference_elaboration_directory"), "rb") as fd:
+        with open(
+            os.path.join(
+                os.path.dirname(sim_db), "_ts_flow_reference_elaboration_directory"
+            ),
+            "rb",
+        ) as fd:
             elab_db = os.path.join(pickle.load(fd), "simv.vdb")
             if elab_db not in input_dbs:
                 ts_debug(f"Adding elaboration database: '{elab_db}'")
@@ -110,7 +122,9 @@ def __merge_databases(args):
     if args["elfile"]:
         elfile = ts_get_root_rel_path(args["elfile"])
         if not os.path.isfile(elfile):
-            ts_throw_error(TsErrCode.GENERIC, f"Exclusion file '{elfile}' does not exist.")
+            ts_throw_error(
+                TsErrCode.GENERIC, f"Exclusion file '{elfile}' does not exist."
+            )
         ts_info(TsInfoCode.GENERIC, f"Using exclusion file '{elfile}'")
         command.append(f"-elfile {elfile}")
 
@@ -129,8 +143,11 @@ def __merge_databases(args):
         shutil.rmtree(output_db, ignore_errors=True)
     ts_info(TsInfoCode.GENERIC, f"Checking absence of '{output_db}'")
     if os.path.isdir(output_db):
-        ts_throw_error(TsErrCode.GENERIC, f"Output database '{output_db}' already exists! "
-                                                "Activate the '--clear' option to remove it.")
+        ts_throw_error(
+            TsErrCode.GENERIC,
+            f"Output database '{output_db}' already exists! "
+            "Activate the '--clear' option to remove it.",
+        )
     ts_debug("OK")
     command.append(f"-dbname {output_db}")
 
@@ -145,7 +162,7 @@ def __merge_databases(args):
         directory=COVERAGE_OUTPUT_DIR,
         command=command,
         no_std_out=ts_get_cfg("no_sim_out"),
-        no_std_err=ts_get_cfg("no_sim_out")
+        no_std_err=ts_get_cfg("no_sim_out"),
     )
     run_time = time.time() - run_time
     ts_debug(f"Coverage merge runtime: {run_time:0.3e} second(s).")
@@ -176,7 +193,9 @@ def __show_output_database(args):
     ts_debug("OK")
 
     # - Create command
-    command = f"$VCS_HOME/gui/dve/bin/dve -full64 -ucliplatform=linux64 -cov -dir {output_db}"
+    command = (
+        f"$VCS_HOME/gui/dve/bin/dve -full64 -ucliplatform=linux64 -cov -dir {output_db}"
+    )
     ts_info(TsInfoCode.GENERIC, os.path.expandvars(command))
 
     # - Run GUI command
@@ -184,7 +203,7 @@ def __show_output_database(args):
         directory=COVERAGE_OUTPUT_DIR,
         command=command,
         no_std_out=ts_get_cfg("no_sim_out"),
-        no_std_err=ts_get_cfg("no_sim_out")
+        no_std_err=ts_get_cfg("no_sim_out"),
     )
 
 
@@ -197,7 +216,7 @@ def sim_coverage(arguments):
         "gui": False,
         "no_report": False,
         "no_sim_out": False,
-        **vars(arguments)
+        **vars(arguments),
     }
 
     # Remove coverage output directory
@@ -235,4 +254,3 @@ if __name__ == "__main__":
 
     # Launch compilation
     sys.exit(sim_coverage(args))
-

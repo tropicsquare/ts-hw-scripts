@@ -19,17 +19,57 @@ __maintainer__ = "Jan Zapeca"
 
 import os
 import sys
-import argcomplete
-from internal.ts_hw_args import TsArgumentParser, add_cfg_files_arg, add_force_arg, add_lic_wait_arg, add_release_arg, add_runcode_arg, add_source_data_arg, add_stayin_arg, add_ts_common_args, add_ts_sta_run_args
-from scripts.internal.ts_hw_cfg_parser import check_valid_design_target, check_valid_mode_arg, check_valid_source_data_arg, do_design_config_init, do_sim_config_init
 
+import argcomplete
+from internal.ts_hw_args import (
+    TsArgumentParser,
+    add_cfg_files_arg,
+    add_force_arg,
+    add_lic_wait_arg,
+    add_release_arg,
+    add_runcode_arg,
+    add_source_data_arg,
+    add_stayin_arg,
+    add_ts_common_args,
+    add_ts_sta_run_args,
+)
 from internal.ts_hw_common import init_signals_handler, ts_get_root_rel_path
 from internal.ts_hw_global_vars import TsGlobals
-from internal.ts_hw_logging import TsColors, TsErrCode, TsInfoCode, ts_configure_logging, ts_info, ts_print, ts_throw_error
+from internal.ts_hw_logging import (
+    TsColors,
+    TsErrCode,
+    TsInfoCode,
+    ts_configure_logging,
+    ts_info,
+    ts_print,
+    ts_throw_error,
+)
 from internal.ts_hw_source_list_files import load_source_list_files
-from internal.ts_hw_sta_support import build_sta_cmd, create_sta_sub_dirs, runcode_dir_test, set_sta_global_vars, sta_design_cfg_file, sta_dmsa_file, sta_logging, sta_open_design, sta_setup
-from internal.ts_hw_syn_support import delete_syn_sub_dir, exec_cmd_in_dir_interactive, release, set_license_queuing
+from internal.ts_hw_sta_support import (
+    build_sta_cmd,
+    create_sta_sub_dirs,
+    runcode_dir_test,
+    set_sta_global_vars,
+    sta_design_cfg_file,
+    sta_dmsa_file,
+    sta_logging,
+    sta_open_design,
+    sta_setup,
+)
+from internal.ts_hw_syn_support import (
+    delete_syn_sub_dir,
+    exec_cmd_in_dir_interactive,
+    release,
+    set_license_queuing,
+)
 
+from scripts.internal.ts_hw_cfg_parser import (
+    check_valid_design_target,
+    check_valid_mode_arg,
+    check_valid_source_data_arg,
+    do_design_config_init,
+    do_sim_config_init,
+)
 
 if __name__ == "__main__":
 
@@ -43,13 +83,13 @@ if __name__ == "__main__":
     add_ts_common_args(parser)
     add_cfg_files_arg(parser)
     add_runcode_arg(parser)
-    add_lic_wait_arg(parser,"pt_shell")
-    add_stayin_arg(parser,"pt_shell")
-    add_ts_sta_run_args(parser,"pt_shell")
+    add_lic_wait_arg(parser, "pt_shell")
+    add_stayin_arg(parser, "pt_shell")
+    add_ts_sta_run_args(parser, "pt_shell")
     add_force_arg(parser)
-    add_source_data_arg(parser,"syn")
+    add_source_data_arg(parser, "syn")
     add_release_arg(parser)
-    
+
     argcomplete.autocomplete(parser)
     args = parser.parse_args()
     ts_configure_logging(args)
@@ -77,8 +117,8 @@ if __name__ == "__main__":
     # Check existance of runcode - runcode is also name of run dir TS_REPO_ROOT/sta/{runcode}
     if args.runcode is None:
         ts_throw_error(TsErrCode.ERR_STA_0)
-    else: 
-        ts_info(TsInfoCode.INFO_STA_0,args.runcode)
+    else:
+        ts_info(TsInfoCode.INFO_STA_0, args.runcode)
         # Set sta flow global variables
         set_sta_global_vars(args)
 
@@ -87,19 +127,19 @@ if __name__ == "__main__":
         ts_throw_error(TsErrCode.ERR_STA_6)
 
     # Check dmsa vs open selector usage
-    if (bool(args.dmsa) and bool(args.open_result)):
+    if bool(args.dmsa) and bool(args.open_result):
         ts_throw_error(TsErrCode.ERR_STA_7)
 
     # Check if user requires either to run new synthesis or to open existing synthesis database
     if args.open_result is False:
         if args.force is True:
-            ts_info(TsInfoCode.INFO_STA_2,TsGlobals.TS_STA_RUNCODE)
+            ts_info(TsInfoCode.INFO_STA_2, TsGlobals.TS_STA_RUNCODE)
             # Delete DIR of runcode name if exists
             delete_syn_sub_dir()
         else:
             # Test if database already exists, otherwise create sub-folder
             if runcode_dir_test(args) is True:
-                ts_throw_error(TsErrCode.ERR_STA_2,TsGlobals.TS_STA_RUNCODE)
+                ts_throw_error(TsErrCode.ERR_STA_2, TsGlobals.TS_STA_RUNCODE)
 
         # Create new sub-folder with name of runcode
         create_sta_sub_dirs()
@@ -107,13 +147,11 @@ if __name__ == "__main__":
     else:
         # Open database
         if runcode_dir_test(args) is True:
-            ts_info(TsInfoCode.INFO_STA_1,TsGlobals.TS_STA_RUNCODE)
+            ts_info(TsInfoCode.INFO_STA_1, TsGlobals.TS_STA_RUNCODE)
             sta_open_design(args)
         # If doesn't exist then error
         else:
-            ts_throw_error(TsErrCode.ERR_STA_1,TsGlobals.TS_STA_RUNCODE)
-
-
+            ts_throw_error(TsErrCode.ERR_STA_1, TsGlobals.TS_STA_RUNCODE)
 
     # Generates design configuration tcl file
     sta_design_cfg_file(args)
@@ -126,20 +164,29 @@ if __name__ == "__main__":
         sta_dmsa_file(TsGlobals.TS_STA_DMSA_FILE, args)
 
     # Set enviromental variable for DC - license quering
-    set_license_queuing(args,"pt_shell","SNPSLMD_QUEUE")
+    set_license_queuing(args, "pt_shell", "SNPSLMD_QUEUE")
 
     # Prepare pt_cmd
     pt_cmd = build_sta_cmd(args)
 
     # Run STA
-    exec_cmd_in_dir_interactive(TsGlobals.TS_STA_RUN_DIR,pt_cmd)
+    exec_cmd_in_dir_interactive(TsGlobals.TS_STA_RUN_DIR, pt_cmd)
 
     # Goodbye STA!
-    ts_print("STA is done!",color=TsColors.PURPLE,big=True)
+    ts_print("STA is done!", color=TsColors.PURPLE, big=True)
 
     # Release data to a given flow_dir - sta
-    if args.release and TsGlobals.TS_DESIGN_CFG["design"]["flow_dirs"]["sta"] and not args.force:
-        TsGlobals.TS_STA_RELEASE_DIR = os.path.join(ts_get_root_rel_path(TsGlobals.TS_DESIGN_CFG["design"]["flow_dirs"]["sta"],TsGlobals.TS_STA_RUNCODE))
-        release(TsGlobals.TS_STA_RUN_DIR,TsGlobals.TS_STA_RELEASE_DIR,"sta")
+    if (
+        args.release
+        and TsGlobals.TS_DESIGN_CFG["design"]["flow_dirs"]["sta"]
+        and not args.force
+    ):
+        TsGlobals.TS_STA_RELEASE_DIR = os.path.join(
+            ts_get_root_rel_path(
+                TsGlobals.TS_DESIGN_CFG["design"]["flow_dirs"]["sta"],
+                TsGlobals.TS_STA_RUNCODE,
+            )
+        )
+        release(TsGlobals.TS_STA_RUN_DIR, TsGlobals.TS_STA_RELEASE_DIR, "sta")
 
 sys.exit(0)
