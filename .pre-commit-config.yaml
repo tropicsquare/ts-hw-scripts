@@ -1,0 +1,18 @@
+repos:
+- repo: local
+  hooks:
+    - id: pycln
+      name: pycln
+      entry: pycln
+      language: system
+      files: \.py$
+    - id: isort
+      name: isort
+      entry: isort
+      language: system
+      files: \.py$
+    - id: black
+      name: black
+      entry: black
+      language: system
+      files: \.py$
