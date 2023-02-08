@@ -970,7 +970,7 @@ def add_source_data_arg(parser, default=None):
     )
 
 # Common pdk/design_cfg argument --filter-mode-usage
-def add_pd_common_args(parser):
+def add_pd_common_args(parser, default=None):
     """
     Adds common pdk/design_cfg argument --filter-mode-usage
     :param parser: Argparse parser to which arguments shall be added
@@ -978,7 +978,7 @@ def add_pd_common_args(parser):
     parser.add_argument(
         "--filter-mode-usage",
         nargs="?",
-        default=None,
+        default=default,
         choices= ('sim','syn','dft','sta','pnr','pwr','sta-signoff'),
         help=f"Defines filter for the usage attribute of a mode in ts_design_cfg.yml file. Expected values: syn,sta,dft,pnr etc."
     )
