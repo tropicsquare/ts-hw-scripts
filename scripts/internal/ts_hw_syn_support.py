@@ -235,6 +235,21 @@ def set_license_queuing(args, tool_type, env_var):
         ts_set_env_var(f"{env_var}", "True")
 
 
+def set_license_wait_time(args, tool_type, env_var,time):
+    """
+    Setting of maximum wait time for a licence
+    :param args
+    :param tool_type: name/type of tool
+    :param env_var: enviromental variable to be set
+    :param time: time in seconds
+    """
+    # If not set, do not define the variable. The False value is not working. It is synopsys tools bug.
+    if args.license_wait:
+        ts_info(TsInfoCode.GENERIC, f"Maximum waiting time {time} for {tool_type} license queuing.")
+        ts_set_env_var(f"{env_var}",time)
+
+
+
 def syn_rtl_src_file(args):
     """
     Generates target RTL synthesis TCL script

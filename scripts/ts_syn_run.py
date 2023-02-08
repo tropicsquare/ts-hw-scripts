@@ -58,6 +58,7 @@ from internal.ts_hw_syn_support import (
     open_result_test,
     release,
     set_license_queuing,
+    set_license_wait_time,
     set_syn_global_vars,
     syn_design_cfg_file,
     syn_logging,
@@ -152,7 +153,10 @@ if __name__ == "__main__":
 
     # Set enviromental variable for DC - license quering
     set_license_queuing(args, "dc_shell", "SNPSLMD_QUEUE")
+    set_license_wait_time(args, "dc_shell","SNPS_MAX_WAITTIME","1")
+    set_license_wait_time(args, "dc_shell","SNPS_MAX_QUEUETIME","1")
 
+    print(os.environ)
     # Prepare dc_cmd
     dc_cmd = build_synthesis_cmd(args)
 
