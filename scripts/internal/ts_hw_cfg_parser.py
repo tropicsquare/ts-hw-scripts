@@ -25,6 +25,7 @@ from .ts_hw_design_config_file import (
     load_design_config_file,
     load_pdk_configs,
     validate_design_config_file,
+    filter_design_config_file,
 )
 from .ts_hw_global_vars import TsGlobals
 from .ts_hw_logging import (
@@ -264,6 +265,9 @@ def do_design_config_init(args, skip_check=False, enforce=False):
 
     # Check that Design config is valid (it references towards PDK objects)
     validate_design_config_file()
+
+    # Remove filtered design modes objects
+    filter_design_config_file(args)
 
 
 def __check_pwr_scenarios():

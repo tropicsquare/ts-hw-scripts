@@ -23,7 +23,9 @@ from internal.ts_hw_args import (
     add_target_arg,
     add_ts_common_args,
     add_ts_sim_run_args,
+    add_pd_common_args,
 )
+
 from internal.ts_hw_cfg_parser import do_design_config_init, do_sim_config_init
 from internal.ts_hw_common import (
     check_target,
@@ -60,6 +62,7 @@ if __name__ == "__main__":
     add_cfg_files_arg(parser)
     add_target_arg(parser)
     add_ts_sim_run_args(parser)
+    add_pd_common_args(parser)
     argcomplete.autocomplete(parser)
     args = parser.parse_args()
     TsGlobals.TS_SIM_CFG_PATH = args.sim_cfg

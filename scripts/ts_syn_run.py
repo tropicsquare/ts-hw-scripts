@@ -31,6 +31,7 @@ from internal.ts_hw_args import (
     add_stayin_arg,
     add_ts_common_args,
     add_ts_syn_run_args,
+    add_pd_common_args,
 )
 from internal.ts_hw_cfg_parser import (
     check_valid_design_target,
@@ -57,6 +58,7 @@ from internal.ts_hw_syn_support import (
     open_result_test,
     release,
     set_license_queuing,
+    set_license_wait_time,
     set_syn_global_vars,
     syn_design_cfg_file,
     syn_logging,
@@ -83,6 +85,7 @@ if __name__ == "__main__":
     add_ts_syn_run_args(parser, "dc_shell")
     add_force_arg(parser)
     add_release_arg(parser)
+    add_pd_common_args(parser)
 
     argcomplete.autocomplete(parser)
     args = parser.parse_args()
@@ -93,7 +96,7 @@ if __name__ == "__main__":
 
     # Do Config Init
     # Config for ts_design_cfg
-    # setattr(args, "design_cfg", os.path.join(get_repo_root_path(),TsGlobals.TS_DESIGN_CFG_PATH))
+    setattr(args,"filter_mode_usage","syn")
     do_design_config_init(args, enforce=True)
     # Target need to be defined from TS_DESIGN_CFG (holder of value)
     setattr(args, "target", TsGlobals.TS_DESIGN_CFG["design"]["target"])
@@ -150,7 +153,10 @@ if __name__ == "__main__":
 
     # Set enviromental variable for DC - license quering
     set_license_queuing(args, "dc_shell", "SNPSLMD_QUEUE")
+    set_license_wait_time(args, "dc_shell","SNPS_MAX_WAITTIME","1")
+    set_license_wait_time(args, "dc_shell","SNPS_MAX_QUEUETIME","1")
 
+    print(os.environ)
     # Prepare dc_cmd
     dc_cmd = build_synthesis_cmd(args)
 

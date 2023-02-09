@@ -75,6 +75,8 @@ def add_cfg_files_arg(parser):
     )
 
 
+
+
 def add_target_arg(parser):
     """
     Adds compilation/simulation target argument.
@@ -184,6 +186,7 @@ def add_pdk_cfg_args(parser):
         action="store_true",
         help="Exports liberty files operation conditions according to a corner settings.",
     )
+
 
 
 def add_ts_sim_compile_args(parser):
@@ -964,4 +967,18 @@ def add_source_data_arg(parser, default=None):
         nargs="?",
         default=default,
         help=f"Source data from a destination folder according to flow_dir settings in a ts_design_cfg.yml file. Expected values: syn,sta,dft,pnr etc. Default value set is to {default}",
+    )
+
+# Common pdk/design_cfg argument --filter-mode-usage
+def add_pd_common_args(parser, default=None):
+    """
+    Adds common pdk/design_cfg argument --filter-mode-usage
+    :param parser: Argparse parser to which arguments shall be added
+    """
+    parser.add_argument(
+        "--filter-mode-usage",
+        nargs="?",
+        default=default,
+        choices= ('sim','syn','dft','sta','pnr','pwr','sta-signoff'),
+        help=f"Defines filter for the usage attribute of a mode in ts_design_cfg.yml file. Expected values: syn,sta,dft,pnr etc."
     )

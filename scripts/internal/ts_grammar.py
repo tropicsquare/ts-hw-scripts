@@ -490,18 +490,21 @@ GRAMMAR_PDK_CONFIG = GrammarSchema(
 #
 ###################################################################################################
 
+__mode_usage_config =  lambda s: s in ('sim','syn','sta','dft','pnr','pwr','sta-signoff')
+
+
 GRAMMAR_DSG_CONFIG = GrammarSchema(
     {
         "pdk_configs": [str],
         "design": {
             "target": str,
             Optional("flow_dirs"): {
-                Optional("pnr"): str,
+                Optional("sim"): str,
                 Optional("syn"): str,
-                Optional("pwr"): str,
                 Optional("dft"): str,
                 Optional("sta"): str,
-                Optional("sim"): str,
+                Optional("pnr"): str,
+                Optional("pwr"): str,
             },
             "pdk": str,
             "std_cells": [{str: __GRAMMAR_VERSION}],
@@ -518,6 +521,7 @@ GRAMMAR_DSG_CONFIG = GrammarSchema(
                 {
                     "name": str,
                     "corner": str,
+                    Optional("usage"): [__mode_usage_config],
                     Optional("constraints"): str,
                     Optional("tluplus"): str,
                     Optional("spef"): str,

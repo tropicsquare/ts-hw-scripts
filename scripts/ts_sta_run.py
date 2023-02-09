@@ -32,6 +32,7 @@ from internal.ts_hw_args import (
     add_stayin_arg,
     add_ts_common_args,
     add_ts_sta_run_args,
+    add_pd_common_args,
 )
 from internal.ts_hw_common import init_signals_handler, ts_get_root_rel_path
 from internal.ts_hw_global_vars import TsGlobals
@@ -63,7 +64,7 @@ from internal.ts_hw_syn_support import (
     set_license_queuing,
 )
 
-from scripts.internal.ts_hw_cfg_parser import (
+from internal.ts_hw_cfg_parser import (
     check_valid_design_target,
     check_valid_mode_arg,
     check_valid_source_data_arg,
@@ -89,6 +90,7 @@ if __name__ == "__main__":
     add_force_arg(parser)
     add_source_data_arg(parser, "syn")
     add_release_arg(parser)
+    add_pd_common_args(parser)
 
     argcomplete.autocomplete(parser)
     args = parser.parse_args()
@@ -99,6 +101,10 @@ if __name__ == "__main__":
 
     # Do Config Init
     # Config for ts_design_cfg
+    if args.sign_off:
+        setattr(args,"filter_mode_usage","sta-signoff")
+    else:
+        setattr(args,"filter_mode_usage","sta")
     do_design_config_init(args)
     # Target need to be defined from TS_DESIGN_CFG (holder of value)
     setattr(args, "target", TsGlobals.TS_DESIGN_CFG["design"]["target"])
