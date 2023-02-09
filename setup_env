@@ -22,4 +22,4 @@ source $temp_file
 rm $temp_file
 
 # Install pre-commit hook (for python sources)
-pre-commit install
+#pre-commit install
