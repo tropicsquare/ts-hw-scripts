@@ -13,7 +13,6 @@ from datetime import datetime
 import shutil
 
 from .ts_hw_common import (
-    exec_cmd_in_dir,
     get_repo_root_path,
     load_yaml_file,
     ts_get_root_rel_path,
@@ -36,6 +35,7 @@ from .ts_hw_logging import (
     ts_warning,
 )
 from .ts_hw_source_list_files import get_netlist_from_slf
+from .ts_hw_syn_support import exec_cmd_in_dir_interactive
 
 # TODO: solve how to get to spef files from some config file and not hardcoded
 # SPEF_PATH = "/projects/tropic01/pnr_export/ICC2_topo31_v1_sdc26_rev1_holdFix2/results/"
@@ -92,6 +92,11 @@ def ts_get_available_pwr_scenarios():
         ret_val.append(s)
     return ret_val
 
+def ts_get_available_pwr_scenarios_names():
+    ret_val = []
+    for s in ts_get_pwr_cfg("scenarios"):
+        ret_val.append(s["name"])
+    return ret_val
 
 def ts_print_available_scenarios():
     ts_print("*" * 80, color=TsColors.PURPLE)
@@ -112,20 +117,19 @@ def check_pwr_scenario(pwr_scenario):
             TsErrCode.ERR_PWR_3, pwr_scenario, ts_get_available_pwr_scenarios()
         )
 
-
-def create_pwr_run_dir(pwr_scenario: str, seed: int):
-    """
-    Creates power run directory pwr/runs/<scenario>_<seed>_<runcode>_<date>.<time>
-    :param pwr_scenario: Power scenario.
-    :param seed: Simulation seed.
-    """
-    runs_dir = os.path.join(ts_get_root_rel_path(TsGlobals.TS_PWR_DIR), "runs")
-    os.makedirs(runs_dir, exist_ok=True)
-    now = datetime.now().strftime("%Y%m%d.%H%M")
-    run_dir_name = "{}_{}_{}_{}".format(pwr_scenario, seed, TsGlobals.TS_RUNCODE, now)
-    TsGlobals.TS_PWR_RUN_DIR = os.path.join(runs_dir, run_dir_name)
-    os.makedirs(TsGlobals.TS_PWR_RUN_DIR, exist_ok=True)
-    os.makedirs(os.path.join(TsGlobals.TS_PWR_RUN_DIR, "tmp"), exist_ok=True)
+#def create_pwr_run_dir(pwr_scenario: str, seed: int):
+#    """
+#    Creates power run directory pwr/runs/<scenario>_<seed>_<runcode>_<date>.<time>
+#    :param pwr_scenario: Power scenario.
+#    :param seed: Simulation seed.
+#    """
+#    runs_dir = os.path.join(ts_get_root_rel_path(TsGlobals.TS_PWR_DIR), "runs")
+#    os.makedirs(runs_dir, exist_ok=True)
+#    now = datetime.now().strftime("%Y%m%d.%H%M")
+#    run_dir_name = "{}_{}_{}_{}".format(pwr_scenario, seed, TsGlobals.TS_RUNCODE, now)
+#    TsGlobals.TS_PWR_RUN_DIR = os.path.join(runs_dir, run_dir_name)
+#    os.makedirs(TsGlobals.TS_PWR_RUN_DIR, exist_ok=True)
+#    os.makedirs(os.path.join(TsGlobals.TS_PWR_RUN_DIR, "tmp"), exist_ok=True)
 
 
 def find_list(lst: list, key: str, val: str):
@@ -149,8 +153,8 @@ def find_list(lst: list, key: str, val: str):
 
 def get_netlist_file() -> str:
     # TODO: This will be switched once pnr export directory structure and naming is solved
-    # return os.path.join(TsGlobals.TS_RUNCODE_DIR, RUNCODE_RESULTS_DIR, f"{RUNCODE_FILE_PREFIX}.v")
-    return get_netlist_from_slf("pnr_export/slf_netlist.yml")
+    return os.path.join(TsGlobals.TS_RUNCODE_DIR, RUNCODE_RESULTS_DIR, f"{RUNCODE_FILE_PREFIX}.v")
+    #return get_netlist_from_slf("pnr_export/slf_netlist.yml")
 
 
 def get_parasitic_file(mode: dict) -> str:
@@ -273,7 +277,7 @@ def build_prime_time_cmd(scenario):
     :return: command tu run
     """
     pt_shell_cmd_args = "-f {}".format(TsGlobals.TS_PWR_RUN_FILE)
-    log_file = join(scenario["rundir"], "pt_shell.log")
+    log_file = os.path.join(scenario["rundir"], "pt_shell.log")
     pt_shell_cmd_args += f" -output_log_file {log_file}"
 
     set_args = "set RUNCODE_DIR {}; ".format(TsGlobals.TS_PWR_RUNCODE_DIR)
@@ -288,7 +292,7 @@ def generate_pre_pwr_hook(scenario, args):
     :param path: Path where to generate it.
     :args: args
     """
-    path = join(scenario["rundir"], "pre_hook.tcl")
+    path = os.path.join(scenario["rundir"], "pre_hook.tcl")
     prehook_file = open(path, 'w')
 
     lines = []
@@ -311,7 +315,7 @@ def generate_post_pwr_hook(scenario, args):
     :param path: Path where to generate it.
     :args: args
     """
-    path = join(scenario["rundir"], "post_hook.tcl")
+    path = os.path.join(scenario["rundir"], "post_hook.tcl")
     posthook_file = open(path, 'w')
 
     lines = []
@@ -339,7 +343,7 @@ def generate_common_setup():
     :param args: args
     """
     ts_info(TsInfoCode.GENERIC, "Generating common setup.")
-    path = join(TsGlobals.TS_PWR_RUNCODE_DIR, "common_setup.tcl")
+    path = os.path.join(TsGlobals.TS_PWR_RUNCODE_DIR, "common_setup.tcl")
     design_cfg_cmd = xterm_cmd_wrapper(build_design_cfg_cmd(path))
     ts_debug(f"Running command {design_cfg_cmd}")
     exec_cmd_in_dir_interactive(TsGlobals.TS_PWR_RUNCODE_DIR, design_cfg_cmd)
@@ -350,7 +354,7 @@ def generate_scenario_setup(scenario: dict, vcd_file: str, args):
     """
     ts_info(TsInfoCode.GENERIC, "Generating power setup.")
 
-    path = join(scenario["rundir"], "scenario_setup.tcl")
+    path = os.path.join(scenario["rundir"], "scenario_setup.tcl")
 
     # Create and open the setup file
     setup_file = open(path, "w")
@@ -409,7 +413,7 @@ def generate_scenario_setup(scenario: dict, vcd_file: str, args):
     lines.append("##############################################\n")
     lines.append("# Back Annotation File Section\n")
     lines.append("##############################################\n")
-    lines.append("set PARASITIC_FILE \"{}\"\n".format(scenario["mode"]["spef"]))
+    lines.append("set PARASITIC_FILE \"{}\"\n".format(get_parasitic_file(scenario["mode"])))
     lines.append("\n")
 
     lines.append("##############################################\n")
@@ -430,37 +434,49 @@ def generate_scenario_setup(scenario: dict, vcd_file: str, args):
 
 def extend_pwr_cfg():
     for s in TsGlobals.TS_PWR_CFG["scenarios"]:
-        s["rundir"] = join(TsGlobals.TS_PWR_RUNCODE_DIR, s["name"])
+        s["rundir"] = os.path.join(TsGlobals.TS_PWR_RUNCODE_DIR, s["name"])
         s["mode"] = find_list(TsGlobals.TS_DESIGN_CFG["design"]["modes"], "name", s["mode"])
 
-def create_scenario_run_dirs():
+def create_scenario_run_dirs(args):
     for s in TsGlobals.TS_PWR_RUN_SCENARIOS:
         if os.path.exists(s["rundir"]):
-            ts_warning(TsWarnCode.GENERIC,
-                "Recreating directory '{}' for scenario '{}'.".format(s["rundir"], s["name"]))
-            shutil.rmtree(s["rundir"], ignore_errors=True)
+            if args.force:
+                ts_info(TsInfoCode.GENERIC,
+                    "Recreating directory '{}' for scenario '{}'.".format(s["rundir"], s["name"]))
+                shutil.rmtree(s["rundir"], ignore_errors=True)
+            else:
+                ts_throw_error(TsErrCode.GENERIC,
+                    "Scenario {} already runed below runcode {}. Use force to override it.".format(s["name"], TsGlobals.TS_RUNCODE))
         ts_debug("Creating rundir '{}'.".format(s["rundir"]))
         os.makedirs(s["rundir"])
 
-def set_pwr_env(args):
-    # Check and set runcode
-    if args.runcode is None:
-        ts_throw_error(TsErrCode.GENERIC, "Missing runcode parameter")
-    else:
-        ts_info(TsInfoCode.GENERIC, "Selected runcode is: {}".format(args.runcode))
+def set_runcode(args):
+    try:
+        TsGlobals.TS_RUNCODE = os.environ["TS_RUNCODE"]
+    except KeyError:
+        ts_warning(TsWarnCode.GENERIC, "Environment variable TS_RUNCODES not set.")
+
+    if hasattr(args, "runcode") and args.runcode != None:
+        ts_info(TsInfoCode.GENERIC, f"Overriding defautl runcode with {args.runcode}")
         TsGlobals.TS_RUNCODE = args.runcode
 
-    # Check and set power flow dir
-    try:
-        for f in TsGlobals.TS_DESIGN_CFG["design"]["flow_dirs"]:
-            if "pwr" in f.keys():
-                TsGlobals.TS_PWR_DIR = ts_get_root_rel_path(f["pwr"])
-    except KeyError:
-        ts_throw_error(TsErrCode.GENERIC, "No flow_dirs specified in design config.")
-    if TsGlobals.TS_PWR_DIR is None:
-        ts_throw_error(TsErrCode.GENERIC, "No pwr folder specified in design config.")
+    if TsGlobals.TS_RUNCODE is None:
+        ts_throw_error(TsErrCode.GENERIC, "No runcode specified or previously defined! Exiting.\n")
+    else:
+        ts_info(TsInfoCode.GENERIC, f"Runcode for power analysis: {TsGlobals.TS_RUNCODE}")
 
-    TsGlobals.TS_PWR_RUNCODE_DIR = join(TsGlobals.TS_PWR_DIR, TsGlobals.TS_RUNCODE)
+def set_pwr_runcode_dir():
+    try:
+        TsGlobals.TS_PWR_RUNCODE_DIR = ts_get_root_rel_path(
+            os.path.join(TsGlobals.TS_DESIGN_CFG["design"]["flow_dirs"]["pwr"],
+            TsGlobals.TS_RUNCODE)
+        )
+    except KeyError:
+        ts_throw_error(TsErrCode.GENERIC, "No pwr directory specified.")
+
+def set_pwr_env(args):
+
+    set_pwr_runcode_dir()
     extend_pwr_cfg()
     check_scenario_args()
 
@@ -468,7 +484,7 @@ def set_pwr_env(args):
         ts_throw_error(TsErrCode.GENERIC, 
             f"Power analysis for runcode {TsGlobals.TS_RUNCODE} already done, plese use --force or --add-scenario.")
     
-    if args.force:
+    if args.force and args.add_scenario is None:
         ts_info(TsInfoCode.GENERIC, f"Forced to re-run runcode {TsGlobals.TS_RUNCODE}.")
         shutil.rmtree(TsGlobals.TS_PWR_RUNCODE_DIR, ignore_errors=True)
         os.makedirs(TsGlobals.TS_PWR_RUNCODE_DIR)
@@ -479,7 +495,7 @@ def set_pwr_env(args):
         scenarios_names = args.add_scenario.split(',')
 
     TsGlobals.TS_PWR_RUN_SCENARIOS = get_scenarios_to_run(scenarios_names)
-    create_scenario_run_dirs()
+    create_scenario_run_dirs(args)
 
 def check_pwr_args(args):
     """
@@ -493,27 +509,16 @@ def check_pwr_args(args):
             f"GUI {args.gui} is not supported. GUI wont be launched.",
         )
 
-    if TsGlobals.TS_RUNCODE == None:
-        if not hasattr(args, "runcode") or args.runcode == None:
-            ts_throw_error(TsErrCode.ERR_PWR_7)
-        else:
-            TsGlobals.TS_RUNCODE = args.runcode
-            try:
-                for f in TsGlobals.TS_DESIGN_CFG["design"]["flow_dirs"]:
-                    if "pnr" in f.keys():
-                        TsGlobals.TS_RUNCODE_DIR = join(f["pnr"], TsGlobals.TS_RUNCODE)
-                        if not os.path.exists(TsGlobals.TS_RUNCODE_DIR):
-                            ts_throw_error(TsErrCode.GENERIC, "Directory {TsGlobals.TS_RUNCODE_DIR} does not exists.")
-            except KeyError:
+    try:
+        TsGlobals.TS_RUNCODE_DIR = os.path.join(TsGlobals.TS_DESIGN_CFG["design"]["flow_dirs"]["pnr"], TsGlobals.TS_RUNCODE)
+        if not os.path.exists(TsGlobals.TS_RUNCODE_DIR):
+            ts_throw_error(TsErrCode.GENERIC, f"Directory {TsGlobals.TS_RUNCODE_DIR} does not exists.")
+    except KeyError:
                 ts_throw_error(TsErrCode.GENERIC, "No pnr directory specified.")
 
 def check_scenario_args():
     for s in TsGlobals.TS_PWR_CFG["scenarios"]:
         ts_debug("Checking args for scenario {}".format(s["name"]))
-        ts_debug(f"Checking spef for mode '{s['mode']['name']}'.")
-        if "spef" not in s["mode"].keys():
-            ts_throw_error(TsErrCode.GENERIC, f"No spef file specified for mode '{s['mode']['name']}'.")
-
         ts_debug(f"Checking constraints for mode '{s['mode']['name']}'.")
         if "constraints" not in s["mode"].keys():
             ts_throw_error(TsErrCode.GENERIC, f"No sdc file specified for mode '{s['mode']['name']}'.")
@@ -533,12 +538,11 @@ def check_primetime_run_script():
             f"PrimeTime run script {TsGlobals.TS_PWR_RUN_FILE} does not exists!",
         )
 
-
 def get_pwr_waves_path(scenario):
     """
     Gets path to power waves.
     """
-    return join(scenario["rundir"], "reports", "wave.fsdb")
+    return os.path.join(scenario["rundir"], "reports", "wave.fsdb")
 
 def get_optional_key(dictionary: dict, key: str):
     """
@@ -591,3 +595,15 @@ def pwr_logging(args):
     handler = logging.FileHandler(filename)
     handler.setFormatter(TSFormatter(use_colors=False))
     logger.addHandler(handler)
+
+def restore_pwr_session(scenario_name):
+    set_pwr_runcode_dir()
+
+    if scenario_name not in ts_get_available_pwr_scenarios_names():
+        ts_throw_error(TsErrCode.GENERIC, "Specified scenario does not exists in power config file.")
+
+    scenario_dir_path = os.path.join(TsGlobals.TS_PWR_RUNCODE_DIR, scenario_name)
+    session_path = os.path.join(scenario_dir_path, os.environ["TS_DESIGN_NAME"]+"_ss")
+    cmd = xterm_cmd_wrapper(f"pt_shell -x \"restore_session {session_path}\"")
+
+    exec_cmd_in_dir_interactive(scenario_dir_path, cmd)

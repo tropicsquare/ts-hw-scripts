@@ -614,21 +614,27 @@ def add_ts_pwr_run_args(parser, tool_type):
         "--clear-sim",
         action="store_true",
         default=False,
-        help="Passes --clear option to simulation script.",
+        help="Passe --clear option to simulation flow.",
     )
 
     parser.add_argument(
         "--clear-sim-logs",
         action="store_true",
         default=False,
-        help="Passes --clear-logs option to simulation script.",
+        help="Passe --clear-logs option to simulation flow.",
+    )
+    parser.add_argument(
+        "--clear-pwr-logs",
+        action="store_true",
+        default=False,
+        help="Clear logs in pwr directory.",
     )
 
     parser.add_argument(
         "--recompile",
         action="store_true",
         default=False,
-        help="Passes --recompile option to simulation script.",
+        help="Passe --recompile option to simulation flow.",
     )
 
     parser.add_argument(
@@ -644,10 +650,10 @@ def add_ts_pwr_run_args(parser, tool_type):
         default=False,
         help=dedent(
             """\
-                            Simulation is not executed, default seed = 0.
-                            Flow expects dumped VCD file as if the simulation was executed.
-                            The inter.vcd file has to be located in sim/build/sim_<target>_<test>_<seed> directory.
-                            """
+            Simulation is not executed, default seed = 0.
+            Flow expects dumped VCD file as if the simulation was executed.
+            The inter.vcd file has to be located in sim/build/sim_<target>_<test>_<seed> directory.
+            """
         ),
     )
 
@@ -672,9 +678,8 @@ def add_ts_pwr_run_args(parser, tool_type):
         choices=("fsdb", "out"),
         help=dedent(
             """\
-                            Dumps power waves in specified format.
-                            Location: pwr/runs/reports/wave.<format>
-                            """
+            Dumps power waves in specified format.
+            """
         ),
     )
 
@@ -684,23 +689,26 @@ def add_ts_pwr_run_args(parser, tool_type):
         default=1,
         help=dedent(
             """\
-                            Runs every specified scenario multiple times.
-                            Works only if the scenario is randomized.
-                            Not randomized scenarios, or runs with fixed seed by '--seed' option
-                            are executed only once.
-                            """
-        ),
+            Runs every specified scenario multiple times.
+            Works only if the scenario is randomized.
+            Not randomized scenarios, or runs with fixed seed by '--seed' option
+            are executed only once.
+            """
+        )
     )
 
     parser.add_argument(
         "--add-scenario",
         type=str,
         nargs="?",
-        help=dedent(
-            """\
-                Allows to add scenario to existing runcode.
-            """
-        )
+        help="Specify scenarios to run. If not present, all scenarios are runed."
+    )
+
+    parser.add_argument(
+        "--restore",
+        type=str,
+        nargs="?",
+        help="Restore PrimeTime session of "
     )
 
     parser.add_argument(

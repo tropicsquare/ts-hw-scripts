@@ -39,6 +39,11 @@ from internal.ts_hw_args import (
     add_cfg_files_arg,
     add_ts_common_args,
     add_ts_pwr_run_args,
+    add_runcode_arg,
+    add_force_arg,
+    add_lic_wait_arg,
+    add_stayin_arg,
+    add_pd_common_args,
 )
 from internal.ts_hw_cfg_parser import (
     do_design_config_init,
@@ -65,25 +70,7 @@ from internal.ts_hw_logging import (
     ts_throw_error,
     ts_warning,
 )
-from internal.ts_hw_pwr_support import (
-    build_prime_time_cmd,
-    build_run_sim_cmd,
-    check_primetime_run_script,
-    check_pwr_args,
-    check_runcode_dir,
-    check_vcd,
-    create_pwr_run_dir,
-    generate_common_setup,
-    generate_post_pwr_hook,
-    generate_specific_pwr_setup,
-    get_optional_key,
-    get_pwr_waves_path,
-    get_scenarios_to_run,
-    pwr_logging,
-    set_prime_time_license_queuing,
-    set_verdi_license_queuing,
-    ts_print_available_scenarios,
-)
+from internal.ts_hw_pwr_support import *
 
 if __name__ == "__main__":
 
@@ -99,13 +86,14 @@ if __name__ == "__main__":
     add_force_arg(parser)
     add_lic_wait_arg(parser,"pt_shell")
     add_stayin_arg(parser,"pt_shell")
+    add_pd_common_args(parser)
     add_ts_pwr_run_args(parser,"pt_shell")
     argcomplete.autocomplete(parser)
     args = parser.parse_args()
 
     if args.clear_pwr_logs:
         ts_info(TsInfoCode.GENERIC, "Clearing pwr/logs directory.")
-        shutil.rmtree(join(ts_get_root_rel_path(TsGlobals.TS_PWR_DIR), "logs"), ignore_errors=True)
+        shutil.rmtree(os.path.join(ts_get_root_rel_path(TsGlobals.TS_PWR_DIR), "logs"), ignore_errors=True)
 
     ts_configure_logging(args)
     pwr_logging(args)
@@ -118,6 +106,12 @@ if __name__ == "__main__":
     # Print available scenarios
     if args.list_scenarios:
         ts_print_available_scenarios()
+        sys.exit(0)
+
+    set_runcode(args)
+
+    if (args.restore is not None):
+        restore_pwr_session(args.restore)
         sys.exit(0)
 
     check_pwr_args(args)

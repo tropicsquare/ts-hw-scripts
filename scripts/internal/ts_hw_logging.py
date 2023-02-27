@@ -295,7 +295,6 @@ class TsErrCode(LogEnum):
     ]
     ERR_PWR_4 = [lambda: "Simulation failed!.\n"]
     ERR_PWR_5 = [lambda e: "Power Analysis failed!. \n {}".format(e)]
-    ERR_PWR_6 = [lambda: "No scenario specified!.\n"]
     ERR_PWR_7 = [lambda: "No runcode specified or previously defined! Exiting.\n"]
 
     # Memory map generator error messages
