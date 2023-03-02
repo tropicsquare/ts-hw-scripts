@@ -289,14 +289,6 @@ class TsErrCode(LogEnum):
             pwr_file, e
         )
     ]
-    ERR_PWR_3 = [
-        lambda scenario, scenarios: "Invalid scenario {}!"
-        "scenarios: {}".format(scenario, scenarios)
-    ]
-    ERR_PWR_4 = [lambda: "Simulation failed!.\n"]
-    ERR_PWR_5 = [lambda e: "Power Analysis failed!. \n {}".format(e)]
-    ERR_PWR_6 = [lambda: "No scenario specified!.\n"]
-    ERR_PWR_7 = [lambda: "No runcode specified or previously defined! Exiting.\n"]
 
     # Memory map generator error messages
     ERR_MMAP_0 = [
@@ -390,15 +382,6 @@ class TsWarnCode(LogEnum):
     WARN_PDK_10 = [lambda: "RC corner is not defined, but export attempted!"]
     WARN_PDK_11 = [lambda: "Flow dirs are not defined, but export attempted!"]
 
-    # PWR warnings
-    WARN_PWR_0 = [
-        lambda scenario: "Scenario '{}' is not randomized, so it will only run once!".format(
-            scenario
-        )
-    ]
-    WARN_PWR_1 = [lambda: ""]
-    WARN_PWR_2 = [lambda: ""]
-
     # Memory map generator warnings
     WARN_MMAP_0 = [lambda name: "Found new memory sub-region: {}".format(name)]
     WARN_MMAP_1 = [lambda name: "Parent region: {}".format(name)]
@@ -447,9 +430,6 @@ class TsInfoCode(LogEnum):
 
     # PWR info messages
     INFO_PWR_0 = [lambda path: "Loading Power configuration file: '{}'".format(path)]
-    INFO_PWR_2 = [lambda: "Power configuration file OK!"]
-    INFO_PWR_3 = [lambda: "Generating power setup"]
-    INFO_PWR_4 = [lambda: "Clearing pwr/runs directory."]
 
     # Memory map generator error messages
     INFO_MMAP_0 = [

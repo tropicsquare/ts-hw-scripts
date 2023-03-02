@@ -597,42 +597,37 @@ def add_ts_sim_coverage_args(parser):
     )
 
 
-def add_ts_pwr_run_args(parser):
+def add_ts_pwr_run_args(parser, tool_type):
     """
     Adds arguments specific to ts_run_pwr.py
     :param parser: Argparse parser to which arguments shall be added
     """
 
     parser.add_argument(
-        "scenario", nargs="*", help="Scenarios on which power analysis is performed."
-    )
-
-    parser.add_argument(
-        "--clear-pwr",
-        action="store_true",
-        default=False,
-        help="Clear all directories of previous runs.",
-    )
-
-    parser.add_argument(
         "--clear-sim",
         action="store_true",
         default=False,
-        help="Passes --clear option to simulation script.",
+        help="Passe --clear option to simulation flow.",
     )
 
     parser.add_argument(
         "--clear-sim-logs",
         action="store_true",
         default=False,
-        help="Passes --clear-logs option to simulation script.",
+        help="Passe --clear-logs option to simulation flow.",
+    )
+    parser.add_argument(
+        "--clear-pwr-logs",
+        action="store_true",
+        default=False,
+        help="Clear logs in pwr directory.",
     )
 
     parser.add_argument(
         "--recompile",
         action="store_true",
         default=False,
-        help="Passes --recompile option to simulation script.",
+        help="Passe --recompile option to simulation flow.",
     )
 
     parser.add_argument(
@@ -648,32 +643,25 @@ def add_ts_pwr_run_args(parser):
         default=False,
         help=dedent(
             """\
-                            Simulation is not executed, default seed = 0.
-                            Flow expects dumped VCD file as if the simulation was executed.
-                            The inter.vcd file has to be located in sim/build/sim_<target>_<test>_<seed> directory.
-                            """
+            Simulation is not executed, default seed = 0.
+            Flow expects dumped VCD file as if the simulation was executed.
+            The inter.vcd file has to be located in sim/build/sim_<target>_<test>_<seed> directory.
+            """
         ),
-    )
-
-    parser.add_argument(
-        "--license-wait",
-        action="store_true",
-        default=False,
-        help="Enables license queuing for all used tools (VCS, PrimeTime, Verdi).",
     )
 
     parser.add_argument(
         "--list-scenarios",
         action="store_true",
         default=False,
-        help="Lists all available scenarios defined in power config file.",
+        help="Lists all available scenarios defined in power config file."
     )
 
     parser.add_argument(
-        "--gui",
+        "--open-pwr-waves",
+        type=str,
         nargs="?",
-        default=None,
-        help="Shows power waves in GUI. Only Verdi is supported.",
+        help="Shows power waves of scenario in GUI."
     )
 
     parser.add_argument(
@@ -683,52 +671,36 @@ def add_ts_pwr_run_args(parser):
         choices=("fsdb", "out"),
         help=dedent(
             """\
-                            Dumps power waves in specified format.
-                            Location: pwr/runs/reports/wave.<format>
-                            """
+            Dumps power waves in specified format.
+            """
         ),
     )
 
     parser.add_argument(
-        "--loop",
-        type=int,
-        default=1,
+        "--add-scenario",
+        type=str,
+        nargs="?",
         help=dedent(
             """\
-                            Runs every specified scenario multiple times.
-                            Works only if the scenario is randomized.
-                            Not randomized scenarios, or runs with fixed seed by '--seed' option
-                            are executed only once.
-                            """
-        ),
+            Specify scenarios to run. If not present, all scenarios are runed."
+            Example: --add-scenario=scen1,scen2,scen3
+            --add-scenario=all runs all scenarios.
+            """
+        )
     )
 
     parser.add_argument(
-        "--stay-in-pt-shell",
-        action="store_true",
-        default=False,
-        help="Does not exit PrimeTime after the analysis is done.",
+        "--restore",
+        type=str,
+        nargs="?",
+        help="Restore PrimeTime session of scenario."
     )
 
     parser.add_argument(
         "--seed",
         type=int,
         default=SUPPRESS,
-        help="Seed for randomization. Overrides randomization specified in power config file.",
-    )
-
-    parser.add_argument(
-        "--runcode",
-        nargs="?",
-        default=None,
-        help=dedent(
-            """\
-                            Mandatory.
-                            Name of directory where netlist and parazitic files are located.
-                            netlist file: /projects/tropic01/pnr_export/<runcode>/results/write_data.v
-                            parazitic file: /projects/tropic01/pnr_export/<runcode>/results/write_data.<corner>.spef
-                            """
-        ),
+        help="Seed for randomization. Overrides randomization specified in power config file."
     )
 
     parser.add_argument(
@@ -736,15 +708,7 @@ def add_ts_pwr_run_args(parser):
         action="store_true",
         default=False,
         help="When some non-crucial operation fails (e.g. simulation), "
-        "do not continue and finish with error.",
-    )
-
-    # TMP
-    parser.add_argument(
-        "--vcd-dump",
-        nargs="?",
-        default=None,
-        help="Set to 'vcscmd' for dumping vcd not from tb but by passing args to vcs command line.",
+        "do not continue and finish with error."
     )
 
 

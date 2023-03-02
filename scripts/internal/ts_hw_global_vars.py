@@ -13,6 +13,9 @@ class TsGlobals:
     # Repository root environment variable
     TS_REPO_ROOT = "TS_REPO_ROOT"
 
+    # Runcode
+    TS_RUNCODE = None
+
     # Simulation directory
     TS_SIM_DIR = "sim"
 
@@ -88,20 +91,16 @@ class TsGlobals:
     # Power configuration (Dictionary from YAML parser)
     TS_PWR_CFG = None
 
-    # Power run dir
-    TS_PWR_RUN_DIR = None
-
     # Runfile for power analysis
     TS_PWR_RUN_FILE = "modules/ts-power-flow/pwr/pwr.tcl"
+
+    TS_PWR_RUN_SCENARIOS = None
 
     #
     TS_PNR_EXPORT_PATH = "/projects/tropic01/pnr_export"
 
-    # Runcode
-    TS_RUNCODE = None
-
     # Runcode directory
-    TS_RUNCODE_DIR = None
+    TS_PWR_RUNCODE_DIR = None
 
     # Enviromantal variable for synthesis flow root directory ts-synthesis-flow
     TS_SYN_FLOW_PATH = "TS_SYN_FLOW_PATH"
@@ -186,3 +185,7 @@ class TsGlobals:
 
     # Synthesis release dir
     TS_STA_RELEASE_DIR = None
+
+    TS_DIR_DONT_TOUCH = [
+        "/projects/tropic01/pnr_export"
+    ]
