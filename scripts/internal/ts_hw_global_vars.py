@@ -185,3 +185,7 @@ class TsGlobals:
 
     # Synthesis release dir
     TS_STA_RELEASE_DIR = None
+
+    TS_DIR_DONT_TOUCH = [
+        "/projects/tropic01/pnr_export"
+    ]

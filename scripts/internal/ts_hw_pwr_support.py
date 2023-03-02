@@ -19,6 +19,7 @@ from .ts_hw_common import (
     ts_get_test_dir,
     ts_set_cfg,
     ts_set_env_var,
+    ts_rmdir
 )
 from .ts_hw_global_vars import TsGlobals
 from .ts_hw_logging import (
@@ -106,31 +107,18 @@ def ts_print_available_scenarios():
     ts_print("*" * 80, color=TsColors.PURPLE)
 
 
-def check_pwr_scenario(pwr_scenario):
-    """
-    Checks if scenario provided scenario is available in power config file.
-    "param pwr_scenario: Scenario to check.
-    """
-    ts_info(TsInfoCode.GENERIC, f"Checking scenario: {pwr_scenario}")
-    if pwr_scenario not in ts_get_available_pwr_scenarios():
-        ts_throw_error(
-            TsErrCode.ERR_PWR_3, pwr_scenario, ts_get_available_pwr_scenarios()
-        )
-
-#def create_pwr_run_dir(pwr_scenario: str, seed: int):
-#    """
-#    Creates power run directory pwr/runs/<scenario>_<seed>_<runcode>_<date>.<time>
-#    :param pwr_scenario: Power scenario.
-#    :param seed: Simulation seed.
-#    """
-#    runs_dir = os.path.join(ts_get_root_rel_path(TsGlobals.TS_PWR_DIR), "runs")
-#    os.makedirs(runs_dir, exist_ok=True)
-#    now = datetime.now().strftime("%Y%m%d.%H%M")
-#    run_dir_name = "{}_{}_{}_{}".format(pwr_scenario, seed, TsGlobals.TS_RUNCODE, now)
-#    TsGlobals.TS_PWR_RUN_DIR = os.path.join(runs_dir, run_dir_name)
-#    os.makedirs(TsGlobals.TS_PWR_RUN_DIR, exist_ok=True)
-#    os.makedirs(os.path.join(TsGlobals.TS_PWR_RUN_DIR, "tmp"), exist_ok=True)
-
+def create_scenario_run_dirs(args):
+    for s in TsGlobals.TS_PWR_RUN_SCENARIOS:
+        if os.path.exists(s["rundir"]):
+            if args.force:
+                ts_info(TsInfoCode.GENERIC,
+                    "Recreating directory '{}' for scenario '{}'.".format(s["rundir"], s["name"]))
+                ts_rmdir(s["rundir"])
+            else:
+                ts_throw_error(TsErrCode.GENERIC,
+                    "Scenario {} already runed below runcode {}. Use force to override it.".format(s["name"], TsGlobals.TS_RUNCODE))
+        ts_debug("Creating rundir '{}'.".format(s["rundir"]))
+        os.makedirs(s["rundir"])
 
 def find_list(lst: list, key: str, val: str):
     """
@@ -486,7 +474,7 @@ def set_pwr_env(args):
     
     if args.force and args.add_scenario is None:
         ts_info(TsInfoCode.GENERIC, f"Forced to re-run runcode {TsGlobals.TS_RUNCODE}.")
-        shutil.rmtree(TsGlobals.TS_PWR_RUNCODE_DIR, ignore_errors=True)
+        ts_rmdir(TsGlobals.TS_PWR_RUNCODE_DIR)
         os.makedirs(TsGlobals.TS_PWR_RUNCODE_DIR)
 
     if args.add_scenario == "all" or args.add_scenario is None:

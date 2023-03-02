@@ -93,7 +93,7 @@ if __name__ == "__main__":
 
     if args.clear_pwr_logs:
         ts_info(TsInfoCode.GENERIC, "Clearing pwr/logs directory.")
-        shutil.rmtree(os.path.join(ts_get_root_rel_path(TsGlobals.TS_PWR_DIR), "logs"), ignore_errors=True)
+        ts_rmdir(os.path.join(ts_get_root_rel_path(TsGlobals.TS_PWR_DIR), "logs"))
 
     ts_configure_logging(args)
     pwr_logging(args)

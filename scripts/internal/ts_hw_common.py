@@ -8,6 +8,7 @@
 
 import contextlib
 import os
+import shutil
 import random
 import re
 import signal
@@ -556,3 +557,12 @@ def ts_unset_env_var(var: str):
         ts_throw_error(
             TsErrCode.GENERIC, f"Failed to unset environment variable {var}!"
         )
+
+def ts_rmdir(dir: str):
+    for dir_prefix in TsGlobals.TS_DIR_DONT_TOUCH:
+        if dir.startswith(dir_prefix):
+            ts_throw_error(
+                TsErrCode.GENERIC, f"Failed to remove directory {dir}! {dir_prefix} is in TS_DIR_DONT_TOUCH list."
+            )
+    shutil.rmtree(dir, ignore_errors=True)
+    
