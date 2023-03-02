@@ -604,13 +604,6 @@ def add_ts_pwr_run_args(parser, tool_type):
     """
 
     parser.add_argument(
-        "--clear-pwr",
-        action="store_true",
-        default=False,
-        help="Clear all directories of previous runs.",
-    )
-
-    parser.add_argument(
         "--clear-sim",
         action="store_true",
         default=False,
@@ -661,14 +654,14 @@ def add_ts_pwr_run_args(parser, tool_type):
         "--list-scenarios",
         action="store_true",
         default=False,
-        help="Lists all available scenarios defined in power config file.",
+        help="Lists all available scenarios defined in power config file."
     )
 
     parser.add_argument(
-        "--gui",
+        "--open-pwr-waves",
+        type=str,
         nargs="?",
-        default=None,
-        help="Shows power waves in GUI. Only Verdi is supported.",
+        help="Shows power waves of scenario in GUI."
     )
 
     parser.add_argument(
@@ -684,38 +677,30 @@ def add_ts_pwr_run_args(parser, tool_type):
     )
 
     parser.add_argument(
-        "--loop",
-        type=int,
-        default=1,
-        help=dedent(
-            """\
-            Runs every specified scenario multiple times.
-            Works only if the scenario is randomized.
-            Not randomized scenarios, or runs with fixed seed by '--seed' option
-            are executed only once.
-            """
-        )
-    )
-
-    parser.add_argument(
         "--add-scenario",
         type=str,
         nargs="?",
-        help="Specify scenarios to run. If not present, all scenarios are runed."
+        help=dedent(
+            """\
+            Specify scenarios to run. If not present, all scenarios are runed."
+            Example: --add-scenario=scen1,scen2,scen3
+            --add-scenario=all runs all scenarios.
+            """
+        )
     )
 
     parser.add_argument(
         "--restore",
         type=str,
         nargs="?",
-        help="Restore PrimeTime session of "
+        help="Restore PrimeTime session of scenario."
     )
 
     parser.add_argument(
         "--seed",
         type=int,
         default=SUPPRESS,
-        help="Seed for randomization. Overrides randomization specified in power config file.",
+        help="Seed for randomization. Overrides randomization specified in power config file."
     )
 
     parser.add_argument(
@@ -723,15 +708,7 @@ def add_ts_pwr_run_args(parser, tool_type):
         action="store_true",
         default=False,
         help="When some non-crucial operation fails (e.g. simulation), "
-        "do not continue and finish with error.",
-    )
-
-    # TMP
-    parser.add_argument(
-        "--vcd-dump",
-        nargs="?",
-        default=None,
-        help="Set to 'vcscmd' for dumping vcd not from tb but by passing args to vcs command line.",
+        "do not continue and finish with error."
     )
 
 

@@ -35,20 +35,7 @@ from .ts_hw_logging import (
     ts_throw_error,
     ts_warning,
 )
-from .ts_hw_source_list_files import get_netlist_from_slf
 from .ts_hw_syn_support import exec_cmd_in_dir_interactive
-
-# TODO: solve how to get to spef files from some config file and not hardcoded
-# SPEF_PATH = "/projects/tropic01/pnr_export/ICC2_topo31_v1_sdc26_rev1_holdFix2/results/"
-# SPEF_WC = "write_data.TLUP_MAX_125.spef"
-# SPEF_TYP = "write_data.TLUP_TYP_25.spef"
-# SPEF_BC = "write_data.TLUP_MIN_-40.spef"
-#
-# SPEF_DICT = {
-#    "func_wc"   :   SPEF_WC,
-#    "func_typ"  :   SPEF_TYP,
-#    "func_bc"   :   SPEF_BC
-# }
 
 CORNER_DICT = {"bc": "TLUP_MIN_-40", "tc": "TLUP_TYP_25", "wc": "TLUP_MAX_125"}
 
@@ -140,20 +127,35 @@ def find_list(lst: list, key: str, val: str):
     return None
 
 def get_netlist_file() -> str:
-    # TODO: This will be switched once pnr export directory structure and naming is solved
-    return os.path.join(TsGlobals.TS_RUNCODE_DIR, RUNCODE_RESULTS_DIR, f"{RUNCODE_FILE_PREFIX}.v")
-    #return get_netlist_from_slf("pnr_export/slf_netlist.yml")
-
+    """
+    Composes path to nestlist file.
+    :return: Path to netlist file regarding to runcode 
+    """
+    return os.path.join(
+        TsGlobals.TS_RUNCODE_DIR,
+        RUNCODE_RESULTS_DIR,
+        f"{RUNCODE_FILE_PREFIX}.v"
+    )
 
 def get_parasitic_file(mode: dict) -> str:
+    """
+    Composes path to parasitic (spef) file.
+    :param mode: Mode
+    :return: Path to parasitic file regarding to runcode and corner.
+    """
     return os.path.join(
         TsGlobals.TS_RUNCODE_DIR,
         RUNCODE_RESULTS_DIR,
         "{}.{}.spef".format(RUNCODE_FILE_PREFIX, CORNER_DICT[mode["corner"]]),
     )
 
-
-def get_vcd_file(scenario: dict, seed):
+def get_vcd_file(scenario: dict, seed) -> str:
+    """
+    Compose path to VCD file for certain scenario dumped by simulation.
+    :param scenario: Scenario for which to find VCD.
+    :param seed: Seed the simulation was runned with.
+    :return: Path to VCD file of the scenario.
+    """
     ts_set_cfg("target", scenario["simulation_target"])
     sim_test = {"name": scenario["test_name"], "seed": seed}
     return os.path.join(ts_get_test_dir("sim", sim_test), "inter.vcd")
@@ -166,11 +168,13 @@ def get_pdk_views_for_common_config() -> str:
     """
     return "nldm_db"
 
+
 def get_scenarios_to_run(scenarios_names: list) -> list:
     """
     Creates list of scenarios to be executed from 'scenario names' passed from command line.
     Uses unix like star completion.
     :param scenarios_names: List of scenario names to be queried, may contain wild-cards.
+    :return: List of scenarios.
     """
     scenario_list = []
     s_cnt_prev = 0
@@ -190,11 +194,18 @@ def get_scenarios_to_run(scenarios_names: list) -> list:
 
     return scenario_list
 
+
 def xterm_cmd_wrapper (cmd: str) -> str:
+    """
+    Wraps a command to be used with xterm"
+    :param cmd: Command to be wrapped.
+    :return: Wrapped command.
+    """
     mod_cmd = cmd.replace('"', '\\"')
     return f"TERM=xterm /usr/bin/bash -c \"{mod_cmd}\""
 
-def build_run_sim_cmd(scenario: dict, seed: int, args, clear=0):
+
+def build_run_sim_cmd(scenario: dict, seed: int, args):
     """
     Builds command to run simulation.
     :param scenario: Power scenario.
@@ -206,18 +217,15 @@ def build_run_sim_cmd(scenario: dict, seed: int, args, clear=0):
     ts_sim_run_args = "{}".format(scenario["simulation_target"])
     ts_sim_run_args += " {}".format(scenario["test_name"])
 
-    # TODO: integrate --dump-vcd with time window
-    # ts_sim_run_args += "--dump-vcd {} {}".format(pwr_scenario["from"], pwr_scenario["to"])
-
     ts_sim_run_args += " --dump-waves"
 
     if args.recompile:
         ts_sim_run_args += " --recompile"
 
-    if args.clear_sim and clear == 0:
+    if args.clear_sim:
         ts_sim_run_args += " --clear"
 
-    if args.clear_sim_logs and clear == 0:
+    if args.clear_sim_logs:
         ts_sim_run_args += " --clear-logs"
 
     if args.license_wait:
@@ -225,24 +233,11 @@ def build_run_sim_cmd(scenario: dict, seed: int, args, clear=0):
 
     ts_sim_run_args += " --seed {}".format(seed)
 
-    # TODO: This is not ideal :( universal dumping of VCD file is still in progress
-    # TMP
-    if args.vcd_dump == "tb":
-        ts_sim_run_args += ' --add-elab-options "'
-        ts_sim_run_args += "-pvalue+tassic_tb_top.vcd_dump_enable=1"
-        ts_sim_run_args += " -pvalue+tassic_tb_top.vcd_dump_on={}".format(
-            scenario["from"]
-        )
-        ts_sim_run_args += " -pvalue+tassic_tb_top.vcd_dump_off={}".format(
-            scenario["to"]
-        )
-        ts_sim_run_args += '"'
-    else:
-        ts_sim_run_args += ' --add-elab-options "'
-        ts_sim_run_args += "+vcs+dumpvars+inter.vcd"
-        ts_sim_run_args += " +vcs+dumpon+{}000".format(scenario["from"])
-        ts_sim_run_args += " +vcs+dumpoff+{}000".format(scenario["to"])
-        ts_sim_run_args += '"'
+    ts_sim_run_args += ' --add-elab-options "'
+    ts_sim_run_args += "+vcs+dumpvars+inter.vcd"
+    ts_sim_run_args += " +vcs+dumpon+{}000".format(scenario["from"])
+    ts_sim_run_args += " +vcs+dumpoff+{}000".format(scenario["to"])
+    ts_sim_run_args += '"'
 
     return f"ts_sim_run.py {ts_sim_run_args}"
 
@@ -259,6 +254,7 @@ def build_design_cfg_cmd(export_path: str):
 
     return f"ts_design_cfg.py {ts_design_cfg_args}"
 
+
 def build_prime_time_cmd(scenario):
     """
     Builds command to run power analysis
@@ -274,10 +270,11 @@ def build_prime_time_cmd(scenario):
 
     return f"pt_shell {pt_shell_cmd_args}"
 
+
 def generate_pre_pwr_hook(scenario, args):
     """
     Generates pre-PrimeTime hook.
-    :param path: Path where to generate it.
+    :param scenario: Scenario for which to generate it.
     :args: args
     """
     path = os.path.join(scenario["rundir"], "pre_hook.tcl")
@@ -297,10 +294,11 @@ def generate_pre_pwr_hook(scenario, args):
     prehook_file.writelines(lines)
     prehook_file.close()
 
+
 def generate_post_pwr_hook(scenario, args):
     """
     Generates post-PrimeTime hook.
-    :param path: Path where to generate it.
+    :param scenario: Scenario for which to generate it.
     :args: args
     """
     path = os.path.join(scenario["rundir"], "post_hook.tcl")
@@ -309,7 +307,7 @@ def generate_post_pwr_hook(scenario, args):
     lines = []
 
     lines.append("##############################################\n")
-    lines.append("# Post PrimeTime Hook file\n")
+    lines.append("# PrimeTime Post-Hook file\n")
     lines.append("# Generated automatically by ts-hw-scripts\n")
     lines.append("##############################################\n")
     lines.append("\n")
@@ -324,11 +322,10 @@ def generate_post_pwr_hook(scenario, args):
     posthook_file.writelines(lines)
     posthook_file.close()
 
+
 def generate_common_setup():
     """
     Generates common setup.
-    :param path: Path where to generate it.
-    :param args: args
     """
     ts_info(TsInfoCode.GENERIC, "Generating common setup.")
     path = os.path.join(TsGlobals.TS_PWR_RUNCODE_DIR, "common_setup.tcl")
@@ -336,9 +333,11 @@ def generate_common_setup():
     ts_debug(f"Running command {design_cfg_cmd}")
     exec_cmd_in_dir_interactive(TsGlobals.TS_PWR_RUNCODE_DIR, design_cfg_cmd)
 
+
 def generate_scenario_setup(scenario: dict, vcd_file: str, args):
     """
-    Generates specific power setup.
+    Generates specific power setup for scenario.
+    :param scenario: Scenario for which to generate it.
     """
     ts_info(TsInfoCode.GENERIC, "Generating power setup.")
 
@@ -376,11 +375,8 @@ def generate_scenario_setup(scenario: dict, vcd_file: str, args):
     lines.append("##############################################\n")
     lines.append("# Waves Dumping Setup\n")
     lines.append("##############################################\n")
-    if args.dump_pwr_waves or args.gui == "verdi":
-        if args.gui == "verdi":
-            lines.append("set WAVEFORM_FORMAT fsdb\n")
-        else:
-            lines.append("set WAVEFORM_FORMAT {}\n".format(args.dump_pwr_waves))
+    if args.dump_pwr_waves:
+        lines.append("set WAVEFORM_FORMAT {}\n".format(args.dump_pwr_waves))
     else:
         lines.append("set WAVEFORM_FORMAT none\n")
     lines.append("\n")
@@ -420,29 +416,24 @@ def generate_scenario_setup(scenario: dict, vcd_file: str, args):
     setup_file.writelines(lines)
     setup_file.close()
 
+
 def extend_pwr_cfg():
+    """
+    Extends TsGlobals.TS_PWR_CFG by rundir and mode for each scenario
+    """
     for s in TsGlobals.TS_PWR_CFG["scenarios"]:
         s["rundir"] = os.path.join(TsGlobals.TS_PWR_RUNCODE_DIR, s["name"])
         s["mode"] = find_list(TsGlobals.TS_DESIGN_CFG["design"]["modes"], "name", s["mode"])
 
-def create_scenario_run_dirs(args):
-    for s in TsGlobals.TS_PWR_RUN_SCENARIOS:
-        if os.path.exists(s["rundir"]):
-            if args.force:
-                ts_info(TsInfoCode.GENERIC,
-                    "Recreating directory '{}' for scenario '{}'.".format(s["rundir"], s["name"]))
-                shutil.rmtree(s["rundir"], ignore_errors=True)
-            else:
-                ts_throw_error(TsErrCode.GENERIC,
-                    "Scenario {} already runed below runcode {}. Use force to override it.".format(s["name"], TsGlobals.TS_RUNCODE))
-        ts_debug("Creating rundir '{}'.".format(s["rundir"]))
-        os.makedirs(s["rundir"])
 
 def set_runcode(args):
+    """
+    Checks and sets runcode.
+    """
     try:
         TsGlobals.TS_RUNCODE = os.environ["TS_RUNCODE"]
     except KeyError:
-        ts_warning(TsWarnCode.GENERIC, "Environment variable TS_RUNCODES not set.")
+        ts_warning(TsWarnCode.GENERIC, "Environment variable TS_RUNCODES is not set.")
 
     if hasattr(args, "runcode") and args.runcode != None:
         ts_info(TsInfoCode.GENERIC, f"Overriding defautl runcode with {args.runcode}")
@@ -453,6 +444,7 @@ def set_runcode(args):
     else:
         ts_info(TsInfoCode.GENERIC, f"Runcode for power analysis: {TsGlobals.TS_RUNCODE}")
 
+
 def set_pwr_runcode_dir():
     try:
         TsGlobals.TS_PWR_RUNCODE_DIR = ts_get_root_rel_path(
@@ -462,6 +454,7 @@ def set_pwr_runcode_dir():
     except KeyError:
         ts_throw_error(TsErrCode.GENERIC, "No pwr directory specified.")
 
+
 def set_pwr_env(args):
 
     set_pwr_runcode_dir()
@@ -470,7 +463,7 @@ def set_pwr_env(args):
 
     if os.path.exists(TsGlobals.TS_PWR_RUNCODE_DIR) and not args.force and args.add_scenario is None:
         ts_throw_error(TsErrCode.GENERIC, 
-            f"Power analysis for runcode {TsGlobals.TS_RUNCODE} already done, plese use --force or --add-scenario.")
+            f"Power analysis for runcode {TsGlobals.TS_RUNCODE} already done, plese use --force.")
     
     if args.force and args.add_scenario is None:
         ts_info(TsInfoCode.GENERIC, f"Forced to re-run runcode {TsGlobals.TS_RUNCODE}.")
@@ -485,31 +478,28 @@ def set_pwr_env(args):
     TsGlobals.TS_PWR_RUN_SCENARIOS = get_scenarios_to_run(scenarios_names)
     create_scenario_run_dirs(args)
 
+
 def check_pwr_args(args):
     """
     Checks if arguments make sense.
     :param args: args.
     """
-
-    if args.gui not in {"verdi", None}:
-        ts_warning(
-            TsWarnCode.GENERIC,
-            f"GUI {args.gui} is not supported. GUI wont be launched.",
-        )
-
     try:
         TsGlobals.TS_RUNCODE_DIR = os.path.join(TsGlobals.TS_DESIGN_CFG["design"]["flow_dirs"]["pnr"], TsGlobals.TS_RUNCODE)
         if not os.path.exists(TsGlobals.TS_RUNCODE_DIR):
             ts_throw_error(TsErrCode.GENERIC, f"Directory {TsGlobals.TS_RUNCODE_DIR} does not exists.")
     except KeyError:
-                ts_throw_error(TsErrCode.GENERIC, "No pnr directory specified.")
+        ts_throw_error(TsErrCode.GENERIC, "No pnr directory specified.")
+
 
 def check_scenario_args():
     for s in TsGlobals.TS_PWR_CFG["scenarios"]:
         ts_debug("Checking args for scenario {}".format(s["name"]))
-        ts_debug(f"Checking constraints for mode '{s['mode']['name']}'.")
         if "constraints" not in s["mode"].keys():
-            ts_throw_error(TsErrCode.GENERIC, f"No sdc file specified for mode '{s['mode']['name']}'.")
+            ts_throw_error(TsErrCode.GENERIC,
+                "No SDC file specified for mode '{}'.".format(s['mode']['name'])
+            )
+
     
 def check_vcd(scenario: dict, seed):
     vcd_file = get_vcd_file(scenario, seed)
@@ -519,6 +509,7 @@ def check_vcd(scenario: dict, seed):
     else:
         return vcd_file
 
+
 def check_primetime_run_script():
     if not os.path.exists(TsGlobals.TS_PWR_RUN_FILE):
         ts_throw_error(
@@ -526,11 +517,13 @@ def check_primetime_run_script():
             f"PrimeTime run script {TsGlobals.TS_PWR_RUN_FILE} does not exists!",
         )
 
+
 def get_pwr_waves_path(scenario):
     """
     Gets path to power waves.
     """
     return os.path.join(scenario["rundir"], "reports", "wave.fsdb")
+
 
 def get_optional_key(dictionary: dict, key: str):
     """
@@ -541,6 +534,7 @@ def get_optional_key(dictionary: dict, key: str):
         return dictionary[key]
     else:
         return False
+
 
 def set_prime_time_license_queuing(enable: bool):
     """
@@ -584,14 +578,36 @@ def pwr_logging(args):
     handler.setFormatter(TSFormatter(use_colors=False))
     logger.addHandler(handler)
 
-def restore_pwr_session(scenario_name):
+
+def restore_pwr_session(args) -> int:
     set_pwr_runcode_dir()
 
-    if scenario_name not in ts_get_available_pwr_scenarios_names():
+    if args.restore not in ts_get_available_pwr_scenarios_names():
         ts_throw_error(TsErrCode.GENERIC, "Specified scenario does not exists in power config file.")
 
-    scenario_dir_path = os.path.join(TsGlobals.TS_PWR_RUNCODE_DIR, scenario_name)
+    scenario_dir_path = os.path.join(TsGlobals.TS_PWR_RUNCODE_DIR, args.restore)
     session_path = os.path.join(scenario_dir_path, os.environ["TS_DESIGN_NAME"]+"_ss")
-    cmd = xterm_cmd_wrapper(f"pt_shell -x \"restore_session {session_path}\"")
 
-    exec_cmd_in_dir_interactive(scenario_dir_path, cmd)
+    cmd = xterm_cmd_wrapper(f"pt_shell -x \"restore_session {session_path}\"")
+    ts_debug(f"Running command {cmd}")
+    return_code = exec_cmd_in_dir_interactive(scenario_dir_path, cmd)
+
+    return return_code
+
+def open_pwr_waves(args):
+    set_pwr_runcode_dir()
+
+    if args.open_pwr_waves not in ts_get_available_pwr_scenarios_names():
+        ts_throw_error(TsErrCode.GENERIC, "Specified scenario does not exists in power config file.")
+
+    scenario_dir_path = os.path.join(TsGlobals.TS_PWR_RUNCODE_DIR, args.open_pwr_waves)
+    waves_path = os.path.join(scenario_dir_path, "reports",  os.environ["TS_DESIGN_NAME"]+"_wave.fsdb")
+
+    if not os.path.exists(waves_path):
+        ts_throw_error(TsErrCode.GENERIC, f"Wave file {waves_path} does not exists.")
+
+    cmd = f"verdi -sx {waves_path}"
+    ts_debug(f"Running command {cmd}")
+    return_code = exec_cmd_in_dir_interactive(scenario_dir_path, cmd)
+
+    return return_code
