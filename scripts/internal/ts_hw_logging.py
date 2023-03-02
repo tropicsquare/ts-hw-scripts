@@ -315,6 +315,7 @@ class TsErrCode(LogEnum):
     ERR_MMAP_3 = [lambda e: "Invalid file: File '{}' is not a valid RDL file".format(e)]
     ERR_MMAP_4 = [lambda e: "Invalid file: '{}' not found.".format(e)]
     ERR_MMAP_5 = [lambda e: "ORDT returned the following error(s): \n{}".format(e)]
+    ERR_MMAP_6 = [lambda filename: "Invalid file: ({}) is not a C header file or has an invalid path.".format(filename)]
 
     ERR_SYN_0 = [lambda: "Missing runcode parameter"]
     ERR_SYN_1 = [
