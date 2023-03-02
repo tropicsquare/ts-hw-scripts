@@ -37,7 +37,7 @@
 % Set these parameters according to your project.
 \def \projectname {Tropic Square Power Analysis Flow}
 \def \documentname {User manual}
-\def \versionnumber {0.1}
+\def \versionnumber {0.2}
 
 % Title page
 \maketitle
@@ -56,6 +56,9 @@
 	{0.1}			{0.2}				{0.2}			{0.5}
 	{Version Tag 	& Date 				& Author		&	Description					}
                 0.1 & 12.8.2022         & Vit Masek  	&	Initial version \Ttlb
+                0.2 & 1.3.2023          & Vit Masek     &   Run all scenarios as default.
+                                                            New prw dir structure.
+                                                            Default runcode. \Ttlb
 \end{TropicRatioTable4Col}
 
 
@@ -78,13 +81,21 @@
 \pagebreak
 \section{Introduction}
 
-This document serves as an user guide for Tropic Square Power Analysis Flow. The flow consists of:
+This document serves as an user guide for Tropic Square Power Analysis flow. The flow consists of:
 
 \begin{itemize}
-    \item \textit{ts_pwr_config.yml} power config file, which defines scenarios for the power analysis.
-    \item \textit{ts_pwr_run.py} script, which does power analysis with specified scenarios.
+    \item \textit{ts_pwr_config.yml} power config file, which defines scenarios for power analysis.
+    \item \textit{ts_pwr_run.py} script, which does power analysis.
     \item \textit{pwr.tcl} run script TCL that is executed by PrimeTime.
 \end{itemize}
+
+Prerequisites:
+\begin{itemize}
+    \item Design Cfg. flow
+    \item Simulation flow
+    \item PNR results (netlist, spef for wc/tc/bc corners)
+\end{itemize}
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % User manual
@@ -112,27 +123,7 @@ This document serves as an user guide for Tropic Square Power Analysis Flow. The
     \caption{Flowchart}
 \end{figure}
 
-To run the flow, simply execute command:
-\begin{lstlisting}
-    ts_pwr_run.py <scenario> --runcode <runcode>
-\end{lstlisting}
-
 \pagebreak
-
-\TropicNote{VCD file is now dumped using VCS command line options. No hierarchy option is supported.}
-
-\vspace{.5cm}
-
-Run script TCL, which is executed by PrimeTime is part of ts-power-flow repository. This repository
-is expected to be submodule.
-
-Results of each run are located in separate run directory:\\
-\textit{\$TS_REPO_ROOT/pwr/runs/<scenario>_<seed>_<runcode>_<date>.<time>}
-
-\vspace{.5cm}
-
-Runcode specifies name of the directory in pnr_export folder, where netlist and parasitic files
-are located. Folder pnr_export is expected here: \textit{/projects/tropic01/pnr_export/}.
 
 %===================================================================================================
 % POWER CONFIG FILE
@@ -164,7 +155,53 @@ Times 'from' and 'to' are in nanoseconds.
 
 \vspace{.5cm}
 
-The option 'randomized' is optional. Default value is false and seed=0.
+The option 'randomized' is optional. Default value is false and \texttt{seed = 0}.
+
+\subsection{Running the flow}
+
+To run the flow, runcode has to be set. Runcode specifies concrete directory in \textit{pnr} directory
+from \textit{ts_design_cfg.yml} which contains PNR results.
+
+\vspace{.5cm}
+
+One can set default runcode, e.g. in \textit{setup_env} script.
+
+\vspace{.5cm}
+
+To run the flow, one can simply execute command:
+\begin{lstlisting}
+    ts_pwr_run.py
+\end{lstlisting}
+
+This will run power analysis of all scenarios with default runcode.
+
+\vspace{.5cm}
+
+The flow creates runcode directory \textit{\$TS_REPO_ROOT/pwr/<runcode>}. Rundirs for scenarios are then
+located in this directory.
+
+\subsection{How to restore session}
+
+When \texttt{stay-in-tool} option is not used, the flow automaticaly exits \textit{pt_shell} after the
+power analysis of a scenario is done. To restore the session, use \texttt{restore=<scenario>} option.
+
+\subsection{How to open power waves}
+
+If \texttt{dump-pwr-waves} option is used, the flow dumps power waves in certain format. These power waves
+can be then opened using \texttt{open-pwr-waves=<scenario>} in Verdi. Only fsdb format is supported.
+
+\pagebreak
+\section{Notes}
+\TropicNote{
+    VCD file is now dumped using VCS command line options. No hierarchy option is supported.
+}
+\TropicNote{
+    We recomend to use \texttt{help} option to see all options of the flow.
+}
+\TropicNote{
+    Run script TCL, which is executed by PrimeTime is part of \textit{ts-power-flow repository}. This repository
+    is expected to be a submodule.
+}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Open issues
