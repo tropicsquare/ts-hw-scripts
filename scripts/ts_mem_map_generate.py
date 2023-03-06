@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+
 import os
 from pathlib import Path
-
 from internal.ts_hw_args import (
     TsArgumentParser,
     add_ts_common_args,
@@ -12,10 +12,10 @@ from internal.ts_hw_args import (
 from internal.ts_hw_logging import TsErrCode, ts_configure_logging, ts_throw_error
 from internal.ts_mem_map_builder import (
     is_yaml_file,
+    is_h_file,
     ordt_build_parms_file,
     render_yaml_parent,
 )
-
 
 def main(raw_args=None):
 
@@ -23,21 +23,15 @@ def main(raw_args=None):
     parser = TsArgumentParser(description="Memory map generator script")
     add_ts_common_args(parser)
     add_ts_mem_map_generator_args(parser)
-
-    # arguments passed from another script
-    if raw_args is not None:
-        args = parser.parse_args(raw_args)
-
-    # arguments passed from command line
-    else:
-        args = parser.parse_args()
+ 
+    args = parser.parse_args(raw_args)
 
     ts_configure_logging(args)
 
-    if args.latex_dir is None and args.xml_dir is None:
+    if args.latex_dir is None and args.xml_dir is None and args.h_file is None:
         ts_throw_error(
             TsErrCode.GENERIC,
-            "Neither XML not LaTeX output directory was specified.\nAborting...",
+            "No output file or directory was specified.\nAborting...",
         )
 
     if args.latex_dir is not None and not os.path.isdir(args.latex_dir):
@@ -45,6 +39,9 @@ def main(raw_args=None):
 
     if args.xml_dir is not None and not os.path.isdir(args.xml_dir):
         os.makedirs(args.xml_dir)
+
+    if args.h_file is not None and is_h_file(Path(args.h_file)):
+        open(args.h_file, 'w').close()
 
     is_yaml_file(args.source_file)
 
@@ -61,7 +58,8 @@ def main(raw_args=None):
         lint=args.lint,
         latex_dir=args.latex_dir,
         xml_dir=args.xml_dir,
-        do_not_clear=args.verbose,
+        c_header_file=args.h_file,
+        do_not_clear = args.verbose,
     )
 
 

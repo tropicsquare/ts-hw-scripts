@@ -592,14 +592,14 @@ class GRAMMAR_MEM_MAP_CONFIG:
 
         if value["start_addr"] == value["end_addr"]:
             ts_print(
-                f"WARNING: Region: {value['name']} has the same start and end addresses: {value['start_addr']}",
+                f"WARNING: Region: {value['name']} has the same start and end addresses: {hex(value['start_addr'])}",
                 color=TsColors.RED,
             )
 
         elif value["start_addr"] > value["end_addr"]:
             ts_throw_error(
                 TsErrCode.GENERIC,
-                f"Region: {value['name']} has start address ({value['start_addr']}) greater than end address ({value['end_addr']})",
+                f"Region: {value['name']} has start address ({hex(value['start_addr'])}) greater than end address ({hex(value['end_addr'])})",
             )
 
         if "regions" in value and "reg_map" in value:

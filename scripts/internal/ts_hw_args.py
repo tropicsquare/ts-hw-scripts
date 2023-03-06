@@ -719,13 +719,11 @@ def add_ts_mem_map_generator_args(parser):
     """
 
     parser.add_argument("--xml-dir")
-    parser.add_argument(
-        "--latex-dir", help="One or both arguments (--latex_dir, --xml_dir) required"
-    )
-    parser.add_argument(
-        "--ordt-parms",
-        help=dedent(
-            """\
+    parser.add_argument("--latex-dir")
+    parser.add_argument("--h-file",
+                        help="One or multiple of (--latex-dir, --xml-dir, --h-file) required")
+    parser.add_argument("--ordt-parms",
+                        help=dedent("""\
                         Parameters file for ORDT XML output.
                         If a file is not specified, it will be created in the xml output directory.
                         """
