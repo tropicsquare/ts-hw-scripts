@@ -42,6 +42,10 @@ CORNER_DICT = {"bc": "TLUP_MIN_-40", "tc": "TLUP_TYP_25", "wc": "TLUP_MAX_125"}
 RUNCODE_RESULTS_DIR = "results"
 RUNCODE_FILE_PREFIX = "write_data"
 
+def check_path (path: str):
+    if not os.path.exists(path):
+        ts_throw_error(TsErrCode.GENERIC, f"Path {path} does not exists!")
+
 
 def load_pwr_config_file(pwr_cfg_path: str):
     """
@@ -131,11 +135,13 @@ def get_netlist_file() -> str:
     Composes path to nestlist file.
     :return: Path to netlist file regarding to runcode 
     """
-    return os.path.join(
+    path = os.path.join(
         TsGlobals.TS_RUNCODE_DIR,
         RUNCODE_RESULTS_DIR,
         f"{RUNCODE_FILE_PREFIX}.v"
     )
+    check_path(path)
+    return path
 
 def get_parasitic_file(mode: dict) -> str:
     """
@@ -143,11 +149,14 @@ def get_parasitic_file(mode: dict) -> str:
     :param mode: Mode
     :return: Path to parasitic file regarding to runcode and corner.
     """
-    return os.path.join(
+
+    path = os.path.join(
         TsGlobals.TS_RUNCODE_DIR,
         RUNCODE_RESULTS_DIR,
         "{}.{}.spef".format(RUNCODE_FILE_PREFIX, CORNER_DICT[mode["corner"]]),
     )
+    check_path(path)
+    return path
 
 def get_vcd_file(scenario: dict, seed) -> str:
     """
@@ -158,7 +167,9 @@ def get_vcd_file(scenario: dict, seed) -> str:
     """
     ts_set_cfg("target", scenario["simulation_target"])
     sim_test = {"name": scenario["test_name"], "seed": seed}
-    return os.path.join(ts_get_test_dir("sim", sim_test), "inter.vcd")
+    path = os.path.join(ts_get_test_dir("sim", sim_test), "inter.vcd")
+    check_path(path)
+    return path
 
 
 def get_pdk_views_for_common_config() -> str:
@@ -486,8 +497,7 @@ def check_pwr_args(args):
     """
     try:
         TsGlobals.TS_RUNCODE_DIR = os.path.join(TsGlobals.TS_DESIGN_CFG["design"]["flow_dirs"]["pnr"], TsGlobals.TS_RUNCODE)
-        if not os.path.exists(TsGlobals.TS_RUNCODE_DIR):
-            ts_throw_error(TsErrCode.GENERIC, f"Directory {TsGlobals.TS_RUNCODE_DIR} does not exists.")
+        check_path(TsGlobals.TS_RUNCODE_DIR)
     except KeyError:
         ts_throw_error(TsErrCode.GENERIC, "No pnr directory specified.")
 
@@ -499,16 +509,6 @@ def check_scenario_args():
             ts_throw_error(TsErrCode.GENERIC,
                 "No SDC file specified for mode '{}'.".format(s['mode']['name'])
             )
-
-    
-def check_vcd(scenario: dict, seed):
-    vcd_file = get_vcd_file(scenario, seed)
-    if not os.path.exists(vcd_file):
-        ts_throw_error(TsErrCode.GENERIC,
-            f"VCD file {vcd_file} does not exists!")
-    else:
-        return vcd_file
-
 
 def check_primetime_run_script():
     if not os.path.exists(TsGlobals.TS_PWR_RUN_FILE):
@@ -522,7 +522,9 @@ def get_pwr_waves_path(scenario):
     """
     Gets path to power waves.
     """
-    return os.path.join(scenario["rundir"], "reports", "wave.fsdb")
+    path = os.path.join(scenario["rundir"], "reports", "wave.fsdb")
+    check_path(path)
+    return path
 
 
 def get_optional_key(dictionary: dict, key: str):
@@ -588,6 +590,8 @@ def restore_pwr_session(args) -> int:
     scenario_dir_path = os.path.join(TsGlobals.TS_PWR_RUNCODE_DIR, args.restore)
     session_path = os.path.join(scenario_dir_path, os.environ["TS_DESIGN_NAME"]+"_ss")
 
+    check_path(session_path)
+
     cmd = xterm_cmd_wrapper(f"pt_shell -x \"restore_session {session_path}\"")
     ts_debug(f"Running command {cmd}")
     return_code = exec_cmd_in_dir_interactive(scenario_dir_path, cmd)
@@ -603,8 +607,7 @@ def open_pwr_waves(args):
     scenario_dir_path = os.path.join(TsGlobals.TS_PWR_RUNCODE_DIR, args.open_pwr_waves)
     waves_path = os.path.join(scenario_dir_path, "reports",  os.environ["TS_DESIGN_NAME"]+"_wave.fsdb")
 
-    if not os.path.exists(waves_path):
-        ts_throw_error(TsErrCode.GENERIC, f"Wave file {waves_path} does not exists.")
+    check_path(waves_path)
 
     cmd = f"verdi -sx {waves_path}"
     ts_debug(f"Running command {cmd}")

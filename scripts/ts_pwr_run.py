@@ -192,7 +192,7 @@ if __name__ == "__main__":
         ########################################################################################
         # Prepare for power analysis
         ########################################################################################
-        vcd_file = check_vcd(pwr_scenario, seed)
+        vcd_file = get_vcd_file(pwr_scenario, seed)
 
         # Generate specific power setup
         generate_scenario_setup(pwr_scenario, vcd_file, args)
