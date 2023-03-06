@@ -85,7 +85,7 @@ __SIMULATOR_COMMANDS = {
         "simulate": {
             "binary": "simv",
             "common_options": "-ucli",
-            "coverage": "-cm line+cond+fsm+tgl+branch+assert -cm_dir {}/simv",
+            "coverage": "-cm line+cond+fsm+tgl+branch+assert -cm_dir{}",
             "sim_cmd_file": "-do {}",
             "log_file": "-l {}",
             "seed": "+ntb_random_seed={}",
