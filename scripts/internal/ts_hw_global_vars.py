@@ -88,6 +88,9 @@ class TsGlobals:
     # List of PDK views to be exported
     TS_EXP_VIEWS = []
 
+    # Requirements Tracing directory
+    TS_REQ_TRACING_DIR_PATH = os.path.join(TS_SIM_DIR, "req_tracing_output")
+
     # Power configuration (Dictionary from YAML parser)
     TS_PWR_CFG = None
 

@@ -933,6 +933,7 @@ def add_source_data_arg(parser, default=None):
         help=f"Source data from a destination folder according to flow_dir settings in a ts_design_cfg.yml file. Expected values: syn,sta,dft,pnr etc. Default value set is to {default}",
     )
 
+
 # Common pdk/design_cfg argument --filter-mode-usage
 def add_pd_common_args(parser, default=None):
     """
@@ -946,3 +947,25 @@ def add_pd_common_args(parser, default=None):
         choices= ('sim','syn','dft','sta','pnr','pwr','sta-signoff'),
         help=f"Defines filter for the usage attribute of a mode in ts_design_cfg.yml file. Expected values: syn,sta,dft,pnr etc."
     )
+
+
+def add_ts_req_tracing_args(parser):
+    """
+    Adds arguments specific to ts_req_tracing.py
+    :param parser: Argparse parser to which arguments shall be added
+    """
+
+    parser.add_argument("--spec-path",
+                        help="Path to design specification")
+
+    parser.add_argument("--ver-path",
+                        help="Path to verification plan")
+
+    parser.add_argument("-o", "--output",
+                        help="Output directory with HTML report")
+
+    parser.add_argument("--dump-db", action="store_true", default=False,
+                        help="Generate YAML files with databases of traced items")
+
+    parser.add_argument("--clear", action="store_true", default=False,
+                        help="Remove output directory if previously created.")
