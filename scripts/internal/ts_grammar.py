@@ -569,6 +569,7 @@ class GRAMMAR_MEM_MAP_CONFIG:
     schema = GrammarSchema(
         {
             "name": str,
+            Optional("short_name", default=""): str,
             "start_addr": int,
             "end_addr": int,
             Optional("reg_map"): str,
