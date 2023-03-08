@@ -80,18 +80,15 @@ def is_rdl_file(file: str):
     else:
         ts_throw_error(TsErrCode.ERR_MMAP_3, os.path.basename(file))
 
+
 def is_h_file(file: Path) -> bool:
     if file.parent.is_dir() and file.suffix == ".h":
         return True
-    else: ts_throw_error(TsErrCode.ERR_MMAP_6, file.name)
-
-def latex_valid_identifier(name):
-    """(very naive) If string is not a valid latex identifier name, convert it to one."""
-    name = name.replace("{", "_").replace("}", "_")
-    return name
+    else:
+        ts_throw_error(TsErrCode.ERR_MMAP_6, file.name)
 
 
-def ordt_build_parms_file(output_parms_file, base_address=0):
+def ordt_build_parms_file(output_parms_file, base_address: str = "0"):
     """builds a parameters file with default parameters for ordt in the output directory"""
 
     default_parms = dedent(
@@ -529,6 +526,11 @@ class latex_builder:
             temp_file.unlink()
         self.temp_tex_files_path.rmdir()
 
+    def latex_valid_identifier(self, name: str) -> str:
+        """Replaces curly brackets (latex inappropriate) with underscores"""
+
+        return name.replace("{", "_").replace("}", "_")
+
     def get_nesting_level(self, node):
         temp = node.parent
         count = 0
@@ -549,6 +551,23 @@ class latex_builder:
         if len(node.children) == 0:
             # naive assumption b/c node was already validated in class Node
             return "rdl" if node.reg_map != "" else "empty"
+
+    def get_size(self, node: "Node") -> str:
+        """returns size of address space in bytes/KB/MB/GB"""
+
+        _size_bytes = (node.end_addr - node.start_addr) + 1
+
+        if _size_bytes < 1024:
+            return f"{_size_bytes} bytes"
+
+        elif _size_bytes < pow(1024, 2):
+            return f"{round(_size_bytes/1024)} KB"
+
+        elif _size_bytes < pow(1024, 3):
+            return f"{round(_size_bytes/(pow(1024,2)))} MB"
+
+        elif _size_bytes < pow(1024, 4):
+            return f"{round(_size_bytes/(pow(1024,3)))} GB"
 
     def build_output(self, tree):
         self.add_subregion_table(tree)
@@ -595,10 +614,11 @@ class latex_builder:
             write_line(
                 self.latex_path,
                 latex_content.subregion_table_row(
-                    latex_valid_identifier(child.name),
+                    self.latex_valid_identifier(child.name),
                     pretty_hex(child.start_addr),
                     pretty_hex(child.end_addr),
                     temp_nesting_level,
+                    self.get_size(child),
                 ),
             )
 
@@ -621,7 +641,7 @@ class latex_builder:
             self.latex_path,
             latex_content.section_start(
                 nesting_level,
-                latex_valid_identifier(node.name),
+                self.latex_valid_identifier(node.name),
                 pretty_hex(self.get_absolute_addr(node)),
                 pretty_hex(self.get_absolute_addr(node, start=False)),
             ),
@@ -649,21 +669,21 @@ class latex_content(LogEnum):
     subregion_table_start = [
         lambda: dedent(
             r"""
-        \begin{TropicRatioTable2Col}
-        {0.5}                                         {0.5}
-        {Memory region                                & Address offset range}
+        \begin{TropicRatioTable3Col}
+        {0.6}                                         {0.3}                               {0.1}
+        {Memory region                                & Address offset range              & Size}
         """
         )
     ]
 
     subregion_table_row = [
-        lambda block_name, start_addr, end_addr, nesting_level: rf"""
-        \multirow {{2}} {{*}} {{\hyperref[{'sub'* nesting_level}sec:{block_name}] {{{block_name}}}}}            & {start_addr}     \\
-                                                    & {end_addr}     \Ttlb%
+        lambda block_name, start_addr, end_addr, nesting_level, size: rf"""
+        \multirow {{2}} {{*}} {{\hyperref[{'sub'* nesting_level}sec:{block_name}] {{{block_name}}}}} & {start_addr} & \multirow {{2}} {{*}} {{{size}}} \\
+                                                    & {end_addr} &    \Ttlb%
         """
     ]
 
-    subregion_table_end = [lambda: dedent("\n\end{TropicRatioTable2Col}\n")]
+    subregion_table_end = [lambda: dedent("\n\end{TropicRatioTable3Col}\n")]
 
 
 class c_header_builder:
@@ -739,4 +759,7 @@ class c_header_builder:
             fh.writelines(self.defs)
             fh.write(self.footer_content())
 
-        ts_print(f"Generated header file with base address definitions at:\n{self.output_file}", color=TsColors.BLUE)
+        ts_print(
+            f"Generated header file with base address definitions at:\n{self.output_file}",
+            color=TsColors.BLUE,
+        )
