@@ -80,18 +80,15 @@ def is_rdl_file(file: str):
     else:
         ts_throw_error(TsErrCode.ERR_MMAP_3, os.path.basename(file))
 
+
 def is_h_file(file: Path) -> bool:
     if file.parent.is_dir() and file.suffix == ".h":
         return True
-    else: ts_throw_error(TsErrCode.ERR_MMAP_6, file.name)
-
-def latex_valid_identifier(name):
-    """(very naive) If string is not a valid latex identifier name, convert it to one."""
-    name = name.replace("{", "_").replace("}", "_")
-    return name
+    else:
+        ts_throw_error(TsErrCode.ERR_MMAP_6, file.name)
 
 
-def ordt_build_parms_file(output_parms_file, base_address=0):
+def ordt_build_parms_file(output_parms_file, base_address: str = "0"):
     """builds a parameters file with default parameters for ordt in the output directory"""
 
     default_parms = dedent(
@@ -198,6 +195,7 @@ class Node:
     name: str
     start_addr: int
     end_addr: int
+    short_name: str = ""
     reg_map: str = ""
     parent: "Node" = field(init=False, default=None)
     children: List["Node"] = field(init=False, default_factory=list)
@@ -234,6 +232,7 @@ class Node:
         if "regions" in top and top["regions"] is not None:
             top_node = cls(
                 name=top["name"],
+                short_name=top["short_name"] if "short_name" in top else "",
                 start_addr=top["start_addr"],
                 end_addr=top["end_addr"],
                 reg_map=top.get("reg_map", ""),
@@ -254,11 +253,14 @@ class Node:
 
                 # node has no children
                 if "reg_map" in region and is_rdl_file(region["reg_map"]):
-                    ts_debug("Including RDL file: {}".format(region["reg_map"]))
+                    ts_debug(f'Including RDL file: {region["reg_map"]}')
                     region["reg_map"] = load_rdl(region["reg_map"], current_level[-1])
 
                     temp_child = cls(
                         name=region["name"],
+                        short_name=region["short_name"]
+                        if "short_name" in region
+                        else "",
                         start_addr=region["start_addr"],
                         end_addr=region["end_addr"],
                         reg_map=region["reg_map"],
@@ -271,7 +273,7 @@ class Node:
                     if isinstance(region["regions"], str) and is_yaml_file(
                         region["regions"]
                     ):
-                        ts_debug("Opening YAML file: {}".format(region["regions"]))
+                        ts_debug(f'Opening YAML file: {region["regions"]}')
 
                         temp_yaml, temp_current_level = load_yaml(
                             region["regions"], current_level[-1]
@@ -285,6 +287,9 @@ class Node:
 
                         # overwrite from same node in parent file
                         child_node.name = region["name"]
+                        child_node.short_name = (
+                            region["short_name"] if "short_name" in region else ""
+                        )
                         child_node.start_addr = region["start_addr"]
                         child_node.end_addr = region["end_addr"]
 
@@ -293,10 +298,12 @@ class Node:
 
                     child_node.parent = top_node
                     top_node.children.append(child_node)
-                # node is an empty memory region with no children
-                elif "regions" not in region and "reg_map" not in region:
+                elif "reg_map" not in region:
                     temp_child = cls(
                         name=region["name"],
+                        short_name=region["short_name"]
+                        if "short_name" in region
+                        else "",
                         start_addr=region["start_addr"],
                         end_addr=region["end_addr"],
                     )
@@ -529,6 +536,11 @@ class latex_builder:
             temp_file.unlink()
         self.temp_tex_files_path.rmdir()
 
+    def latex_valid_identifier(self, name: str) -> str:
+        """Replaces curly brackets (latex inappropriate) with underscores"""
+
+        return name.replace("{", "_").replace("}", "_")
+
     def get_nesting_level(self, node):
         temp = node.parent
         count = 0
@@ -549,6 +561,23 @@ class latex_builder:
         if len(node.children) == 0:
             # naive assumption b/c node was already validated in class Node
             return "rdl" if node.reg_map != "" else "empty"
+
+    def get_size(self, node: "Node") -> str:
+        """returns size of address space in bytes/KB/MB/GB"""
+
+        _size_bytes = (node.end_addr - node.start_addr) + 1
+
+        if _size_bytes < 1024:
+            return f"{_size_bytes} bytes"
+
+        elif _size_bytes < pow(1024, 2):
+            return f"{round(_size_bytes/1024)} KB"
+
+        elif _size_bytes < pow(1024, 3):
+            return f"{round(_size_bytes/(pow(1024,2)))} MB"
+
+        elif _size_bytes < pow(1024, 4):
+            return f"{round(_size_bytes/(pow(1024,3)))} GB"
 
     def build_output(self, tree):
         self.add_subregion_table(tree)
@@ -595,10 +624,11 @@ class latex_builder:
             write_line(
                 self.latex_path,
                 latex_content.subregion_table_row(
-                    latex_valid_identifier(child.name),
+                    self.latex_valid_identifier(child.name),
                     pretty_hex(child.start_addr),
                     pretty_hex(child.end_addr),
                     temp_nesting_level,
+                    self.get_size(child),
                 ),
             )
 
@@ -621,7 +651,7 @@ class latex_builder:
             self.latex_path,
             latex_content.section_start(
                 nesting_level,
-                latex_valid_identifier(node.name),
+                self.latex_valid_identifier(node.name),
                 pretty_hex(self.get_absolute_addr(node)),
                 pretty_hex(self.get_absolute_addr(node, start=False)),
             ),
@@ -649,21 +679,21 @@ class latex_content(LogEnum):
     subregion_table_start = [
         lambda: dedent(
             r"""
-        \begin{TropicRatioTable2Col}
-        {0.5}                                         {0.5}
-        {Memory region                                & Address offset range}
+        \begin{TropicRatioTable3Col}
+        {0.6}                                         {0.3}                               {0.1}
+        {Memory region                                & Address offset range              & Size}
         """
         )
     ]
 
     subregion_table_row = [
-        lambda block_name, start_addr, end_addr, nesting_level: rf"""
-        \multirow {{2}} {{*}} {{\hyperref[{'sub'* nesting_level}sec:{block_name}] {{{block_name}}}}}            & {start_addr}     \\
-                                                    & {end_addr}     \Ttlb%
+        lambda block_name, start_addr, end_addr, nesting_level, size: rf"""
+        \multirow {{2}} {{*}} {{\hyperref[{'sub'* nesting_level}sec:{block_name}] {{{block_name}}}}} & {start_addr} & \multirow {{2}} {{*}} {{{size}}} \\
+                                                    & {end_addr} &    \Ttlb%
         """
     ]
 
-    subregion_table_end = [lambda: dedent("\n\end{TropicRatioTable2Col}\n")]
+    subregion_table_end = [lambda: dedent("\n\end{TropicRatioTable3Col}\n")]
 
 
 class c_header_builder:
@@ -684,45 +714,60 @@ class c_header_builder:
         return hex(addr)
 
     def valid_c_def(self, name: str) -> str:
-        """Converts name to a valid C identifier with _BASE_ADDRESS suffix:
-            * Capitalizes entire string,
-            * Replaces variable inappropriate characters with underscores,
-            * Adds underscore to beginning if string starts with digit.
-
-        Args:
-            name str: macro name
-        Returns:
-            name str: valid c macro name
+        """Converts name to a capitalized valid C identifier with _BASE_ADDR suffix:
+        * Replaces variable inappropriate characters with underscores,
+        * Adds underscore to beginning if string starts with digit.
         """
 
-        return re.sub("\W|^(?=\d)", "_", name).upper() + "_BASE_ADDRESS"
+        return re.sub("\W|^(?=\d)", "_", name).upper()
+
+    def get_name(self, node: "Node") -> str:
+        """Returns concatenated short names of node and immediate parent, making sure they're valid C identifiers."""
+
+        short_name = (
+            self.valid_c_def(node.name)
+            if node.short_name == ""
+            else self.valid_c_def(node.short_name)
+        )
+
+        short_name_parent = (
+            self.valid_c_def(node.parent.name)
+            if node.parent.short_name == ""
+            else self.valid_c_def(node.parent.short_name)
+        )
+
+        return f"{short_name_parent}_{short_name}_BASE_ADDR"
 
     def walk_tree(self, tree: "Node"):
-        """Recursively traverses entire tree, creates a list of macro definition."""
+        """Recursively traverses entire tree, creates a list of macro definitions."""
 
         for child in tree.children:
             self.defs.append(
-                f"#define {self.valid_c_def(child.name):<35}{' '*4}{self.absolute_hex_address(child):<10}\n\n"
+                f"#define {self.get_name(child):<45}{' ' * 4}{self.absolute_hex_address(child):<10}\n\n"
             )
             self.walk_tree(child)
 
     def header_content(self) -> str:
-        """Generates include guards for the header file.
+        """Generates include guards placed at the top of header file."""
 
-        Returns:
-            header_str str: string of include guards placed at the top of header file
-        """
-        _pre_header_content = f"/{'*' * 79}\n * @file {self.output_file.name}\n * @author Tropic Square\n * @brief {self.output_file.stem} top definitions and macros\n * @note autogenerated by TS Memory Map Generator\n *\n * @license TODO\n {'*' * 79}/"
+        _pre_header_content = dedent(
+            f"""
+        /{'*' * 79}
+        * @file {self.output_file.name}
+        * @author Tropic Square
+        * @brief {self.output_file.stem} top base address definitions
+        * @note Autogenerated by TS Memory Map Generator
+        *
+        * @license TODO
+        {'*' * 79}/"""
+        )
 
         _header_name = f"__{self.output_file.stem.upper()}"
 
         return f"{_pre_header_content}\n\n#ifndef {_header_name}\n#define {_header_name}\n\n"
 
     def footer_content(self) -> str:
-        """Generates string that closes the include guards.
-
-        Returns:
-            header_str str: string of include guards placed at the top of header file"""
+        """Generates include guards placed at the bottom of header file."""
 
         return f"\n\n#endif  /*__{self.output_file.stem.upper()}*/"
 
@@ -739,4 +784,7 @@ class c_header_builder:
             fh.writelines(self.defs)
             fh.write(self.footer_content())
 
-        ts_print(f"Generated header file with base address definitions at:\n{self.output_file}", color=TsColors.BLUE)
+        ts_print(
+            f"Generated header file with base address definitions at:\n{self.output_file}",
+            color=TsColors.BLUE,
+        )
