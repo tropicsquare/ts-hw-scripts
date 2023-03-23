@@ -170,7 +170,8 @@ class GRAMMAR_SIM_CFG:
             ),
             VerboseOptional("verilog_std", default="v01"): Among("v95", "v01", "v05"),
             Optional("coverage", default=False): bool,
-            Optional("gui", default=None): Among(None, "dve", "verdi"),
+            # gui causes problems in other flows, please do not use it this way
+            # Optional("gui", default=None): Among(None, "dve", "verdi"),
             Optional("compile_debug", default=False): bool,
             Optional("verbose", default=0): int,
             Optional("fail_fast", default=False): bool,
@@ -490,7 +491,16 @@ GRAMMAR_PDK_CONFIG = GrammarSchema(
 #
 ###################################################################################################
 
-__mode_usage_config =  lambda s: s in ('sim','syn','sta','dft','pnr','pwr','sta-signoff')
+__mode_usage_config = lambda s: s in (
+    "sim",
+    "syn",
+    "sta",
+    "dft-lint",
+    "dft-atpg",
+    "pnr",
+    "pwr",
+    "sta-signoff",
+)
 
 
 GRAMMAR_DSG_CONFIG = GrammarSchema(
@@ -501,7 +511,7 @@ GRAMMAR_DSG_CONFIG = GrammarSchema(
             Optional("flow_dirs"): {
                 Optional("sim"): str,
                 Optional("syn"): str,
-                Optional("dft"): str,
+                Optional("dft-lint"): str,
                 Optional("sta"): str,
                 Optional("pnr"): str,
                 Optional("pwr"): str,

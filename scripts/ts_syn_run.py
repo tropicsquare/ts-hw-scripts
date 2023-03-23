@@ -26,19 +26,23 @@ from internal.ts_hw_args import (
     add_cfg_files_arg,
     add_force_arg,
     add_lic_wait_arg,
+    add_pd_common_args,
     add_release_arg,
     add_runcode_arg,
     add_stayin_arg,
     add_ts_common_args,
     add_ts_syn_run_args,
-    add_pd_common_args,
 )
 from internal.ts_hw_cfg_parser import (
     check_valid_design_target,
     do_design_config_init,
     do_sim_config_init,
 )
-from internal.ts_hw_common import exec_cmd_in_dir, init_signals_handler, ts_get_root_rel_path
+from internal.ts_hw_common import (
+    exec_cmd_in_dir,
+    init_signals_handler,
+    ts_get_root_rel_path
+)
 from internal.ts_hw_global_vars import TsGlobals
 from internal.ts_hw_logging import (
     TsColors,
@@ -95,7 +99,7 @@ if __name__ == "__main__":
 
     # Do Config Init
     # Config for ts_design_cfg
-    setattr(args,"filter_mode_usage","syn")
+    setattr(args, "filter_mode_usage", "syn")
     do_design_config_init(args, enforce=True)
     # Target need to be defined from TS_DESIGN_CFG (holder of value)
     setattr(args, "target", TsGlobals.TS_DESIGN_CFG["design"]["target"])
@@ -152,8 +156,8 @@ if __name__ == "__main__":
 
     # Set enviromental variable for DC - license quering
     set_license_queuing(args, "dc_shell", "SNPSLMD_QUEUE")
-    set_license_wait_time(args, "dc_shell","SNPS_MAX_WAITTIME","1")
-    set_license_wait_time(args, "dc_shell","SNPS_MAX_QUEUETIME","1")
+    set_license_wait_time(args, "dc_shell", "SNPS_MAX_WAITTIME", "1")
+    set_license_wait_time(args, "dc_shell", "SNPS_MAX_QUEUETIME", "1")
 
     print(os.environ)
     # Prepare dc_cmd

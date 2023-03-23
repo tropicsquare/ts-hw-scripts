@@ -26,15 +26,19 @@ from internal.ts_hw_args import (
     add_cfg_files_arg,
     add_force_arg,
     add_lic_wait_arg,
+    add_pd_common_args,
     add_release_arg,
     add_runcode_arg,
     add_source_data_arg,
     add_stayin_arg,
     add_ts_common_args,
     add_ts_sta_run_args,
-    add_pd_common_args,
 )
-from internal.ts_hw_common import exec_cmd_in_dir, init_signals_handler, ts_get_root_rel_path
+from internal.ts_hw_common import (
+    exec_cmd_in_dir,
+    init_signals_handler,
+    ts_get_root_rel_path
+)
 from internal.ts_hw_global_vars import TsGlobals
 from internal.ts_hw_logging import (
     TsColors,
@@ -101,9 +105,9 @@ if __name__ == "__main__":
     # Do Config Init
     # Config for ts_design_cfg
     if args.sign_off:
-        setattr(args,"filter_mode_usage","sta-signoff")
+        setattr(args, "filter_mode_usage", "sta-signoff")
     else:
-        setattr(args,"filter_mode_usage","sta")
+        setattr(args, "filter_mode_usage", "sta")
     do_design_config_init(args)
     # Target need to be defined from TS_DESIGN_CFG (holder of value)
     setattr(args, "target", TsGlobals.TS_DESIGN_CFG["design"]["target"])

@@ -19,13 +19,14 @@ from .ts_hw_common import (
     load_yaml_file,
     ts_get_cfg,
     ts_get_curr_dir_rel_path,
+    ts_get_root_rel_path,
     ts_set_cfg,
 )
 from .ts_hw_design_config_file import (
+    filter_design_config_file,
     load_design_config_file,
     load_pdk_configs,
     validate_design_config_file,
-    filter_design_config_file,
 )
 from .ts_hw_global_vars import TsGlobals
 from .ts_hw_logging import (
@@ -270,6 +271,60 @@ def do_design_config_init(args, skip_check=False, enforce=False):
     filter_design_config_file(args)
 
 
+def do_dft_lint_init(args):
+    """
+    Returns do_lint_init fuction based on selected tool
+
+    """
+    cmd = f"do_dft_lint_{TsGlobals.TS_DFT_LINT_TOOL}_init(args)"
+    try:
+        return eval(cmd)
+    except KeyError:
+        ts_throw_error(
+            TsErrCode.GENERIC,
+            f"Not defined ts_hw_cfg_parser.do_dft_lint_{TsGlobals.TS_DFT_LINT_TOOL}_init() for selected LINT tool {TsGlobals.TS_DFT_LINT_TOOL}",
+        )
+
+
+def do_dft_lint_spyglass_init(args):
+    """
+    Spyglass constraints selection
+        :args :lint_constraints - relative/absoluth path + name of the file *.sgdc
+              :mode             - name in accordance with design_cfg modes
+    """
+
+    if args.lint_constraints is None and args.mode is None:
+        ts_throw_error(TsErrCode.ERR_DFT_5)
+    else:
+        file_path = None
+
+        # Check existance of any constraints based on selected mode
+        # the sgdc expect *dft_{args.mode}*
+        if args.mode is not None:
+            root_dir = ts_get_root_rel_path(f"lint/{TsGlobals.TS_DFT_LINT_TOOL}/sgdc/")
+            regex = re.compile(rf"(.*)(dft_{args.mode})(.*)(sgdc)$")
+
+        # Check existance of selected constraints
+        if args.lint_constraints is not None:
+            root_dir = ts_get_root_rel_path(os.path.dirname(args.lint_constraints))
+            regex = re.compile(rf"({os.path.basename(args.lint_constraints)})$")
+
+        try:
+            files = [
+                f
+                for f in os.listdir(root_dir)
+                if os.path.isfile(os.path.join(root_dir, f))
+            ]
+            for f in files:
+                result = regex.search(f)
+                if result:
+                    TsGlobals.TS_DFT_CONSTRAINT = f"{root_dir}/{result.string}"
+            if TsGlobals.TS_DFT_CONSTRAINT is None:
+                raise
+        except:
+            ts_throw_error(TsErrCode.ERR_DFT_5)
+
+
 def __check_pwr_scenarios():
     ts_debug("Checking power scenarios.")
     scenarios = ts_get_pwr_cfg("scenarios")
@@ -408,6 +463,39 @@ def parse_runcode_arg(args):
 
     if args.runcode:
         root_dir = os.getcwd()
+        result = None
+        suffix = None
+
+        regex = re.compile(rf"({args.runcode})(_*)([0-9]*)$")
+        for dir in os.listdir(root_dir):
+            result = regex.search(dir)
+            if result:
+                if suffix is None:
+                    suffix = 0
+                if result.group(3):
+                    if suffix < int(result.group(3)):
+                        suffix = int(result.group(3))
+
+        if suffix is not None:
+            return f"{args.runcode}_{suffix+1}"
+        else:
+            return f"{args.runcode}"
+    else:
+        return None
+
+
+def parse_runcode_arg_dft(args, root_dir):
+    """
+    Parses runcode with regards to defined rules by methodology.
+    Test of runcode existance, _n+1 rule usage.
+    """
+    if args.open_result or args.force:
+        return f"{args.runcode}"
+
+    if not os.path.exists(root_dir):
+        return f"{args.runcode}"
+
+    if args.runcode:
         result = None
         suffix = None
 
