@@ -1,0 +1,15 @@
+drawio 19.0.3
+inkscape 1.2.1
+texlive 2021
+vcs R-2020.12-SP2-0
+scl 2021.03
+dc_shell R-2020.09-SP5-1
+vivado 2019.2
+ts-latex-lib v0.13
+ordt 221031.02
+ts-python-env 0.2
+ts-synthesis-flow v1.3
+umc55-pdk 0v1
+primetime S-2021.06-SP5
+ts-sta-flow v0.3
+
