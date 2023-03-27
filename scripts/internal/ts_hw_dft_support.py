@@ -293,9 +293,9 @@ def dft_runfile_spyglass(args):
     lines.append(f"read_file -type sglib {TsGlobals.TS_DFT_BUILD_DIR}/*.sglib\n")
     lines.append(f"source {TsGlobals.TS_DFT_SRC_RTL_FILE}\n")
     # Ignore problematic file - to be removed/fixed
-    lines.append(
-        f"set_option ignorefile /projects/tropic01/work/{os.getenv('USER')}/ts-common-blocks/rtl/sv/tr_maj_edet_reg_vect.sv\n"
-    )
+    # lines.append(
+    #    f"set_option ignorefile /projects/tropic01/work/{os.getenv('USER')}/ts-common-blocks/rtl/sv/tr_maj_edet_reg_vect.sv\n"
+    # )
     # Constraints
     lines.append(f"read_file -type sgdc {TsGlobals.TS_DFT_CONSTRAINT}\n")
     # Compile
