@@ -424,7 +424,11 @@ def __check_modes_valid():
 def __filter_modes_usage(flow_type):
     tmp = []
     for i, mode in enumerate(TsGlobals.TS_DESIGN_CFG["design"]["modes"]):
-        if mode["usage"] and flow_type in mode["usage"]:
+
+        # If "usage" is not defined, treat the mode as if enabled for given flow type.
+        # With this behavior, it is backwards compatible, and also allows setting
+        # up small block level synthesis without defining "usage"
+        if (("usage" not in mode) or flow_type in mode["usage"]):
             tmp.append(TsGlobals.TS_DESIGN_CFG["design"]["modes"][i])
 
     TsGlobals.TS_DESIGN_CFG["design"]["modes"] = tmp.copy()
