@@ -1,0 +1,642 @@
+#******************************************************************************
+# TS Simulation Config
+#
+# TODO: License
+#
+# Author: Marek Santa
+#
+# Description:
+#   This file specifies project specific setting related to simulator,
+#   compilation, elaboration, simulation, coverage and results checking.
+#   The commented-out examples below are intended to demonstrate how to use
+#   this file.
+#
+#   Validity of content of this file is checked by TS HW Scripts.
+#
+#*****************************************************************************
+
+##############################################################################
+# Simulator settings
+##############################################################################
+# Simulator used for executing simulations. Currently only Synopsys VCS is
+# supported
+simulator: vcs
+
+# Simulator GUI to be used when simulation is not run in batch mode
+#gui: [dve | verdi]
+
+# Time resolution used for simulation
+# simulation_resolution: [fs | ps | ns | us | ms | s]
+simulation_resolution: ps
+
+# When license is not available, terminate execution or wait until license is
+# available
+license_wait: true
+
+# Path to session file used by DVE GUI
+#session_file: path/to/file (default = none)
+
+# Enable logging waveform database from whole design hierarchy
+#dump_waves: [true | false] (default = false) 
+
+# Path to custom "do" script
+#do_file: path/to/file (default = none)
+
+# Terminate execution after first failed test
+#fail_fast: [true | false] (default = false)
+
+# Path to directory where simulation files are built
+#build_dir: path/to/dir (default = TS_SIM_BUILD_PATH)
+
+
+##############################################################################
+# Compilation settings
+##############################################################################
+# VHDL standard
+#vhdl_std: [vhdl87 | vhdl93 | vhdl02 | vhdl08] (default = vhdl08)
+vhdl_std: vhdl08
+
+# Verilog standard
+#verilog_std: [v95 | v01 | v05] (default = v01)
+verilog_std: v01
+
+# Include pre-compiled UVM distribution sent shipped with simulator
+#enable_uvm: [true | false] (default = false)
+
+# Global compile options applied to all files
+#comp_options:
+#    common: -comp_switch
+
+# Global macros to be defined when compiling Verilog/SystemVerilog source
+# files. (VHDL (until 2019) has no concept of pre-processor macros therefore
+# any defined macros are ignored for VHDL files.)
+define:
+    MACRO_WITHOUT_VALUE:
+    MACRO_WITH_VALUE: 10
+
+# Path to directories where CAD tool will look for header header files when
+# compiling Verilog/SystemVerilog files. (Include directories are ignored for
+# VHDL files since VHDL has no concept of header files.)
+# Relative path are interpreted as relative to $TS_REPO_ROOT. Absolute paths
+# are interpreted as absolute paths.
+include_dirs:
+    - .
+    - rtl/include
+
+# Remove previously compiled source files to enfore full compilation for each run
+#clear: [true | false] (default = false)
+
+# Perform recompilation of source files for each run
+#recompile: [true | false] (default = false)
+
+# Compile debug TODO
+#compile_debug: [true | false] (default = false)
+
+
+##############################################################################
+# Elaboration settings
+##############################################################################
+
+# Global elaboration options applied to all files
+#elab_options:
+#    common: -elab_switch
+
+
+##############################################################################
+# Simulation settings
+##############################################################################
+
+# Global simulation options applied to all files
+#sim_options:
+#    common: -sim_switch
+
+
+##############################################################################
+# Coverage settings
+##############################################################################
+
+# Enable code coverage collection
+#coverage: [true | false] (default = false)
+coverage: false
+
+
+##############################################################################
+# Tests settings
+##############################################################################
+
+# Path to global Test List File applicable for all targets
+test_list_file: path/to/file.tlf
+
+# Set strategy of passing test names (keyword "name" under "tests" in Test
+# List File) to simulator. Two strategies are available:
+# uvm               - test name is passed to simulator using 
+#                     +UVM_TESTNAME=<test_name>
+# generic_parameter - test name is passed to simulator using generic/parameter
+#                     defined by test_name_generic/test_name_parameter. It's
+#                     designer's/verifier's responsibility to implement such
+#                     generic/parameter on top level entity/module which is
+#                     being simulated.
+#
+#test_name_strategy: [uvm | generic_parameter]
+test_name_strategy: uvm
+
+# Name of generic/parameter that contains test name. Applicable only when
+# test_name_strategy is set to generic_parameter
+test_name_generic: G_TEST_NAME
+test_name_parameter: P_TEST_NAME
+
+# Initial seed used for random number generator. If no seed is specified,
+# random seed is generated.
+#seed: 0 
+
+# Number of repetitions of a test
+#loop: 5 (default = 1)
+
+# Global top level generics to be defined when running VHDL test
+generics: 
+    G_MY_INTEGER_GENERIC: 2
+    G_MY_TIME_GENERIC: 25ns
+
+# Global top level parameters to be defined when running Verilog/SystemVerilog
+# test
+parameters:
+    P_MY_REAL_PARAMETER: 3.14
+    P_MY_STRING_PARAMETER: "Hello world"
+    P_MY_ADDRESS_PARAMETER: 0x240000
+
+
+##############################################################################
+# Results check settings
+##############################################################################
+
+# Disable checking results when tests are completed
+#no_check: [true | false] (default = false)
+no_check: false
+
+# Check and report elaboration results
+#check_elab_log = [true | false] (default = false)
+check_elab_log: true
+
+# Check severity
+# When check severity is set to warning, lines from simulation/elaboration log
+# file classified as Warnings or Errors cause test failure. When check
+# severity is set to error, only lines which are classified as Error casue
+# test failure.
+#check_severity = [warning | error] (default = warning)
+check_severity: warning
+
+# Error patterns define regular expressions which cause a line within
+# simulation/elaboration log file to be classified as error.
+error_patterns:
+    common:
+        # Memory compiler SRAM models error
+        - "MEM_Error"
+        # OTP model error
+        - "EMTC_Error"
+        # EFuse Error
+        - "Error"
+        # Flash model error
+        - "ERROR-"
+
+# Warning patterns define regular expressions which cause a line within
+# simulation/elaboration log file to be classified as warning.
+#warning_patterns:
+#    common:
+#        - "Warning"
+
+# Ignore errors
+# When error_ignore_start and error_ignore_stop is set, scripting system will
+# search for strings set by these keywords in simulation log file and ignore 
+# all errors that appear between them. Such ignored errors will not cause test
+# to fail.
+error_ignore_start: TS_ERR_IGNORE_START
+error_ignore_stop: TS_ERR_IGNORE_STOP
+
+# Ignore errors
+# When warning_ignore_start and warning_ignore_stop is set, scripting system 
+# will search for strings set by these keywords in simulation log file and
+# ignore all warnings that appear between them. Such ignored warnings will not
+# cause test to fail.
+warning_ignore_start: TS_WARN_IGNORE_START
+warning_ignore_stop: TS_WARN_IGNORE_STOP
+
+
+##############################################################################
+# Reporting settings
+##############################################################################
+
+# Scripts verbosity level
+#verbose: [0 .. 3] (default = 0)
+
+# Do not colorize scripts output
+#no_color: [true | false] (default = false)
+
+# Disable printing compilation/elaboration/simulation progress into console
+#no_sim_out: [true | false] (default = false)
+
+# Remove all previously generated logs prior run
+#clear_logs: [true | false] (default = false)
+clear_logs: true
+
+# Add timestamps to log files
+#timestamp_log_file: [true | false] (default = true)
+timestamp_log_file: true
+
+# Message printed after simulation is completed
+# If simulation is aborted (e.g. CTRL+C) then it is often desirable to mark
+# the test as failed even if no error has occured yet. To do this, the
+# testbench needs to print a special phrase when regularly exiting simulation
+# and configure this phrase as value of post_sim_msg. If this phrase in not
+# found in simulation log file, test will be marked as failed regardless of
+# 0 found errors/warnings.
+# If post_sim_msg keyword is not defined, check for this keyword is not
+# executed.
+post_sim_msg: TS_TB_ENDING_OK
+
+#vvvvvvvvvvvvvvv TODO TODO TODO vvvvvvvvvvvvvvvvv
+#stop_severity: [note | warning | error | failure | nostop] (default = failure)
+#sim_verbosity: [debug | info | warning | error] (default = info)
+#sim_verbosity_levels:
+#    info:
+#^^^^^^^^^^^^^^^ TODO TODO TODO ^^^^^^^^^^^^^^^^^
+
+
+##############################################################################
+# Regression settings
+##############################################################################
+# Number of tests run in parallel when running regression
+regress_jobs: 3
+
+
+##############################################################################
+# Hooks
+##############################################################################
+
+# A hook is a callback which is called at a specific time during compilation/
+# simulation process. Each hook is defined as a path to an executable script
+# or as a bash command
+#
+# The overall hook flow is following:
+#
+#           Run ts_sim_compile.py
+#                   |
+#                   |------> pre_compile_hook
+#                   v
+#              Compilation
+#                   |
+#                   |------> post_compile_hook
+#                   v
+#           Compiled RTL and TB
+#
+#            Run ts_sim_run.py
+#                   |
+#                   |------> pre_run_hook
+#                   v
+#   --------> Start execution
+#   |           of a test
+#   |               |
+#   |               |------> pre_test_hook
+#   |               |
+#   |               |------> pre_test_hook (test specific) 
+#   |               v
+#   |          Elaboration
+#   |               |
+#   |               |------> pre_sim_hook
+#   |               v
+#   |          Simulation
+#   |               |
+#   |               |------> post_test_hook
+#   |               |
+#   |               |------> post_test_hook (test specific)
+#   |               v
+#   -------- Any tests remaining?
+#      Yes          |
+#                No |------> post_run_hook
+#                   v
+#           Run ts_sim_check.py
+#                   |
+#                   |------> post_check_hook
+#                   v
+#             Test results
+#
+
+
+# Command to be executed prior compilation
+pre_compile_hook: script.sh
+
+# Command to be executed after compilation
+post_compile_hook: "make fw"
+
+# Command to be executed prior run
+pre_run_hook: script.sh
+
+# Command to be executed after run
+post_run_hook: "echo DONE"
+
+# Command to be executed prior test
+pre_test_hook: script.sh
+
+# Command to be executed after test
+post_test_hook: "echo DONE"
+
+# Command to be executed prior simulation
+pre_sim_hook: script.sh
+
+# Command to be executed after check
+post_check_hook: "echo DONE"
+
+
+##############################################################################
+# Targets
+#
+# This list specifies targets for simulation/synthesis. Each target has
+# following keys:
+#
+#  1) source_list_files              - path to source list file(s) or name of
+#                                      another target(s). If another target is
+#                                      referenced, source list file(s) from
+#                                      this referenced target are included
+#                                      (other settings defined in referenced
+#                                      target are not applied)
+#  2) top_entity                     - name of top entity for simulation.
+#                                      Note that library name is used as
+#                                      a prefix of top entity 
+#  3) inherits (optional)            - another target used as a base for this
+#                                      target to avoid repeating settings.
+#                                      Inheritance includes source list file(s)
+#                                      to be compiled as well as all other
+#                                      settings to be applied.
+#  4) test_list_file (optional)      - target specific test list file
+#  5) comp_options (optional)        - target specific compilation options
+#  6) elab_options (optional)        - target specific elaboration options
+#  7) sim_options (optional)         - target specific simulation options
+#  8) generics (optional)            - target specific generics
+#  9) parameters (optional)          - target specific parameters
+# 10) define (optional)              - target specific macro definitions
+# 11) enable_uvm (optional)          - target specific enable to use
+#                                      pre-compiled UVM library
+# 12) test_name_strategy (optional)  - target specific test name strategy
+# 13) test_name_generic (optional)   - target specific test name generic
+# 14) test_name_parameter (optional) - target specific test name parameter
+# 15) include_dirs (optional)        - target specific directories to be
+#                                      included
+# 16) do_file (optional)             - target specific DO file
+#
+# For more info on target specific keys see description of their global
+# equivalent.
+#
+##############################################################################
+targets:
+
+    #-------------------------------------------------------------------------
+    # Common synthesizable RTL, Technology, Simulation/Synthesis independant
+    #-------------------------------------------------------------------------
+    rtl_common:
+        top_entity: tassic_rtl.tassic_top
+        source_list_files:
+            # Common blocks
+            - $TS_COMMON_BLOCKS_ROOT/rtl/slf_sv_rtl_pdk_agnostic.yml
+            # We include RAMs since CPB contains buffers made out of FFs!
+            - $TS_COMMON_BLOCKS_ROOT/rtl/slf_sv_rtl_rams.yml
+
+            # TPDI
+            - modules/ts-tpdi/rtl/slf_rtl_common.yml
+
+            # TASSIC common
+            - rtl/slf_rtl_tassic_common.yml
+
+
+    #-------------------------------------------------------------------------
+    # UMC 55 RTL
+    #-------------------------------------------------------------------------
+    rtl_umc55:
+        top_entity: tassic_rtl.tassic_top
+        source_list_files:
+            # TASSIC top - Common RTL
+            - rtl_common
+
+            # Bedrock RTL
+            - modules/bedrock/export/slf_umc55_synth.yml
+
+            # Flash controller RTL
+            - modules/tassic-flash/export/slf_umc55_syn.yml
+
+            # CPU Subsystem UMC55 (Memories)
+            - modules/ts-cpu-subsystem/rtl/slf_rtl_memories_umc55.yml
+
+            # TASSIC top - UMC55 specific  stuff
+            - rtl/slf_rtl_tassic_umc55.yml
+
+    #-------------------------------------------------------------------------
+    # Functional pad models (no timing)
+    #-------------------------------------------------------------------------
+    mod_pads_functional:
+        top_entity: dummy
+        source_list_files:
+            # Pad analog models
+            - /projects/tropic01/pdk/umc/io_55_UM055GIOEE25MVIREPFS/0v1/behav_models/slf_mod_tassic_pads_functional.yml
+
+    #-------------------------------------------------------------------------
+    # UMC 55 - Post Synthesis gates
+    #
+    # Zero delay
+    #-------------------------------------------------------------------------
+    gate_syn_umc55:
+        top_entity: tassic_top_gate.tassic_top
+        source_list_files:
+            - $TS_STD_CELLS_ROOT/behav_models/slf_umc55_cells.yml
+            # TODO: Make MOPTs relative path!
+            - /projects/tropic01/pdk/umc/ip_55_custom_cells_4TPS/0v1/rtl/slf_mod_mopt.yml
+            - mod_pads_functional
+            - syn_export/slf_netlist.yml
+
+    #-------------------------------------------------------------------------
+    # UMC 55 - Post PnR gates
+    #
+    # Intended for SDF annotation
+    #-------------------------------------------------------------------------
+    gate_pnr_umc55:
+        top_entity: tassic_top_gate_pnr.tassic_top
+        source_list_files:
+            - $TS_STD_CELLS_ROOT/behav_models/slf_umc55_cells_sdf30.yml
+            # TODO: Make MOPTs relative path!
+            - /projects/tropic01/pdk/umc/ip_55_custom_cells_4TPS/0v1/rtl/slf_mod_mopt.yml
+            - mod_pads_timing
+            - pnr_export/slf_netlist.yml
+
+    #-------------------------------------------------------------------------
+    # UVM TB: Environment + Test cases source files
+    #
+    # All elab/compile options are the same for all TB targets.
+    #
+    #-------------------------------------------------------------------------
+    tb_uvm_base:
+        top_entity: tassic_tb_lib.tassic_tb_top
+        source_list_files:
+            # Common verification blocks
+            - $TS_COMMON_VER_ROOT/src/clk_agent/slf_clk_agent.yml
+            - $TS_COMMON_VER_ROOT/src/clk_gate_agent/slf_clk_gate_agent.yml
+            - $TS_COMMON_VER_ROOT/src/dio_agent/slf_dio_agent.yml
+            - $TS_COMMON_VER_ROOT/src/ahb_master_agent/slf_ahb_master_agent.yml
+            - $TS_COMMON_VER_ROOT/src/scoreboard/slf_scoreboard.yml
+            # TPDI to LSU Bridge agents
+            - modules/ts-tpdi/tb/env/qspi_master_agent/slf_qspi_master_agent.yml
+            # Serial Subsystem agents
+            - modules/ts-serial-subsystem/tb/env/spi_master_agent/slf_spi_master_agent.yml
+            # TPDI to LSU Bridge environment
+            - modules/ts-tpdi/tb/env/slf_env.yml
+            # Serial Subsystem environment
+            - modules/ts-serial-subsystem/tb/env/slf_uvm_env.yml
+            # TASSIC environment
+            - tb/env/slf_env.yml
+            # Sequences
+            - modules/ts-serial-subsystem/tb/tests/sequences/slf_sequences.yml
+            - tb/tests/sequences/slf_sequences.yml
+            # Tests
+            - tb/tests/slf_tests.yml
+            # Top testbench
+            - tb/slf_tb.yml
+
+    #-------------------------------------------------------------------------
+    # Combination of UVM TB and UMC55 version of RTL
+    #-------------------------------------------------------------------------
+    tb_uvm_rtl_umc55:
+        top_entity: tassic_tb_lib.tassic_tb_top
+        enable_uvm: true
+        test_name_strategy: uvm
+        test_list_file: tb/tests/tlf.yml
+        source_list_files:
+            - rtl_umc55_sim
+            - tb_uvm_base
+        define:
+            TS_MEMS_UMC55:
+
+        # Disabled warnings:
+        #
+        # UTSFM         - Memory compiler memory models have timescale defined at 10ps/1ps.
+        # UTSFCM          We don't use timescale in design nor in TB! Thus VCS complains
+        #                 some modules have timescale, while others don't! We override
+        #                 timescale to 1ps with "simulation_resolution" (more fine grained),
+        #                 thus we should have no issues with it!
+        # ICPSD_W       - Suppressed until solution is found on UVM agents which can
+        #                 operate bidirectionally on some interfaces
+        # DRTZ          - Some modules have coarser timescales than simulation time scale.
+        #                 For RTL we wave this issue. Further, we have no SDF annotation
+        #                 on RTL...
+        #                   *** DO NOT COPY THIS OPTION TO TIMING GLS! ***
+        #
+        # -debug_access=r+w  Needed for backdoor access to memories (preload of FW)
+        elab_options:
+            vcs: "+lint=TFIPC-L +lint=PCWM +warn=noUTSFM,noUTSFCM,noICPSD_W,noDRTZ -debug_access=r+w"
+        sim_options:
+            vcs: "-sv_lib $TS_REPO_ROOT/modules/ts-macandd/modules/xkcp/bin/generic64/libXKCP -sv_lib $TS_REPO_ROOT/modules/ts-cpu-subsystem/tb/jtag_dpi/librbs"
+
+
+    #-------------------------------------------------------------------------
+    # UVM TB + UMC55 post synthesis Gates
+    #-------------------------------------------------------------------------
+    tb_uvm_gate_syn_umc55:
+        top_entity: tassic_tb_lib.tassic_tb_top
+        enable_uvm: true
+        test_name_strategy: uvm
+        test_list_file: tb/tests/tlf.yml
+        source_list_files:
+            - gate_syn_umc55
+            - tb_uvm_base
+        define:
+            TS_MEMS_UMC55:
+            TS_GATE_LEVEL_SIM:
+
+        # Disabled warnings:
+        #
+        # UTSFM         - Memory compiler memory models have timescale defined at 10ps/1ps.
+        # UTSFCM          We don't use timescale in design nor in TB! Thus VCS complains
+        #                 some modules have timescale, while others don't! We override
+        #                 timescale to 1ps with "simulation_resolution" (more fine grained),
+        #                 thus we should have no issues with it!
+        # ICPSD_W       - Suppressed until solution is found on UVM agents which can
+        #                 operate bidirectionally on some interfaces
+        # DRTZ          - Some modules have coarser timescales than simulation time scale.
+        #                 For RTL we wave this issue. Further, we have no SDF annotation
+        #                 on RTL...
+        #                   *** DO NOT COPY THIS OPTION TO TIMING GLS! ***
+        #
+        # -debug_access=r+w  Needed for backdoor access to memories (preload of FW)
+        elab_options:
+            vcs: "+lint=TFIPC-L +lint=PCWM +warn=noUTSFM,noUTSFCM,noICPSD_W,noDRTZ -debug_access=r+w"
+        sim_options:
+            vcs: "-sv_lib $TS_REPO_ROOT/modules/ts-macandd/modules/xkcp/bin/generic64/libXKCP -sv_lib $TS_REPO_ROOT/modules/ts-cpu-subsystem/tb/jtag_dpi/librbs"
+
+    #-------------------------------------------------------------------------
+    # UVM TB + UMC55 post-PnR gates
+    #
+    # This is base target fo annotated GLS. It contains all siwtches and
+    # warnings for SDF annotation, but NOT the corner selection!
+    # Use targets below for actual simulation
+    #-------------------------------------------------------------------------
+    tb_uvm_gate_pnr_umc55:
+        top_entity: tassic_tb_lib.tassic_tb_top
+        enable_uvm: true
+        test_name_strategy: uvm
+        test_list_file: tb/tests/tlf.yml
+        do_file: $TS_REPO_ROOT/pnr_export/tcheck_do_file
+        source_list_files:
+            - gate_pnr_umc55
+            - tb_uvm_base
+        define:
+            TS_MEMS_UMC55:
+            TS_GATE_LEVEL_SIM:
+            TS_SDF_ANNOTATE:
+            TS_PNR_MIRROR_FIX:
+
+        # Disabled warnings:
+        #
+        # UTSFM         - Memory compiler memory models have timescale defined at 10ps/1ps.
+        # UTSFCM          We don't use timescale in design nor in TB! Thus VCS complains
+        #                 some modules have timescale, while others don't! We override
+        #                 timescale to 1ps with "simulation_resolution" (more fine grained),
+        #                 thus we should have no issues with it!
+        # ICPSD_W       - Suppressed until solution is found on UVM agents which can
+        #                 operate bidirectionally on some interfaces
+        #
+        # DRTZ          - Checked, only applies in JTAG and SVT AHB VIP. Does not truncate any
+        #                 delayes of cells!
+        #
+        # SDF_GENERIC_NOT_FOUND - Suppressed due to bedrock being VHDL model, but having no Vital.
+        #                         Due to this, we can't annotate anything on it.!
+        #
+        # SDFCOM_NDI    - Suppressed due to single negative delay. "-negdelay" switch added, but warning stays!
+        #
+        # SDFCOM_UHICD  - According to solvnet can be ignored.
+        #
+        # -debug_access=r+w  Needed for backdoor access to memories (preload of FW)
+        #
+        # TODO: Check suppress of TFIPC-L
+        elab_options:
+            vcs: "+lint=TFIPC-L,PCWM -suppress=PCTI-L,PCTIO-L +warn=noUTSFM,noUTSFCM,noICPSD_W,noIWNF,noDRTZ,noSDFCOM_UHICD,noSDFCOM_NDI,noSDFCOM_RLTPD -debug_access=r+w +neg_tchk -negdelay -sdfretain -tcheckvecsplit +sdfverbose -diag=sdf:verbose -sdfretain=warning"
+        sim_options:
+            vcs: "-sv_lib $TS_REPO_ROOT/modules/ts-macandd/modules/xkcp/bin/generic64/libXKCP -sv_lib $TS_REPO_ROOT/modules/ts-cpu-subsystem/tb/jtag_dpi/librbs -error=noSDF_GENERIC_NOT_FOUND -warn=noSDF_GENERIC_NOT_FOUND"
+
+
+    #-------------------------------------------------------------------------
+    # UVM TB targets for back-annotated GLS sims over technology corners
+    #-------------------------------------------------------------------------
+
+    # SDF annotated GLS - Typical corner (1.2 V, 25 C)
+    tb_uvm_gate_pnr_umc55_typ:
+        inherits: tb_uvm_gate_pnr_umc55
+        define:
+            TS_SDF_TYP_CORNER:
+
+    # SDF annotated GLS - Minimal (BC) corner (1.32 V, -40 C)
+    tb_uvm_gate_pnr_umc55_min:
+        inherits: tb_uvm_gate_pnr_umc55
+        define:
+            TS_SDF_MIN_CORNER:
+
+    # SDF annotated GLS - Maximal (BC) corner (1.08 V, 125 C)
+    tb_uvm_gate_pnr_umc55_max:
+        inherits: tb_uvm_gate_pnr_umc55
+        define:
+            TS_SDF_MAX_CORNER:
+
