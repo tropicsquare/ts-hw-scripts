@@ -34,7 +34,7 @@ from internal.ts_hw_args import (
     add_ts_sta_run_args,
     add_pd_common_args,
 )
-from internal.ts_hw_common import init_signals_handler, ts_get_root_rel_path
+from internal.ts_hw_common import exec_cmd_in_dir, init_signals_handler, ts_get_root_rel_path
 from internal.ts_hw_global_vars import TsGlobals
 from internal.ts_hw_logging import (
     TsColors,
@@ -59,7 +59,6 @@ from internal.ts_hw_sta_support import (
 )
 from internal.ts_hw_syn_support import (
     delete_syn_sub_dir,
-    exec_cmd_in_dir_interactive,
     release,
     set_license_queuing,
 )
@@ -176,7 +175,11 @@ if __name__ == "__main__":
     pt_cmd = build_sta_cmd(args)
 
     # Run STA
-    exec_cmd_in_dir_interactive(TsGlobals.TS_STA_RUN_DIR, pt_cmd)
+    exec_cmd_in_dir(
+        directory=TsGlobals.TS_STA_RUN_DIR,
+        command=pt_cmd,
+        batch_mode=args.batch_mode
+    )
 
     # Goodbye STA!
     ts_print("STA is done!", color=TsColors.PURPLE, big=True)
