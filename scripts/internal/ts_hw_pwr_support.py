@@ -19,7 +19,8 @@ from .ts_hw_common import (
     ts_get_test_dir,
     ts_set_cfg,
     ts_set_env_var,
-    ts_rmdir
+    ts_rmdir,
+    exec_cmd_in_dir
 )
 from .ts_hw_global_vars import TsGlobals
 from .ts_hw_logging import (
@@ -35,7 +36,6 @@ from .ts_hw_logging import (
     ts_throw_error,
     ts_warning,
 )
-from .ts_hw_syn_support import exec_cmd_in_dir_interactive
 
 CORNER_DICT = {"bc": "TLUP_MIN_-40", "tc": "TLUP_TYP_25", "wc": "TLUP_MAX_125"}
 
@@ -133,7 +133,7 @@ def find_list(lst: list, key: str, val: str):
 def get_netlist_file() -> str:
     """
     Composes path to nestlist file.
-    :return: Path to netlist file regarding to runcode 
+    :return: Path to netlist file regarding to runcode
     """
     path = os.path.join(
         TsGlobals.TS_RUNCODE_DIR,
@@ -342,8 +342,11 @@ def generate_common_setup():
     path = os.path.join(TsGlobals.TS_PWR_RUNCODE_DIR, "common_setup.tcl")
     design_cfg_cmd = xterm_cmd_wrapper(build_design_cfg_cmd(path))
     ts_debug(f"Running command {design_cfg_cmd}")
-    exec_cmd_in_dir_interactive(TsGlobals.TS_PWR_RUNCODE_DIR, design_cfg_cmd)
-
+    exec_cmd_in_dir(
+        directory=TsGlobals.TS_PWR_RUNCODE_DIR,
+        command=design_cfg_cmd,
+        batch_mode=False
+    )
 
 def generate_scenario_setup(scenario: dict, vcd_file: str, args):
     """
@@ -473,9 +476,9 @@ def set_pwr_env(args):
     check_scenario_args()
 
     if os.path.exists(TsGlobals.TS_PWR_RUNCODE_DIR) and not args.force and args.add_scenario is None:
-        ts_throw_error(TsErrCode.GENERIC, 
+        ts_throw_error(TsErrCode.GENERIC,
             f"Power analysis for runcode {TsGlobals.TS_RUNCODE} already done, plese use --force.")
-    
+
     if args.force and args.add_scenario is None:
         ts_info(TsInfoCode.GENERIC, f"Forced to re-run runcode {TsGlobals.TS_RUNCODE}.")
         ts_rmdir(TsGlobals.TS_PWR_RUNCODE_DIR)
@@ -594,9 +597,14 @@ def restore_pwr_session(args) -> int:
 
     cmd = xterm_cmd_wrapper(f"pt_shell -x \"restore_session {session_path}\"")
     ts_debug(f"Running command {cmd}")
-    return_code = exec_cmd_in_dir_interactive(scenario_dir_path, cmd)
+    return_code = exec_cmd_in_dir(
+        directory=scenario_dir_path,
+        command=cmd,
+        batch_mode=args.batch_mode
+    )
 
     return return_code
+
 
 def open_pwr_waves(args):
     set_pwr_runcode_dir()
@@ -611,6 +619,10 @@ def open_pwr_waves(args):
 
     cmd = f"verdi -sx {waves_path}"
     ts_debug(f"Running command {cmd}")
-    return_code = exec_cmd_in_dir_interactive(scenario_dir_path, cmd)
+    return_code = exec_cmd_in_dir(
+        directory=scenario_dir_path,
+        command=cmd,
+        batch_mode=args.batch_mode
+    )
 
     return return_code

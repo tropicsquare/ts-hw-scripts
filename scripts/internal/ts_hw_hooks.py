@@ -55,14 +55,21 @@ def __call_hook(hook: TsHooks, root_dict: dict, *args):
             f"File '{abs_hook_path}' does not exist, "
             f"hook '{hook_path}' will be executed as bash command..."
         )
-        if exec_cmd_in_dir(os.getcwd(), hook_path) != 0:
+        if exec_cmd_in_dir(
+            directory=os.getcwd(),
+            command=hook_path,
+            batch_mode=True) != 0:
             ts_throw_error(TsErrCode.ERR_HOK_0, hook_path, hook_type)
 
     # Or execute it with optional arguments
     else:
         hook_cmd = f"source {abs_hook_path} {' '.join(map(str, args))}"
         ts_debug(f"Hook_command: {hook_cmd}")
-        exec_cmd_in_dir(os.getcwd(), hook_cmd)
+        exec_cmd_in_dir(
+            directory=os.getcwd(),
+            command=hook_cmd,
+            batch_mode=True
+        )
 
 
 def ts_call_global_hook(hook: TsHooks, *args):

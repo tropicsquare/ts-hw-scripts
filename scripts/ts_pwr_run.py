@@ -169,7 +169,11 @@ if __name__ == "__main__":
 
             # Run simulation
             ts_debug(f"Running command {run_sim_cmd}")
-            sim_exit_code = exec_cmd_in_dir_interactive(TsGlobals.TS_PWR_DIR, run_sim_cmd)
+            sim_exit_code = exec_cmd_in_dir(
+                directory=TsGlobals.TS_PWR_DIR,
+                command=run_sim_cmd,
+                batch_mode=args.batch_mode
+            )
 
             ts_debug(f"Simulation exit code: {sim_exit_code}")
 
@@ -213,7 +217,11 @@ if __name__ == "__main__":
         # Run power analysis
         ########################################################################################
         ts_debug(f"Running command {pt_shell_cmd}")
-        pwr_exit_code = exec_cmd_in_dir_interactive(pwr_scenario["rundir"], pt_shell_cmd)
+        pwr_exit_code = exec_cmd_in_dir(
+            directory=pwr_scenario["rundir"],
+            command=pt_shell_cmd,
+            batch_mode=args.batch_mode
+        )
 
         ts_debug(f"PrimeTime exit code: {pwr_exit_code}")
         if pwr_exit_code:
