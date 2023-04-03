@@ -1,0 +1,214 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% This is User-guide for scripting system for digital simulations in
+% Tropic Square. It explains basic use-cases of the scripting system and shows
+% examples how to use the scripting system.
+%
+% This document uses Tropic Square LaTex library. Set file to this library in
+% TROPICTEXLIBPATH variable (see below).
+%
+% LaTex class:
+%	tropic_design_spec
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Specify Tropic Square document class
+\documentclass{tropic_design_spec}
+
+% For code samples
+\usepackage{listings}
+\lstset{backgroundcolor=\color{lightgray}}
+
+% For executing shell commands
+\usepackage{iexec}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Document properties and title page
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\title{User manual}
+\author{Vit Masek, Tropic Square}
+\date{August 2022}
+
+% Start of document
+\begin{document}
+
+% Parameters Needed by Design spec class (must be inside document)
+% Set these parameters according to your project.
+\def \projectname {Tropic Square Power Analysis Flow}
+\def \documentname {User manual}
+\def \versionnumber {0.2}
+
+% Title page
+\maketitle
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Document revisions
+% We revision with GIT, however, it does not mean that major changes in the
+% document should not be kept also with document!
+% In general, when you increase document version number, add also entry to
+% this table with revisions saying what changed!
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section*{Version history}
+
+\begin{TropicRatioTable4Col}
+	{0.1}			{0.2}				{0.2}			{0.5}
+	{Version Tag 	& Date 				& Author		&	Description					}
+                0.1 & 12.8.2022         & Vit Masek  	&	Initial version \Ttlb
+                0.2 & 1.3.2023          & Vit Masek     &   Run all scenarios as default.
+                                                            New prw dir structure.
+                                                            Default runcode. \Ttlb
+\end{TropicRatioTable4Col}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Table of contents
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\pagebreak
+\tableofcontents
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Document
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Introduction
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\pagebreak
+\section{Introduction}
+
+This document serves as an user guide for Tropic Square Power Analysis flow. The flow consists of:
+
+\begin{itemize}
+    \item \textit{ts_pwr_config.yml} power config file, which defines scenarios for power analysis.
+    \item \textit{ts_pwr_run.py} script, which does power analysis.
+    \item \textit{pwr.tcl} run script TCL that is executed by PrimeTime.
+\end{itemize}
+
+Prerequisites:
+\begin{itemize}
+    \item Design Cfg. flow
+    \item Simulation flow
+    \item PNR results (netlist, spef for wc/tc/bc corners)
+\end{itemize}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% User manual
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\pagebreak
+\section{User manual}
+
+%===================================================================================================
+% FLOW DESCRIPTION
+%===================================================================================================
+
+\subsection{Power Analysis Flow}
+
+\begin{figure}[ht!]
+    \centering
+    \includegraphics[width=\linewidth]{\detokenize{img/use-model.pdf}}
+    \caption{Power Flow -- Use model}
+\end{figure}
+
+\pagebreak
+
+\begin{figure}[ht!]
+    \centering
+    \includegraphics[width=.8\linewidth]{\detokenize{img/Flowchart.pdf}}
+    \caption{Flowchart}
+\end{figure}
+
+\pagebreak
+
+%===================================================================================================
+% POWER CONFIG FILE
+%===================================================================================================
+
+\subsection{Power Config File}
+
+The power configuration file is a YAML file. It is used to define scenarios for power analysis and some
+other desired information. Power flow uses \textit{\$TS_REPO_ROOT/pwr/ts_pwr_config.yml} as default
+configuration file for power analysis. The structure of such config file is as follows:
+
+\begin{lstlisting}
+strip_path: <strip path>
+scenarios:
+  - name: <scenario name>
+    mode: <mode from design config file>
+    simulation_target: <target from simulation config file>
+    test_name: <test from test list file>
+    from: <simulation time from which to start the power analysis>
+    to: <simulation time in which to end the power analysis>
+    randomized: <true/false>
+\end{lstlisting}
+
+See \textit{templates/ts_pwr_config.yml}
+
+\vspace{.5cm}
+
+Times 'from' and 'to' are in nanoseconds.
+
+\vspace{.5cm}
+
+The option 'randomized' is optional. Default value is false and \texttt{seed = 0}.
+
+\subsection{Running the flow}
+
+To run the flow, runcode has to be set. Runcode specifies concrete directory in \textit{pnr} directory
+from \textit{ts_design_cfg.yml} which contains PNR results.
+
+\vspace{.5cm}
+
+One can set default runcode, e.g. in \textit{setup_env} script.
+
+\vspace{.5cm}
+
+To run the flow, one can simply execute command:
+\begin{lstlisting}
+    ts_pwr_run.py
+\end{lstlisting}
+
+This will run power analysis of all scenarios with default runcode.
+
+\vspace{.5cm}
+
+The flow creates runcode directory \textit{\$TS_REPO_ROOT/pwr/<runcode>}. Rundirs for scenarios are then
+located in this directory.
+
+\subsection{How to restore session}
+
+When \texttt{stay-in-tool} option is not used, the flow automaticaly exits \textit{pt_shell} after the
+power analysis of a scenario is done. To restore the session, use \texttt{restore=<scenario>} option.
+
+\subsection{How to open power waves}
+
+If \texttt{dump-pwr-waves} option is used, the flow dumps power waves in certain format. These power waves
+can be then opened using \texttt{open-pwr-waves=<scenario>} in Verdi. Only fsdb format is supported.
+
+\pagebreak
+\section{Notes}
+\TropicNote{
+    VCD file is now dumped using VCS command line options. No hierarchy option is supported.
+}
+\TropicNote{
+    We recomend to use \texttt{help} option to see all options of the flow.
+}
+\TropicNote{
+    Run script TCL, which is executed by PrimeTime is part of \textit{ts-power-flow repository}. This repository
+    is expected to be a submodule.
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Open issues
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\pagebreak
+\section{Open Issues}
+
+\PrintOpenIssueSummary
+
+\end{document}
