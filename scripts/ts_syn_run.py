@@ -161,7 +161,7 @@ if __name__ == "__main__":
 
     # Run DC
     exec_cmd_in_dir(
-        dir=TsGlobals.TS_SYN_RUN_DIR,
+        directory=TsGlobals.TS_SYN_RUN_DIR,
         command=dc_cmd,
         batch_mode=args.batch_mode
     )

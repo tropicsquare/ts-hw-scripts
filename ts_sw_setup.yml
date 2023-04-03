@@ -8,4 +8,5 @@ vivado 2019.2
 ts-latex-lib v0.13
 ordt 221031.02
 ts-python-env 0.2
+ts-synthesis-flow v1.3
 umc55-pdk 0v1
