@@ -38,7 +38,7 @@ from internal.ts_hw_cfg_parser import (
     do_design_config_init,
     do_sim_config_init,
 )
-from internal.ts_hw_common import init_signals_handler, ts_get_root_rel_path
+from internal.ts_hw_common import exec_cmd_in_dir, init_signals_handler, ts_get_root_rel_path
 from internal.ts_hw_global_vars import TsGlobals
 from internal.ts_hw_logging import (
     TsColors,
@@ -54,7 +54,6 @@ from internal.ts_hw_syn_support import (
     build_synthesis_cmd,
     create_syn_sub_dirs,
     delete_syn_sub_dir,
-    exec_cmd_in_dir_interactive,
     open_result_test,
     release,
     set_license_queuing,
@@ -161,7 +160,11 @@ if __name__ == "__main__":
     dc_cmd = build_synthesis_cmd(args)
 
     # Run DC
-    exec_cmd_in_dir_interactive(TsGlobals.TS_SYN_RUN_DIR, dc_cmd)
+    exec_cmd_in_dir(
+        dir=TsGlobals.TS_SYN_RUN_DIR,
+        command=dc_cmd,
+        batch_mode=args.batch_mode
+    )
 
     # Goodbye synthesis!
     ts_print("Synthesis is done!", color=TsColors.PURPLE, big=True)

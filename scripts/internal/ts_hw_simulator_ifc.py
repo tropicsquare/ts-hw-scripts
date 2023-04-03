@@ -460,7 +460,11 @@ def __run_uvm_compile() -> int:
             f"Simulator '{simulator}' not supported in function '__run_uvm_compile'"
         )
 
-    return exec_cmd_in_dir(ts_get_cfg("build_dir"), cmd)
+    return exec_cmd_in_dir(
+        directory=ts_get_cfg("build_dir"),
+        command=cmd,
+        batch_mode=True
+    )
 
 
 def __compile_all_files():
@@ -655,7 +659,10 @@ def __compile_all_files():
                 # Finally, call the compile command and evaluate it
                 # Stash stderr. Error message is anyway printed to stdout too.
                 comp_res = exec_cmd_in_dir(
-                    ts_get_cfg("build_dir"), final_comp_cmd, no_std_err=True
+                    directory=ts_get_cfg("build_dir"),
+                    command=final_comp_cmd,
+                    no_std_err=True,
+                    batch_mode=True
                 )
 
                 # Append temporary log file to global log file
@@ -930,10 +937,11 @@ def ts_sim_elaborate(test: dict) -> str:
     # Run elaboration in test specific directory
     run_time = time.time()
     elab_exit_code = exec_cmd_in_dir(
-        elab_dir,
-        elab_cmd + " " + log_file_opt,
-        ts_get_cfg("no_sim_out"),
-        ts_get_cfg("no_sim_out"),
+        directory=elab_dir,
+        command=elab_cmd + " " + log_file_opt,
+        no_std_out=ts_get_cfg("no_sim_out"),
+        no_std_err=ts_get_cfg("no_sim_out"),
+        batch_mode=True
     )
     run_time = time.time() - run_time
 
@@ -1137,7 +1145,11 @@ def ts_sim_run(test: dict, elab_dir: str = "") -> str:
     # Run simulation
     run_time = time.time()
     sim_exit_code = exec_cmd_in_dir(
-        sim_dir, sim_cmd, ts_get_cfg("no_sim_out"), ts_get_cfg("no_sim_out")
+        directory=sim_dir,
+        command=sim_cmd,
+        no_std_out=ts_get_cfg("no_sim_out"),
+        no_std_err=ts_get_cfg("no_sim_out"),
+        batch_mode=True
     )
     run_time = time.time() - run_time
     ts_print("Simulation Done", color=TsColors.PURPLE, big=True)

@@ -324,64 +324,120 @@ __FORBIDDEN_LINES = {
 
 
 def exec_cmd_in_dir(
-    directory: str, command: str, no_std_out: bool = False, no_std_err: bool = False
+    directory: str, command: str, no_std_out: bool = False, no_std_err: bool = False,
+    batch_mode: bool = True
 ) -> int:
     """
     Executes a command in a directory.
     :param directory: Directory in which command shall be executed
     :param command: Command to execute.
+    :param no_std_out: Do not print command standrd output to standard output
+    :param no_std_err: Do not print command error output to error output
+    :param batch_mode:
+        True  - Run in batch mode. Do not redirect input to calling process.
+        False - Create pseudo-terminal and redirect inputs to calling
+                process to the executed command.
     """
 
     def __raise_timeout(*args):
         raise TimeoutError
 
-    # Redirect both standard flows stdout and stderr to the same one
-    # so we can process the lines in order
-    if (no_std_out, no_std_err) == (False, False):
-        opts = {"stdout": subprocess.PIPE, "stderr": subprocess.STDOUT}
-        output = "stdout"
-    elif (no_std_out, no_std_err) == (True, False):
-        opts = {"stdout": subprocess.DEVNULL, "stderr": subprocess.PIPE}
-        output = "stderr"
-    elif (no_std_out, no_std_err) == (False, True):
-        opts = {"stdout": subprocess.PIPE, "stderr": subprocess.DEVNULL}
-        output = "stdout"
-    else:  # (no_std_out, no_std_err) == (True, True):
-        opts = {"stdout": subprocess.DEVNULL, "stderr": subprocess.DEVNULL}
-        output = ""
+    ###########################################################################
+    # Non-Interactive version -> Suitable for CI run where no terminal input
+    # exist
+    ###########################################################################
+    if batch_mode:
+        # Redirect both standard flows stdout and stderr to the same one
+        # so we can process the lines in order
+        if (no_std_out, no_std_err) == (False, False):
+            opts = {"stdout": subprocess.PIPE, "stderr": subprocess.STDOUT}
+            output = "stdout"
+        elif (no_std_out, no_std_err) == (True, False):
+            opts = {"stdout": subprocess.DEVNULL, "stderr": subprocess.PIPE}
+            output = "stderr"
+        elif (no_std_out, no_std_err) == (False, True):
+            opts = {"stdout": subprocess.PIPE, "stderr": subprocess.DEVNULL}
+            output = "stdout"
+        else:  # (no_std_out, no_std_err) == (True, True):
+            opts = {"stdout": subprocess.DEVNULL, "stderr": subprocess.DEVNULL}
+            output = ""
 
-    ts_debug(f"Executing command in directory '{directory}'")
+        ts_debug(f"Executing command in directory '{directory}'")
 
-    # Launch the command
-    p = subprocess.Popen(
-        command, shell=True, encoding="latin-1", cwd=directory, env=os.environ, **opts
-    )
+        # Launch the command
+        p = subprocess.Popen(
+            command, shell=True, encoding="latin-1", cwd=directory, env=os.environ, **opts
+        )
 
-    with contextlib.suppress(AttributeError):
-        signal.signal(signal.SIGALRM, __raise_timeout)
-        no_color = ts_get_cfg("no_color")
-        color_regex = re.compile("\x1b\[[0-9]{1,2}m")
-        # Manage lines while process is running
-        while p.poll() is None:
-            # Read a new line
-            try:
-                # Define a timeout for reading the line
-                signal.alarm(2)
-                line = getattr(p, output).readline()
-            except TimeoutError:
-                continue
-            finally:
-                signal.alarm(0)
-            # Filter
-            if line in __FORBIDDEN_LINES:
-                continue
-            # Remove color of line if need be
-            if no_color:
-                line = color_regex.sub("", line)
-            # Display
-            ts_print(line, end="")
-    signal.alarm(0)
-    return p.wait()
+        with contextlib.suppress(AttributeError):
+            signal.signal(signal.SIGALRM, __raise_timeout)
+            no_color = ts_get_cfg("no_color")
+            color_regex = re.compile("\x1b\[[0-9]{1,2}m")
+            # Manage lines while process is running
+            while p.poll() is None:
+                # Read a new line
+                try:
+                    # Define a timeout for reading the line
+                    signal.alarm(2)
+                    line = getattr(p, output).readline()
+                except TimeoutError:
+                    continue
+                finally:
+                    signal.alarm(0)
+                # Filter
+                if line in __FORBIDDEN_LINES:
+                    continue
+                # Remove color of line if need be
+                if no_color:
+                    line = color_regex.sub("", line)
+                # Display
+                ts_print(line, end="")
+        signal.alarm(0)
+
+        return p.wait()
+
+
+    ###########################################################################
+    # Interactive version -> Redirects pseudo-terminal input
+    ###########################################################################
+    else:
+
+        # Save original tty setting then set it to raw mode
+        old_tty = termios.tcgetattr(sys.stdin)
+        tty.setraw(sys.stdin.fileno())
+
+        # open pseudo-terminal to interact with subprocess
+        master_fd, slave_fd = pty.openpty()
+
+        try:
+            # Launch the command
+            p = subprocess.Popen(
+                command,
+                preexec_fn=os.setsid,
+                stdin=slave_fd,
+                stdout=slave_fd,
+                stderr=slave_fd,
+                shell=True,
+                cwd=directory,
+                universal_newlines=True,
+            )
+
+            while p.poll() is None:
+                # Time-out is extremely important otherwise finished XTERM hangs
+                # and keyboard input is needed to exit subprocess
+                r, w, e = select.select([sys.stdin, master_fd], [], [], 0.01)
+                if sys.stdin in r:
+                    d = os.read(sys.stdin.fileno(), 10240)
+                    os.write(master_fd, d)
+                elif master_fd in r:
+                    o = os.read(master_fd, 10240)
+                    if o:
+                        os.write(sys.stdout.fileno(), o)
+        finally:
+            # restore tty settings back
+            termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_tty)
+
+        return p.wait()
 
 
 def generate_junit_test_object(
@@ -565,4 +621,3 @@ def ts_rmdir(dir: str):
                 TsErrCode.GENERIC, f"Failed to remove directory {dir}! {dir_prefix} is in TS_DIR_DONT_TOUCH list."
             )
     shutil.rmtree(dir, ignore_errors=True)
-    

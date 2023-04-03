@@ -163,6 +163,7 @@ def __merge_databases(args):
         command=command,
         no_std_out=ts_get_cfg("no_sim_out"),
         no_std_err=ts_get_cfg("no_sim_out"),
+        batch_mode=True
     )
     run_time = time.time() - run_time
     ts_debug(f"Coverage merge runtime: {run_time:0.3e} second(s).")
@@ -204,6 +205,7 @@ def __show_output_database(args):
         command=command,
         no_std_out=ts_get_cfg("no_sim_out"),
         no_std_err=ts_get_cfg("no_sim_out"),
+        batch_mode=True
     )
 
 

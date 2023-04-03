@@ -32,51 +32,6 @@ from .ts_hw_global_vars import TsGlobals
 from .ts_hw_logging import TsColors, TSFormatter, TsInfoCode, ts_info, ts_print
 
 
-def exec_cmd_in_dir_interactive(directory: str, command: str) -> int:
-    """
-    Executes a command in a directory in pseudo-terminal interactively.
-    :param directory: Directory in which command shall be executed
-    :param command: Command to execute.
-    """
-
-    # Save original tty setting then set it to raw mode
-    old_tty = termios.tcgetattr(sys.stdin)
-    tty.setraw(sys.stdin.fileno())
-
-    # open pseudo-terminal to interact with subprocess
-    master_fd, slave_fd = pty.openpty()
-
-    try:
-        # Launch the command
-        p = subprocess.Popen(
-            command,
-            preexec_fn=os.setsid,
-            stdin=slave_fd,
-            stdout=slave_fd,
-            stderr=slave_fd,
-            shell=True,
-            cwd=directory,
-            universal_newlines=True,
-        )
-
-        while p.poll() is None:
-            # Time-out is extremely important otherwise finished XTERM hangs
-            # and keyboard input is needed to exit subprocess
-            r, w, e = select.select([sys.stdin, master_fd], [], [], 0.01)
-            if sys.stdin in r:
-                d = os.read(sys.stdin.fileno(), 10240)
-                os.write(master_fd, d)
-            elif master_fd in r:
-                o = os.read(master_fd, 10240)
-                if o:
-                    os.write(sys.stdout.fileno(), o)
-    finally:
-        # restore tty settings back
-        termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_tty)
-
-    return p.wait()
-
-
 def set_syn_global_vars(args):
     """
     Set synthesis flow global variables
