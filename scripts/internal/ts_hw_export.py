@@ -404,8 +404,8 @@ def export_spyglass_src_file(tcl_file: str):
         Data format expects as defined in TsGlobals.TS_SIM_SRCS_BY_LIB
         """
         # defines and include_dirs (only Verilog and SystemVerilog)
+        defines = set()
         if lang != "vhdl":
-            defines = set()
             # sim cfg file defines
             defines.update(__get_defines(TsGlobals.TS_SIM_CFG))
             # target specific defines
@@ -427,8 +427,8 @@ def export_spyglass_src_file(tcl_file: str):
         Data format expects as defined in TsGlobals.TS_SIM_SRCS_BY_LIB
         """
         # defines and include_dirs (only Verilog and SystemVerilog)
+        included_dirs = set()
         if lang != "vhdl":
-            included_dirs = set()
             # sim cfg file include_dirs
             included_dirs.update(__get_included_dirs(TsGlobals.TS_SIM_CFG))
             # target specific include_dirs

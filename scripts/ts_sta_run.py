@@ -191,7 +191,7 @@ if __name__ == "__main__":
     # Release data to a given flow_dir - sta
     if (
         args.release
-        and TsGlobals.TS_DESIGN_CFG["design"]["flow_dirs"]["sta"]
+        and TsGlobals.TS_DESIGN_CFG["design"]["flow_dirs"]["sta"] is not None
         and not args.force
     ):
         TsGlobals.TS_STA_RELEASE_DIR = os.path.join(
