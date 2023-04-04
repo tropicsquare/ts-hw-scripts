@@ -16,8 +16,6 @@ import select
 import shutil
 import subprocess
 import sys
-import termios
-import tty
 from datetime import datetime
 
 from .ts_hw_common import (

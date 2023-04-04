@@ -13,6 +13,9 @@ import random
 import re
 import signal
 import subprocess
+import termios
+import sys
+import tty
 from datetime import datetime
 
 import junit_xml
