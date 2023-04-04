@@ -42,7 +42,7 @@ from internal.ts_hw_cfg_parser import (
     do_sim_config_init,
 )
 from internal.ts_hw_common import (
-    exec_cmd_in_dir_interactive,
+    exec_cmd_in_dir,
     init_signals_handler,
     ts_get_root_rel_path,
 )
@@ -171,20 +171,27 @@ if __name__ == "__main__":
             ts_throw_error(TsErrCode.ERR_SYN_1, args.runcode)
 
     if args.flow == "dft-lint":
+
         # Generates necessary source files
         lint_src_file()
+
         # Generates dft run file
         dft_runfile(args)
+
         # Generates design configuration tcl file
         lint_design_cfg(args)
+
         # Generate lint setup tcl file
         lint_cmd = lint_setup_file(args)
-        exec_cmd_in_dir_interactive(TsGlobals.TS_DFT_RUN_DIR, lint_cmd)
+        exec_cmd_in_dir(TsGlobals.TS_DFT_RUN_DIR, lint_cmd, args.batch_mode)
+
         # Prepare lint_cmd
         # Uses dft runfile
         lint_cmd = build_lint_cmd(args)
+
         # Run LINT
-        exec_cmd_in_dir_interactive(TsGlobals.TS_DFT_RUN_DIR, lint_cmd)
+        exec_cmd_in_dir(TsGlobals.TS_DFT_RUN_DIR, lint_cmd, args.batch_mode)
+
         # Goodbye synthesis!
         ts_print("DFT is done!", color=TsColors.PURPLE, big=True)
     else:
