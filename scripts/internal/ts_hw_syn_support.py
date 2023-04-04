@@ -11,8 +11,6 @@
 
 import logging
 import os
-import pty
-import select
 import shutil
 import subprocess
 import sys
