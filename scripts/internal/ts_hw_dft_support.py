@@ -286,6 +286,7 @@ def dft_runfile_spyglass(args):
     lines.append(f"set_option hdlin_translate_off_skip_text yes\n")
     lines.append(f"set_option pragma {{synthesis}}\n")
     lines.append(f"set_option pragma {{translate}}\n")
+    lines.append(f"set_option define {{TS_MBIST}}\n")
     # Waver
     lines.append(f"waive -rule ErrorAnalyzeBBox\n")
     # Sourcing files and libraries
@@ -302,11 +303,15 @@ def dft_runfile_spyglass(args):
     lines.append(f"compile_design -force\n")
     lines.append(f"\n")
     # Set goal
-    lines.append(f"current_goal dft/dft_scan_ready -top cpuss_top\n")
+    lines.append(
+        f"current_goal dft/dft_scan_ready -top {str(ts_get_design_top()).lower()}\n"
+    )
     # lines.append(f"set_goal_option scan_ready\n")
     # Run goal
     lines.append(f"run_goal\n")
-    lines.append(f"current_goal dft/dft_best_practice -top cpuss_top\n")
+    lines.append(
+        f"current_goal dft/dft_best_practice -top {str(ts_get_design_top()).lower()}\n"
+    )
     lines.append(f"run_goal\n")
     # Save and exit
     lines.append(f"save_project\n")
