@@ -962,6 +962,18 @@ def add_release_arg(parser):
         help="Hard-copy results to destination folder according to flow_dir settings in a ts_design_cfg.yml file.",
     )
 
+# Common argument, batch mode
+def add_batch_mode_arg(parser):
+    """
+    Adds --batch-mode argument
+    :param parser: Argparse parser to which arguments shall be added
+    """
+    parser.add_argument(
+        "--batch-mode",
+        action="store_true",
+        default=False,
+        help="",
+    )
 
 # Common argument --source
 def add_source_data_arg(parser, default=None):

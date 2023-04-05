@@ -27,6 +27,7 @@ from internal.ts_hw_args import (
     add_force_arg,
     add_lic_wait_arg,
     add_pd_common_args,
+    add_batch_mode_arg,
     add_release_arg,
     add_runcode_arg,
     add_stayin_arg,
@@ -89,6 +90,7 @@ if __name__ == "__main__":
     add_force_arg(parser)
     add_release_arg(parser)
     add_pd_common_args(parser)
+    add_batch_mode_arg(parser)
 
     argcomplete.autocomplete(parser)
     args = parser.parse_args()

@@ -28,7 +28,7 @@ from internal.ts_hw_args import (
     add_dft_lint_args,
     add_force_arg,
     add_lic_wait_arg,
-    add_pd_common_args,
+    add_batch_mode_arg,
     add_release_arg,
     add_runcode_arg,
     add_source_data_arg,
@@ -92,6 +92,7 @@ if __name__ == "__main__":
     add_runcode_arg(parser_lint)
     add_dft_lint_args(parser_lint, TsGlobals.TS_DFT_LINT_TOOL)
     add_release_arg(parser_lint)
+    add_batch_mode_arg(parser_lint)
     add_source_data_arg(parser_lint, "dft-lint")
     add_stayin_arg(parser_lint, TsGlobals.TS_DFT_LINT_TOOL)
     add_force_arg(parser_lint)
