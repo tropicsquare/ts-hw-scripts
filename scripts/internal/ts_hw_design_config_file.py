@@ -534,7 +534,7 @@ def filter_design_config_file(args):
     """
     Remove filtered objects from TS_DESIGN_CFG when applied
     """
-    if args.filter_mode_usage is not None:
+    if (hasattr(args, "filter_mode_usage")) and (args.filter_mode_usage is not None):
         __filter_modes_usage(args.filter_mode_usage)
 
 

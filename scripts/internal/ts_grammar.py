@@ -170,7 +170,14 @@ class GRAMMAR_SIM_CFG:
             ),
             VerboseOptional("verilog_std", default="v01"): Among("v95", "v01", "v05"),
             Optional("coverage", default=False): bool,
-            Optional("gui", default=None): Among(None, "dve", "verdi"),
+
+            # "--gui" can have two formats on command line:
+            #       --gui=(dve|verdi)   - For simulation
+            #       --gui               - For DFT or Sim coverage view
+            # Due to argument merging into TsGlobals.TS_SIM_CFG, we need to take into
+            # account both possible formats!
+            Optional("gui", default=None): Or(bool, Among(None, "dve", "verdi")),
+
             Optional("compile_debug", default=False): bool,
             Optional("verbose", default=0): int,
             Optional("fail_fast", default=False): bool,
