@@ -1003,13 +1003,6 @@ def add_pd_common_args(parser, default=None):
         help=f"Defines filter for the usage attribute of a mode in ts_design_cfg.yml file. Expected values: syn,sta,dft,pnr etc.",
     )
 
-    parser.add_argument(
-        "--batch-mode",
-        action="store_true",
-        default=False,
-        help=f"Run underlying tool command in batch mode (non-interactively). Suitable for CI runs"
-    )
-
 
 def add_ts_req_tracing_args(parser):
     """
