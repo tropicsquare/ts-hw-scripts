@@ -44,6 +44,7 @@ from internal.ts_hw_args import (
     add_lic_wait_arg,
     add_stayin_arg,
     add_pd_common_args,
+    add_batch_mode_arg,
 )
 from internal.ts_hw_cfg_parser import (
     do_design_config_init,
@@ -87,6 +88,7 @@ if __name__ == "__main__":
     add_lic_wait_arg(parser,"pt_shell")
     add_stayin_arg(parser,"pt_shell")
     add_pd_common_args(parser)
+    add_batch_mode_arg(parser)
     add_ts_pwr_run_args(parser,"pt_shell")
     argcomplete.autocomplete(parser)
     args = parser.parse_args()

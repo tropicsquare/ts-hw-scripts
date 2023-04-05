@@ -23,6 +23,7 @@ from internal.ts_hw_args import (
     add_pdk_cfg_args,
     add_ts_common_args,
     add_pd_common_args,
+    add_batch_mode_arg
 )
 from internal.ts_hw_cfg_parser import (
     check_valid_design_target,
@@ -53,6 +54,7 @@ if __name__ == "__main__":
     add_cfg_files_arg(parser)
     add_pdk_cfg_args(parser)
     add_pd_common_args(parser)
+    add_batch_mode_arg(parser)
     argcomplete.autocomplete(parser)
     args = parser.parse_args()
     ts_configure_logging(args)
