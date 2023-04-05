@@ -189,6 +189,51 @@ class TsGlobals:
     # Synthesis release dir
     TS_STA_RELEASE_DIR = None
 
+    # TODO: Clean-up this stuff coming from power flow!!!!
     TS_DIR_DONT_TOUCH = [
         "/projects/tropic01/pnr_export"
     ]
+
+    # Enviromental variable for DFT lint root directory
+    TS_DFT_LINT_PATH = "lint"
+
+    # DFT tools names
+    TS_DFT_LINT_TOOL = "spyglass"
+    TS_DFT_ATPG_TOOL = "atpg-tst"
+    TS_DFT_RTL_TOOL = "rtl-tst"
+
+    # DFT runcode
+    TS_DFT_RUNCODE = None
+
+    # DFT run dir
+    TS_DFT_RUN_DIR = None
+
+    # DFT run file name
+    TS_DFT_RUNFILE = "dft_runfile.tcl"
+
+    # DFT netlist
+    TS_DFT_NETLIST = None
+
+    # DFT constraint file
+    TS_DFT_CONSTRAINT = None
+
+    # DFT source rtl tcl file
+    TS_DFT_SRC_RTL_FILE = "src_rtl.tcl"
+
+    # DFT setup file
+    TS_DFT_SETUP_FILE = "dft_setup.tcl"
+
+    # DFT sub-blocks build dir
+    TS_DFT_BUILD_DIR = "."
+
+    # DFT log dir
+    TS_DFT_LOGS_DIR = "logs"
+
+    # DFT results dir
+    TS_DFT_RESULTS_DIR = "results"
+
+    # Synthesis reports dir
+    TS_DFT_REPORTS_DIR = "reports"
+
+    # Synthesis design_cfg file
+    TS_DFT_DESIGN_CFG_FILE = "design_cfg.tcl"

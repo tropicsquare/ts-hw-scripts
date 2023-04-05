@@ -340,6 +340,22 @@ class TsErrCode(LogEnum):
     ERR_STA_6 = [lambda: "Either --dmsa or --mode <mode_name> must be used."]
     ERR_STA_7 = [lambda: "Either --open-result or --dmsa shall be used."]
 
+    # DFT error messages
+    ERR_DFT_0 = [lambda: "Missing runcode parameter"]
+    ERR_DFT_1 = [
+        lambda runcode: "Cannot open {} runcode directory. It doesn't exist".format(
+            runcode
+        )
+    ]
+    ERR_DFT_2 = [
+        lambda runcode: "Directory runcode {} already exists. Use --force swith if you want to re-write it".format(
+            runcode
+        )
+    ]
+    ERR_DFT_3 = [lambda: "DFT root_dir cannot be selected properly."]
+    ERR_DFT_4 = [lambda netlist: "Netlist {} was not found".format(netlist)]
+    ERR_DFT_5 = [lambda: "Missing dft constraint file"]
+
 
 ####################################################################################################
 # Warning codes
@@ -468,6 +484,20 @@ class TsInfoCode(LogEnum):
     ]
     INFO_STA_4 = [lambda folder: "Creating folder: {}".format(folder)]
     INFO_STA_5 = [lambda folder: "Deleting folder: {}".format(folder)]
+
+    # DFT flow messages
+    INFO_DFT_0 = [lambda runcode: "Selected runcode is: {}".format(runcode)]
+    INFO_DFT_1 = [lambda runcode: "Opening DFT database: {}".format(runcode)]
+    INFO_DFT_2 = [
+        lambda runcode: "Deleting and creating new DFT database: {}".format(runcode)
+    ]
+    INFO_DFT_3 = [
+        lambda tool_type, cmd: "Following {} cmd to be executed: {}".format(
+            tool_type, cmd
+        )
+    ]
+    INFO_DFT_4 = [lambda folder: "Creating folder: {}".format(folder)]
+    INFO_DFT_5 = [lambda folder: "Deleting folder: {}".format(folder)]
 
 
 def __ts_process_log(code: LogEnum, *opt_args):
