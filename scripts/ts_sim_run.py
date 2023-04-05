@@ -62,14 +62,13 @@ if __name__ == "__main__":
     add_cfg_files_arg(parser)
     add_target_arg(parser)
     add_ts_sim_run_args(parser)
-    add_pd_common_args(parser)
     argcomplete.autocomplete(parser)
     args = parser.parse_args()
     TsGlobals.TS_SIM_CFG_PATH = args.sim_cfg
     ts_configure_logging(args)
 
     # Load config file, merge with args and check configuration
-    do_sim_config_init(args, skip_check=False, merge_args_to_config=True)
+    do_sim_config_init(args)
     do_design_config_init(args)
 
     # Re-compile if "recompile" is set
