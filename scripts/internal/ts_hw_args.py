@@ -75,8 +75,6 @@ def add_cfg_files_arg(parser):
     )
 
 
-
-
 def add_target_arg(parser):
     """
     Adds compilation/simulation target argument.
@@ -186,7 +184,6 @@ def add_pdk_cfg_args(parser):
         action="store_true",
         help="Exports liberty files operation conditions according to a corner settings.",
     )
-
 
 
 def add_ts_sim_compile_args(parser):
@@ -851,6 +848,54 @@ def add_ts_sta_run_args(parser, tool_type):
     )
 
 
+def add_dft_lint_args(parser, tool_type):
+    """
+    Adds arguments specific to ts_dft_run.py
+    :param parser: Argparse parser to which arguments shall be added
+    """
+    parser.add_argument(
+        "--session",
+        choices=("session_A", "session_B"),
+        default="spyglass",
+        help=f"Runs selected spyglass session.",
+    )
+
+    parser.add_argument(
+        "--open-result",
+        action="store_true",
+        default=False,
+        help=f"Open {tool_type} results of selected runcode.",
+    )
+
+    parser.add_argument(
+        "--netlist",
+        nargs="?",
+        default=None,
+        help=f"Use relative path to the netlist file. It helps to overwrite default netlist naming pattern.",
+    )
+
+    parser.add_argument(
+        "--gui",
+        action="store_true",
+        default=False,
+        help=f"GUI to be used.",
+    )
+
+    parser.add_argument(
+        "--lint-constraints",
+        nargs="?",
+        default=None,
+        help=f"Use relative path of lint tool specific constraint file to REPO_ROOT. This selector helps to overwrite default search pattern. e.g.: spyglass uses *.sgdc file format",
+    )
+
+    parser.add_argument(
+        "--mode",
+        nargs="?",
+        default=None,
+        help=f"Select mode for dft lint run. Mode name selects used lint constraint file.",
+    )
+
+
 # Common argument --licence-wait
 def add_lic_wait_arg(parser, tool_type):
     """
@@ -942,8 +987,8 @@ def add_pd_common_args(parser, default=None):
         "--filter-mode-usage",
         nargs="?",
         default=default,
-        choices= ('sim','syn','dft','sta','pnr','pwr','sta-signoff'),
-        help=f"Defines filter for the usage attribute of a mode in ts_design_cfg.yml file. Expected values: syn,sta,dft,pnr etc."
+        choices=("sim", "syn", "dft", "sta", "pnr", "pwr", "sta-signoff"),
+        help=f"Defines filter for the usage attribute of a mode in ts_design_cfg.yml file. Expected values: syn,sta,dft,pnr etc.",
     )
 
     parser.add_argument(

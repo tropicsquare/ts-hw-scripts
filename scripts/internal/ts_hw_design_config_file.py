@@ -399,7 +399,7 @@ def __check_modes_valid():
 
         # There is no way how to test spef due to various sources of spef file locations
         # Existance of the file shall be tested in a flow itself because it depends on a usage of --source switch
-        #if "spef" in mode:
+        # if "spef" in mode:
         #    TsGlobals.TS_DESIGN_CFG["design"]["modes"][i]["spef"] = mode["spef"]
 
         if "tluplus" in mode:
@@ -430,9 +430,9 @@ def __filter_modes_usage(flow_type):
         # up small block level synthesis without defining "usage"
         if (("usage" not in mode) or flow_type in mode["usage"]):
             tmp.append(TsGlobals.TS_DESIGN_CFG["design"]["modes"][i])
-
-    TsGlobals.TS_DESIGN_CFG["design"]["modes"] = tmp.copy()
-    ts_debug("Filtered modes {}".format(TsGlobals.TS_DESIGN_CFG["design"]["modes"]))
+    if tmp:
+        TsGlobals.TS_DESIGN_CFG["design"]["modes"] = tmp.copy()
+        ts_debug("Filtered modes {}".format(TsGlobals.TS_DESIGN_CFG["design"]["modes"]))
 
 
 def __check_global_design_attrs_valid():
@@ -534,7 +534,7 @@ def filter_design_config_file(args):
     """
     Remove filtered objects from TS_DESIGN_CFG when applied
     """
-    if args.filter_mode_usage:
+    if args.filter_mode_usage is not None:
         __filter_modes_usage(args.filter_mode_usage)
 
 

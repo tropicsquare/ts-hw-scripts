@@ -123,6 +123,18 @@ def __write_syn_rtl_file(lines: list, tcl_file: str, tool: str):
         f.writelines(map(__add_newline, lines))
 
 
+def __write_lint_src_file(lines: list, tcl_file: str, tool: str):
+    """
+    Export file
+    """
+    with open(ts_get_curr_dir_rel_path(tcl_file), "w") as f:
+        __add_newline = lambda x: x + "\n"
+        # write header
+        # f.writelines(map(__add_newline, __get_spyglass_rtl_header(tool)))
+        # write body
+        f.writelines(map(__add_newline, lines))
+
+
 def export_dc_tcl(tcl_file: str):
     """
     Export DC TCL file.
@@ -336,6 +348,119 @@ def export_vivado_tcl(tcl_file: str):
                 lines.append(_add_define_and_include_dirs(source_file))
 
     __write_syn_rtl_file(lines, tcl_file, "vivado")
+
+
+def export_spyglass_src_file(tcl_file: str):
+    """
+    Export spyglass rtl source file.
+    * RTL file list
+    * RTL logical libraries list with RTL files
+    * set_option batch
+    Note: File to be used in dft_runfile.tcl for spyglass
+    """
+
+    def __get_defines(element):
+        return set(element.get("define", {}).items())
+
+    def __get_included_dirs(element):
+        return set(map(ts_get_root_rel_path, element.get("include_dirs", [])))
+
+    def __hdl_lang_check(source_file):
+        """
+        Checks files types
+        """
+        lang = source_file.get("lang")
+        if lang is None:
+            _, ext = os.path.splitext(source_file["full_path"])
+            try:
+                lang = {
+                    ".vhd": "vhdl",
+                    ".v": "verilog",
+                    ".sv": "verilog",
+                    ".svp": "verilog",
+                }[ext]
+            except KeyError:
+                ts_throw_error(
+                    TsErrCode.GENERIC,
+                    f"{source_file['full_path']}: extension '{ext}' not supported!",
+                )
+        else:
+            try:
+                lang = {
+                    "vhdl": "vhdl",
+                    "verilog": "verilog",
+                    "system_verilog": "verilog",
+                }[lang]
+            except KeyError:
+                ts_throw_error(
+                    TsErrCode.GENERIC,
+                    f"{source_file['full_path']}: language '{lang}' unknown!",
+                )
+        return lang
+
+    def __hdl_define(source_file, lang):
+        """
+        Returns defines (only V and SV) if exists for given source_file (only V and SV).
+        Data format expects as defined in TsGlobals.TS_SIM_SRCS_BY_LIB
+        """
+        # defines and include_dirs (only Verilog and SystemVerilog)
+        defines = set()
+        if lang != "vhdl":
+            # sim cfg file defines
+            defines.update(__get_defines(TsGlobals.TS_SIM_CFG))
+            # target specific defines
+            defines.update(
+                __get_defines(
+                    TsGlobals.TS_SIM_CFG["targets"][TsGlobals.TS_SIM_CFG["target"]]
+                )
+            )
+            # src list file defines
+            defines.update(__get_defines(source_file))
+            defines = [
+                f"{name}={val}" if val is not None else name for name, val in defines
+            ]
+        return defines
+
+    def __hdl_incdir(source_file, lang):
+        """
+        Returns incdirs if exists for given source_file (only V and SV).
+        Data format expects as defined in TsGlobals.TS_SIM_SRCS_BY_LIB
+        """
+        # defines and include_dirs (only Verilog and SystemVerilog)
+        included_dirs = set()
+        if lang != "vhdl":
+            # sim cfg file include_dirs
+            included_dirs.update(__get_included_dirs(TsGlobals.TS_SIM_CFG))
+            # target specific include_dirs
+            included_dirs.update(
+                __get_included_dirs(
+                    TsGlobals.TS_SIM_CFG["targets"][TsGlobals.TS_SIM_CFG["target"]]
+                )
+            )
+            # src list file include_dirs
+            included_dirs.update(__get_included_dirs(source_file))
+        return included_dirs
+
+    lines = []
+    for lib, source_files in TsGlobals.TS_SIM_SRCS_BY_LIB.items():
+        lines.append("#############################################################")
+        lines.append(f"# '{lib}' library")
+        lines.append("#############################################################\n")
+        lines.append(f"set_option lib {lib} {TsGlobals.TS_DFT_BUILD_DIR}\n")
+        lines_sub = []
+        for source_file in source_files:
+            lang = __hdl_lang_check(source_file)
+            defines = __hdl_define(source_file, lang)
+            included_dirs = __hdl_incdir(source_file, lang)
+            lines.append(f"read_file -type hdl {source_file['full_path']}")
+            lines_sub.append(source_file["full_path"])
+        if defines:
+            lines.append(f"set_option define \"{' '.join(defines)}\" \n")
+        if included_dirs:
+            lines.append(f"set_option incdir \"{' '.join(included_dirs)}\" \n")
+        lines.append(f"set_option libhdlfiles {lib} \"{' '.join(lines_sub)}\" \n")
+
+    __write_lint_src_file(lines, tcl_file, "spyglass")
 
 
 def __write_tcl_list(list_name: str, input_list: list, fd: str):
