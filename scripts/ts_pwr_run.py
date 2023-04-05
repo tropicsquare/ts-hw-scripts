@@ -101,7 +101,7 @@ if __name__ == "__main__":
     pwr_logging(args)
 
     # Do Config Init
-    do_sim_config_init(args, skip_check=False, merge_args_to_config=True)
+    do_sim_config_init(args)
     do_design_config_init(args)
     do_power_config_init(args)
 
