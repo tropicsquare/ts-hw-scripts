@@ -170,8 +170,7 @@ class GRAMMAR_SIM_CFG:
             ),
             VerboseOptional("verilog_std", default="v01"): Among("v95", "v01", "v05"),
             Optional("coverage", default=False): bool,
-            # gui causes problems in other flows, please do not use it this way
-            # Optional("gui", default=None): Among(None, "dve", "verdi"),
+            Optional("gui", default=None): Among(None, "dve", "verdi"),
             Optional("compile_debug", default=False): bool,
             Optional("verbose", default=0): int,
             Optional("fail_fast", default=False): bool,

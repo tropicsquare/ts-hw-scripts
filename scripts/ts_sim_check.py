@@ -74,7 +74,7 @@ if __name__ == "__main__":
     ts_configure_logging(args)
 
     # Load config files and check them
-    do_sim_config_init(args)
+    do_sim_config_init(args, skip_check=False, merge_args_to_config=True)
     do_design_config_init(args)
 
     # Launch checking process

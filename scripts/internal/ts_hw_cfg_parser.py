@@ -194,7 +194,7 @@ def __check_design_config():
         ts_throw_error(TsErrCode.ERR_PDK_2, e)
 
 
-def do_sim_config_init(args, skip_check=False):
+def do_sim_config_init(args, skip_check=False, merge_args_to_config=False):
     """
     Common initialization for all scripts which load simulation config files.
     Performs following:
@@ -219,11 +219,12 @@ def do_sim_config_init(args, skip_check=False):
     ts_debug(f"Simulation config file: {ts_get_cfg()}")
 
     # Merging command line arguments with config file
-    __merge_args_with_config(args)
-    ts_debug(
-        "Simulation configuration (merged config file and command-line arguments):"
-    )
-    ts_debug(ts_get_cfg())
+    if merge_args_to_config:
+        __merge_args_with_config(args)
+        ts_debug(
+            "Simulation configuration (merged config file and command-line arguments):"
+        )
+        ts_debug(ts_get_cfg())
 
     # Finalize configuration
     __finalize_config()

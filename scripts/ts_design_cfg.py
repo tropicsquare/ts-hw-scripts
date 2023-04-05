@@ -62,7 +62,7 @@ if __name__ == "__main__":
     # pass it from command line
     do_design_config_init(args)
     setattr(args, "target", TsGlobals.TS_DESIGN_CFG["design"]["target"])
-    do_sim_config_init(args)
+    do_sim_config_init(args, skip_check=False, merge_args_to_config=True)
     check_valid_design_target()
     load_source_list_files(ts_get_cfg("target"))
 
