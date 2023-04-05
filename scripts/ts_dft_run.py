@@ -127,7 +127,7 @@ if __name__ == "__main__":
     setattr(args, "target", TsGlobals.TS_DESIGN_CFG["design"]["target"])
 
     # Sim cfg needed for usage of TS_SIM_CFG variable (holder of design name)
-    do_sim_config_init(args, skip_check=False, merge_args_to_config=False)
+    do_sim_config_init(args)
     check_valid_design_target()
 
     # Execute load of source list according to selected target - ts_hw_souce_list_files
