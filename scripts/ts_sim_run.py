@@ -62,7 +62,6 @@ if __name__ == "__main__":
     add_cfg_files_arg(parser)
     add_target_arg(parser)
     add_ts_sim_run_args(parser)
-    add_pd_common_args(parser)
     argcomplete.autocomplete(parser)
     args = parser.parse_args()
     TsGlobals.TS_SIM_CFG_PATH = args.sim_cfg
