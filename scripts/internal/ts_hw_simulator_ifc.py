@@ -84,7 +84,7 @@ __SIMULATOR_COMMANDS = {
         },
         "simulate": {
             "binary": "simv",
-            "common_options": "-ucli",
+            "common_options": "",
             "coverage": "-cm line+cond+fsm+tgl+branch+assert -cm_dir{}",
             "sim_cmd_file": "-do {}",
             "log_file": "-l {}",
@@ -118,6 +118,8 @@ __ELAB_CMD_FILE = lambda x: os.path.join(x, "_ts_flow_elaboration_command")
 __REF_ELAB_DIR = lambda x: os.path.join(x, "_ts_flow_reference_elaboration_directory")
 
 __VHDL_ONLY = lambda x: os.path.join(x, "_ts_flow_this_lib_is_vhdl_only")
+
+__SIM_CMD_FILE = lambda x: os.path.join(x, "sim_cmd_file.do")
 
 __GUI_COMPILE_OPTIONS = {
     None: {
@@ -961,10 +963,9 @@ def ts_sim_elaborate(test: dict) -> str:
     return log_file_path, elab_dir
 
 
-def __create_sim_command_file(directory: str, sim_cmd_file: str):
+def __create_sim_command_file(directory: str) -> list:
     """
     Creates simulation specific command file ("do" file)
-    :param sim_cmd_file: path of simulation command file
     """
     simulator = ts_get_cfg("simulator")
 
@@ -1002,14 +1003,13 @@ def __create_sim_command_file(directory: str, sim_cmd_file: str):
             else:
                 lines.append("dump -add . -aggregates -fid VPD0")
 
-        # If we open GUI, don't do "run", leave it up to user to run it interactively from GUI!
-        if gui is None:
-            lines.append("run")
-            lines.append("dump -close")
-            lines.append("exit")
+            # If gui is not open, do not wait for user input
+            if gui is None:
+                lines.append("run")
+                lines.append("dump -close")
+                lines.append("exit")
 
-        with open(sim_cmd_file, "w") as fd:
-            fd.writelines(map(lambda x: x + "\n", lines))
+        return lines
 
     else:
         ts_script_bug(
@@ -1068,10 +1068,15 @@ def __build_sim_command(
     sim_cmd.append(sim_cmds["exitstatus"])
 
     # Add simulator specific command file
-    sim_cmd_file = os.path.join(sim_dir, "sim_cmd_file.do")
-    if not os.path.exists(sim_cmd_file):
-        __create_sim_command_file(ts_get_test_dir("sim", test), sim_cmd_file)
-    sim_cmd.append(sim_cmds["sim_cmd_file"].format(sim_cmd_file))
+    sim_cmd_file = __SIM_CMD_FILE(sim_dir)
+    lines = __create_sim_command_file(ts_get_test_dir("sim", test))
+    if lines:
+        with open(sim_cmd_file, "w") as fd:
+            fd.writelines(map(lambda x: x + "\n", lines))
+        sim_cmd.append(sim_cmds["sim_cmd_file"].format(sim_cmd_file))
+    # VCS runs in ucli mode when a do file is specified or gui is activated
+    if lines or ts_get_cfg("gui") is not None or ts_get_cfg("compile_debug"):
+        sim_cmd.append("-ucli")
 
     # Add UVM test name if specified
     for single_dict in (ts_get_cfg(), ts_get_cfg("targets")[ts_get_cfg("target")]):
