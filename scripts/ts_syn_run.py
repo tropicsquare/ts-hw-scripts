@@ -23,11 +23,11 @@ import sys
 import argcomplete
 from internal.ts_hw_args import (
     TsArgumentParser,
+    add_batch_mode_arg,
     add_cfg_files_arg,
     add_force_arg,
     add_lic_wait_arg,
     add_pd_common_args,
-    add_batch_mode_arg,
     add_release_arg,
     add_runcode_arg,
     add_stayin_arg,
@@ -42,7 +42,7 @@ from internal.ts_hw_cfg_parser import (
 from internal.ts_hw_common import (
     exec_cmd_in_dir,
     init_signals_handler,
-    ts_get_root_rel_path
+    ts_get_root_rel_path,
 )
 from internal.ts_hw_global_vars import TsGlobals
 from internal.ts_hw_logging import (
@@ -161,15 +161,12 @@ if __name__ == "__main__":
     set_license_wait_time(args, "dc_shell", "SNPS_MAX_WAITTIME", "1")
     set_license_wait_time(args, "dc_shell", "SNPS_MAX_QUEUETIME", "1")
 
-    print(os.environ)
     # Prepare dc_cmd
     dc_cmd = build_synthesis_cmd(args)
 
     # Run DC
     exec_cmd_in_dir(
-        directory=TsGlobals.TS_SYN_RUN_DIR,
-        command=dc_cmd,
-        batch_mode=args.batch_mode
+        directory=TsGlobals.TS_SYN_RUN_DIR, command=dc_cmd, batch_mode=args.batch_mode
     )
 
     # Goodbye synthesis!
