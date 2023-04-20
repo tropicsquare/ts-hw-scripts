@@ -502,7 +502,7 @@ def __sta_netlist_selection(args):
     """
     if args.netlist:
         # Here we use customer entered netlist
-        path = f"{get_repo_root_path(args.netlist)}"
+        path = f"{ts_get_root_rel_path(args.netlist)}"
     else:
         # Use default netlist location from flow_dirs/results/<design_name>.v
         path = f'{ts_get_root_rel_path(TsGlobals.TS_DESIGN_CFG["design"]["flow_dirs"][args.source_data])}/{TsGlobals.TS_STA_RUNCODE}/results/{str(ts_get_design_top()).lower()}.v'

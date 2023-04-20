@@ -190,9 +190,7 @@ class TsGlobals:
     TS_STA_RELEASE_DIR = None
 
     # TODO: Clean-up this stuff coming from power flow!!!!
-    TS_DIR_DONT_TOUCH = [
-        "/projects/tropic01/pnr_export"
-    ]
+    TS_DIR_DONT_TOUCH = ["/projects/tropic01/pnr_export"]
 
     # Enviromental variable for DFT lint root directory
     TS_DFT_LINT_PATH = "lint"
@@ -232,8 +230,47 @@ class TsGlobals:
     # DFT results dir
     TS_DFT_RESULTS_DIR = "results"
 
-    # Synthesis reports dir
+    # DFT reports dir
     TS_DFT_REPORTS_DIR = "reports"
 
-    # Synthesis design_cfg file
+    # DFT design_cfg file
     TS_DFT_DESIGN_CFG_FILE = "design_cfg.tcl"
+
+    # Enviromental variable for RTL LINT root directory
+    TS_RTL_LINT_PATH = "lint"
+
+    # RTL LINT tools names
+    TS_RTL_LINT_TOOL = "spyglass"
+
+    # RTL LINT runcode
+    TS_RLT_LINT_RUNCODE = None
+
+    # RTL LINT run dir
+    TS_RTL_LINT_RUN_DIR = None
+
+    # RTL LINT run file name
+    TS_RTL_LINT_RUNFILE = "rtl_lint_runfile.tcl"
+
+    # RTL LINT constraint file
+    TS_RTL_LINT_CONSTRAINT = None
+
+    # RTL LINT source rtl tcl file
+    TS_RTL_LINT_SRC_RTL_FILE = "src_rtl.tcl"
+
+    # RTL LINT setup file
+    TS_RTL_LINT_SETUP_FILE = "rtl_lint_setup.tcl"
+
+    # RTL LINT sub-blocks build dir
+    TS_RTL_LINT_BUILD_DIR = "."
+
+    # RTL LINT log dir
+    TS_RTL_LINT_LOGS_DIR = "logs"
+
+    # RTL LINT results dir
+    TS_RTL_LINT_RESULTS_DIR = "results"
+
+    # RTL LINT reports dir
+    TS_RTL_LINT_REPORTS_DIR = "reports"
+
+    # RTL LINT design_cfg file
+    TS_RTL_LINT_DESIGN_CFG_FILE = "design_cfg.tcl"

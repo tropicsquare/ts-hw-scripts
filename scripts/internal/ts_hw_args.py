@@ -651,14 +651,14 @@ def add_ts_pwr_run_args(parser, tool_type):
         "--list-scenarios",
         action="store_true",
         default=False,
-        help="Lists all available scenarios defined in power config file."
+        help="Lists all available scenarios defined in power config file.",
     )
 
     parser.add_argument(
         "--open-pwr-waves",
         type=str,
         nargs="?",
-        help="Shows power waves of scenario in GUI."
+        help="Shows power waves of scenario in GUI.",
     )
 
     parser.add_argument(
@@ -683,21 +683,18 @@ def add_ts_pwr_run_args(parser, tool_type):
             Example: --add-scenario=scen1,scen2,scen3
             --add-scenario=all runs all scenarios.
             """
-        )
+        ),
     )
 
     parser.add_argument(
-        "--restore",
-        type=str,
-        nargs="?",
-        help="Restore PrimeTime session of scenario."
+        "--restore", type=str, nargs="?", help="Restore PrimeTime session of scenario."
     )
 
     parser.add_argument(
         "--seed",
         type=int,
         default=SUPPRESS,
-        help="Seed for randomization. Overrides randomization specified in power config file."
+        help="Seed for randomization. Overrides randomization specified in power config file.",
     )
 
     parser.add_argument(
@@ -705,7 +702,7 @@ def add_ts_pwr_run_args(parser, tool_type):
         action="store_true",
         default=False,
         help="When some non-crucial operation fails (e.g. simulation), "
-        "do not continue and finish with error."
+        "do not continue and finish with error.",
     )
 
 
@@ -717,10 +714,14 @@ def add_ts_mem_map_generator_args(parser):
 
     parser.add_argument("--xml-dir")
     parser.add_argument("--latex-dir")
-    parser.add_argument("--h-file",
-                        help="One or multiple of (--latex-dir, --xml-dir, --h-file) required")
-    parser.add_argument("--ordt-parms",
-                        help=dedent("""\
+    parser.add_argument(
+        "--h-file",
+        help="One or multiple of (--latex-dir, --xml-dir, --h-file) required",
+    )
+    parser.add_argument(
+        "--ordt-parms",
+        help=dedent(
+            """\
                         Parameters file for ORDT XML output.
                         If a file is not specified, it will be created in the xml output directory.
                         """
@@ -848,18 +849,45 @@ def add_ts_sta_run_args(parser, tool_type):
     )
 
 
-def add_dft_lint_args(parser, tool_type):
+def add_lint_rtl_args(parser, tool_type):
     """
     Adds arguments specific to ts_dft_run.py
     :param parser: Argparse parser to which arguments shall be added
     """
     parser.add_argument(
-        "--session",
-        choices=("session_A", "session_B"),
-        default="spyglass",
-        help=f"Runs selected spyglass session.",
+        "--open-result",
+        action="store_true",
+        default=False,
+        help=f"Open {tool_type} results of selected runcode.",
     )
 
+    parser.add_argument(
+        "--gui",
+        action="store_true",
+        default=False,
+        help=f"GUI to be used.",
+    )
+
+    parser.add_argument(
+        "--lint-constraints",
+        nargs="?",
+        default=None,
+        help=f"Use relative path of lint tool specific constraint file to REPO_ROOT. This selector helps to overwrite default search pattern. e.g.: spyglass uses *.sgdc file format",
+    )
+
+    parser.add_argument(
+        "--mode",
+        nargs="?",
+        default=None,
+        help=f"Select mode for dft lint run. Mode name selects used lint constraint file.",
+    )
+
+
+def add_dft_lint_args(parser, tool_type):
+    """
+    Adds arguments specific to ts_dft_run.py
+    :param parser: Argparse parser to which arguments shall be added
+    """
     parser.add_argument(
         "--open-result",
         action="store_true",
@@ -962,6 +990,7 @@ def add_release_arg(parser):
         help="Hard-copy results to destination folder according to flow_dir settings in a ts_design_cfg.yml file.",
     )
 
+
 # Common argument, batch mode
 def add_batch_mode_arg(parser):
     """
@@ -974,6 +1003,7 @@ def add_batch_mode_arg(parser):
         default=False,
         help="",
     )
+
 
 # Common argument --source
 def add_source_data_arg(parser, default=None):
@@ -1010,17 +1040,22 @@ def add_ts_req_tracing_args(parser):
     :param parser: Argparse parser to which arguments shall be added
     """
 
-    parser.add_argument("--spec-path",
-                        help="Path to design specification")
+    parser.add_argument("--spec-path", help="Path to design specification")
 
-    parser.add_argument("--ver-path",
-                        help="Path to verification plan")
+    parser.add_argument("--ver-path", help="Path to verification plan")
 
-    parser.add_argument("-o", "--output",
-                        help="Output directory with HTML report")
+    parser.add_argument("-o", "--output", help="Output directory with HTML report")
 
-    parser.add_argument("--dump-db", action="store_true", default=False,
-                        help="Generate YAML files with databases of traced items")
+    parser.add_argument(
+        "--dump-db",
+        action="store_true",
+        default=False,
+        help="Generate YAML files with databases of traced items",
+    )
 
-    parser.add_argument("--clear", action="store_true", default=False,
-                        help="Remove output directory if previously created.")
+    parser.add_argument(
+        "--clear",
+        action="store_true",
+        default=False,
+        help="Remove output directory if previously created.",
+    )
