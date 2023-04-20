@@ -271,19 +271,63 @@ def do_design_config_init(args, skip_check=False, enforce=False):
     filter_design_config_file(args)
 
 
-def do_dft_lint_init(args):
+def do_lint_init(args):
     """
     Returns do_lint_init fuction based on selected tool
 
     """
-    cmd = f"do_dft_lint_{TsGlobals.TS_DFT_LINT_TOOL}_init(args)"
+    # Example TsGlobals.TS_DFT_LINT_TOOL
+    types = f"TsGlobals.TS_{args.flow.upper()}_TOOL"
+    # Example do_dft_lint_spyglass_init
+    cmd = f"do_{args.flow}_{eval(types)}_init(args)"
     try:
         return eval(cmd)
     except KeyError:
         ts_throw_error(
             TsErrCode.GENERIC,
-            f"Not defined ts_hw_cfg_parser.do_dft_lint_{TsGlobals.TS_DFT_LINT_TOOL}_init() for selected LINT tool {TsGlobals.TS_DFT_LINT_TOOL}",
+            f"Not defined ts_hw_cfg_parser.do_{args.flow}_{TsGlobals.TS_DFT_LINT_TOOL}_init() for selected LINT tool {TsGlobals.TS_DFT_LINT_TOOL}",
         )
+
+
+def do_rtl_lint_spyglass_init(args):
+    """
+    Spyglass constraints selection
+        :args :lint_constraints - relative/absoluth path + name of the file *.sgdc
+              :mode             - name in accordance with design_cfg modes
+    """
+    if args.open_result is True:
+        return
+
+    if args.lint_constraints is None and args.mode is None:
+        ts_throw_error(TsErrCode.ERR_DFT_5)
+    else:
+        file_path = None
+
+        # Check existance of any constraints based on selected mode
+        # the sgdc expect *dft_{args.mode}*
+        if args.mode is not None:
+            root_dir = ts_get_root_rel_path(f"lint/{TsGlobals.TS_RTL_LINT_TOOL}/sgdc/")
+            regex = re.compile(rf"(.*)(rtl_{args.mode})(.*)(sgdc)$")
+
+        # Check existance of selected constraints
+        if args.lint_constraints is not None:
+            root_dir = ts_get_root_rel_path(os.path.dirname(args.lint_constraints))
+            regex = re.compile(rf"({os.path.basename(args.lint_constraints)})$")
+
+        try:
+            files = [
+                f
+                for f in os.listdir(root_dir)
+                if os.path.isfile(os.path.join(root_dir, f))
+            ]
+            for f in files:
+                result = regex.search(f)
+                if result:
+                    TsGlobals.TS_RTL_LINT_CONSTRAINT = f"{root_dir}/{result.string}"
+            if TsGlobals.TS_RTL_LINT_CONSTRAINT is None:
+                raise
+        except:
+            ts_throw_error(TsErrCode.ERR_DFT_5)
 
 
 def do_dft_lint_spyglass_init(args):
@@ -292,6 +336,8 @@ def do_dft_lint_spyglass_init(args):
         :args :lint_constraints - relative/absoluth path + name of the file *.sgdc
               :mode             - name in accordance with design_cfg modes
     """
+    if args.open_result is True:
+        return
 
     if args.lint_constraints is None and args.mode is None:
         ts_throw_error(TsErrCode.ERR_DFT_5)
@@ -302,7 +348,10 @@ def do_dft_lint_spyglass_init(args):
         # the sgdc expect *dft_{args.mode}*
         if args.mode is not None:
             root_dir = ts_get_root_rel_path(f"lint/{TsGlobals.TS_DFT_LINT_TOOL}/sgdc/")
-            regex = re.compile(rf"(.*)(dft_{args.mode})(.*)(sgdc)$")
+            if args.netlist:
+                regex = re.compile(rf"(.*)(dft_{args.mode}_netlist)(.*)(sgdc)$")
+            else:
+                regex = re.compile(rf"(.*)(dft_{args.mode})(.*)(sgdc)$")
 
         # Check existance of selected constraints
         if args.lint_constraints is not None:
@@ -484,7 +533,7 @@ def parse_runcode_arg(args):
         return None
 
 
-def parse_runcode_arg_dft(args, root_dir):
+def parse_runcode_arg_root_dir(args, root_dir):
     """
     Parses runcode with regards to defined rules by methodology.
     Test of runcode existance, _n+1 rule usage.

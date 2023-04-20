@@ -13,7 +13,6 @@ import logging
 import os
 import shutil
 import subprocess
-import sys
 from datetime import datetime
 
 from .ts_hw_common import (
@@ -162,14 +161,16 @@ def syn_logging(args):
     """
 
     # Get existing logger
-    logger = logging.getLogger()
+    logger = logging.getLogger("syn")
+    logger.setLevel(logging.DEBUG)
     # Create time stamp for a log file name
     date_time = datetime.now()
     # Set full path and a name of the log file
     os.makedirs(TsGlobals.TS_SYN_LOGS_DIR, exist_ok=True)
     filename = f'{TsGlobals.TS_SYN_LOGS_DIR}/{args.runcode}_{date_time.strftime("%y%m%d.%H%M%S")}.log'
     handler = logging.FileHandler(filename)
-    handler.setFormatter(TSFormatter(use_colors=False))
+    handler.setLevel(logging.DEBUG)
+    # handler.setFormatter(TSFormatter(use_colors=False))
     logger.addHandler(handler)
 
 
