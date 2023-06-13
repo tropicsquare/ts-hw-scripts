@@ -104,11 +104,6 @@ def set_dft_global_vars(args):
     TsGlobals.TS_DFT_SRC_RTL_FILE = os.path.join(
         TsGlobals.TS_DFT_RUN_DIR, TsGlobals.TS_DFT_SRC_RTL_FILE
     )
-
-    # Setting DMSA setup file path and name
-    # TsGlobals.TS_DFT_DMSA_FILE = os.path.join(
-    #    TsGlobals.TS_DFT_RUN_DIR, TsGlobals.TS_DFT_DMSA_FILE
-    # )
     # Setting the netlist
     if not args.open_result:
         TsGlobals.TS_DFT_NETLIST = __dft_netlist_selection(args)
@@ -117,11 +112,6 @@ def set_dft_global_vars(args):
     TsGlobals.TS_DFT_SETUP_FILE = os.path.join(
         TsGlobals.TS_DFT_RUN_DIR, TsGlobals.TS_DFT_SETUP_FILE
     )
-
-    # DFT DMSA file path
-    # TsGlobals.TS_DFT_DMSA_FILE = os.path.join(
-    #    TsGlobals.TS_DFT_RUN_DIR, TsGlobals.TS_DFT_DMSA_FILE
-    # )
 
 
 def get_dft_rootdir(args):
@@ -155,7 +145,10 @@ def __dft_netlist_selection(args):
     if args.netlist:
         # Here we use customer entered netlist
         path = f"{ts_get_root_rel_path(args.netlist)}"
-    elif args.source_data in TsGlobals.TS_DESIGN_CFG["design"]["flow_dirs"]:
+    elif (
+        "flow_dirs" in TsGlobals.TS_DESIGN_CFG["design"]
+        and args.source_data in TsGlobals.TS_DESIGN_CFG["design"]["flow_dirs"]
+    ):
         # Use default netlist location from flow_dirs/results/<design_name>.v
         path = f'{ts_get_root_rel_path(TsGlobals.TS_DESIGN_CFG["design"]["flow_dirs"][args.source_data])}/{TsGlobals.TS_DFT_RUNCODE}/results/{str(ts_get_design_top()).lower()}.v'
     else:
@@ -285,6 +278,7 @@ def dft_runfile_spyglass(args):
     lines.append(f"set_option enableSV09 yes\n")
     lines.append(f"set_option hdlin_translate_off_skip_text yes\n")
     lines.append(f"set_option pragma {{synthesis}}\n")
+    lines.append(f"set_option pragma {{RTL_SYNTHESIS}}\n")
     lines.append(f"set_option pragma {{translate}}\n")
     lines.append(f"set_option define {{TS_MBIST}}\n")
     # Waver
@@ -296,10 +290,6 @@ def dft_runfile_spyglass(args):
         lines.append(f"read_file -type hdl {TsGlobals.TS_DFT_NETLIST}\n")
     else:
         lines.append(f"source {TsGlobals.TS_DFT_SRC_RTL_FILE}\n")
-    # Ignore problematic file - to be removed/fixed
-    # lines.append(
-    #    f"set_option ignorefile /projects/tropic01/work/{os.getenv('USER')}/ts-common-blocks/rtl/sv/tr_maj_edet_reg_vect.sv\n"
-    # )
     # Constraints
     lines.append(f"read_file -type sgdc {TsGlobals.TS_DFT_CONSTRAINT}\n")
     # Compile
@@ -309,7 +299,6 @@ def dft_runfile_spyglass(args):
     lines.append(
         f"current_goal dft/dft_scan_ready -top {str(ts_get_design_top()).lower()}\n"
     )
-    # lines.append(f"set_goal_option scan_ready\n")
     # Run goal
     lines.append(f"run_goal\n")
     lines.append(
@@ -414,20 +403,12 @@ def lint_setup_file_spyglass():
 
                 obj = get_pdk_obj(obj_type, target_obj_name, target_obj_version)
                 if view not in obj["views"]:
-                    if enforce:
-                        ts_throw_error(
-                            TsErrCode.ERR_PDK_25,
-                            target_obj_name,
-                            target_obj_version,
-                            view,
-                        )
-                    else:
-                        ts_warning(
-                            TsWarnCode.WARN_PDK_3,
-                            target_obj_name,
-                            target_obj_version,
-                            view,
-                        )
+                    ts_warning(
+                        TsWarnCode.WARN_PDK_3,
+                        target_obj_name,
+                        target_obj_version,
+                        view,
+                    )
                     continue
 
                 for mode in TsGlobals.TS_DESIGN_CFG["design"]["modes"]:
