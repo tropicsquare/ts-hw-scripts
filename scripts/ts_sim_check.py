@@ -15,6 +15,8 @@ __maintainer__ = "Ondrej Ille"
 
 import argcomplete
 import junit_xml
+import sys
+
 from internal.ts_hw_args import (
     TsArgumentParser,
     add_cfg_files_arg,
@@ -74,8 +76,8 @@ if __name__ == "__main__":
     ts_configure_logging(args)
 
     # Load config files and check them
-    do_sim_config_init(args, skip_check=False, merge_args_to_config=True)
+    do_sim_config_init(args)
     do_design_config_init(args)
 
     # Launch checking process
-    sim_check(args, args.log_file)
+    sys.exit(sim_check(args, args.log_file))
