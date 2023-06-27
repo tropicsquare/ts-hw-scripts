@@ -849,6 +849,50 @@ def add_ts_sta_run_args(parser, tool_type):
     )
 
 
+def add_ts_pnr_run_args(parser, tool_type):
+    """
+    Adds arguments specific to ts_pnr_run.py
+    :param parser: Argparse parser to which arguments shall be added
+    """
+
+    parser.add_argument(
+        "--console",
+        action="store_true",
+        default=False,
+        help=f"Open PnR tool console.",
+    )
+
+    parser.add_argument(
+        "--pnr-target",
+        nargs="?",
+        default="init_design",
+        choices=(
+            "init_design",
+            "place_opt",
+            "clock_opt_opto",
+            "route_auto",
+            "route_opt",
+            "chip_finish",
+            "icv_in_design",
+        ),
+        help=f"Defines PnR target.",
+    )
+
+    parser.add_argument(
+        "--netlist",
+        nargs="?",
+        default=None,
+        help=f"Use relative path to the netlist file. It helps to overwrite default netlist naming pattern.",
+    )
+
+    parser.add_argument(
+        "--open-result",
+        action="store_true",
+        default=False,
+        help=f"Open {tool_type} results of selected runcode.",
+    )
+
+
 def add_lint_rtl_args(parser, tool_type):
     """
     Adds arguments specific to ts_dft_run.py
