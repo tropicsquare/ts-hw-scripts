@@ -183,10 +183,10 @@ class TsGlobals:
     # Synthesis setup.tcl file
     TS_STA_SETUP_FILE = "sta_setup.tcl"
 
-    # Synthesis multi-corner multi-mode setup file
+    # Static timing analysis multi-corner multi-mode setup file
     TS_STA_DMSA_FILE = "dmsa_setup.tcl"
 
-    # Synthesis release dir
+    # Static timing analysis release dir
     TS_STA_RELEASE_DIR = None
 
     # TODO: Clean-up this stuff coming from power flow!!!!
@@ -274,3 +274,39 @@ class TsGlobals:
 
     # RTL LINT design_cfg file
     TS_RTL_LINT_DESIGN_CFG_FILE = "design_cfg.tcl"
+
+    # Enviromental variable for prn root directory
+    TS_PNR_PATH = "pnr"
+
+    # PNR tool name
+    TS_PNR_TOOL = "icc2"
+
+    # PNR runcode
+    TS_PNR_RUNCODE = None
+
+    # PRN run dir
+    TS_PNR_RUN_DIR = None
+
+    # PNR setup file
+    TS_PNR_SETUP_FILE = "pnr_setup.tcl"
+
+    # Synthesis design_cfg file
+    TS_PNR_DESIGN_CFG_FILE = "design_cfg.tcl"
+
+    # File path for open-file PNR tool
+    TS_PNR_OPENFILE = "ts_pnr_open_script.tcl"
+
+    # PNR log dir
+    TS_PNR_LOGS_DIR = "logs"
+
+    # PNR results dir
+    TS_PNR_RESULTS_DIR = "results"
+
+    # PNR reports dir
+    TS_PNR_REPORTS_DIR = "reports"
+
+    # PNR multi-corner multi-mode setup file
+    TS_PNR_MCMM_FILE = "mcmm_setup.tcl"
+
+    # PNR release dir
+    TS_PNR_RELEASE_DIR = None
