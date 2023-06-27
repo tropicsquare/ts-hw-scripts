@@ -307,7 +307,11 @@ class TsErrCode(LogEnum):
     ERR_MMAP_3 = [lambda e: "Invalid file: File '{}' is not a valid RDL file".format(e)]
     ERR_MMAP_4 = [lambda e: "Invalid file: '{}' not found.".format(e)]
     ERR_MMAP_5 = [lambda e: "ORDT returned the following error(s): \n{}".format(e)]
-    ERR_MMAP_6 = [lambda filename: "Invalid file: ({}) is not a C header file or has an invalid path.".format(filename)]
+    ERR_MMAP_6 = [
+        lambda filename: "Invalid file: ({}) is not a C header file or has an invalid path.".format(
+            filename
+        )
+    ]
 
     ERR_SYN_0 = [lambda: "Missing runcode parameter"]
     ERR_SYN_1 = [
@@ -355,6 +359,23 @@ class TsErrCode(LogEnum):
     ERR_DFT_3 = [lambda: "DFT root_dir cannot be selected properly."]
     ERR_DFT_4 = [lambda netlist: "Netlist {} was not found".format(netlist)]
     ERR_DFT_5 = [lambda: "Missing dft constraint file"]
+
+    # PNR error messages
+    ERR_PNR_0 = [lambda: "Missing runcode parameter"]
+    ERR_PNR_1 = [
+        lambda runcode: "Cannot open {} runcode directory. It doesn't exist".format(
+            runcode
+        )
+    ]
+    ERR_PNR_2 = [
+        lambda runcode: "Directory runcode {} already exists. Use --force swith if you want to re-write it".format(
+            runcode
+        )
+    ]
+    ERR_PNR_3 = [
+        lambda source: "Source --source {} is not matching flow_dirs".format(source)
+    ]
+    ERR_PNR_4 = [lambda netlist: "Netlist {} was not found".format(netlist)]
 
 
 ####################################################################################################
@@ -498,6 +519,20 @@ class TsInfoCode(LogEnum):
     ]
     INFO_DFT_4 = [lambda folder: "Creating folder: {}".format(folder)]
     INFO_DFT_5 = [lambda folder: "Deleting folder: {}".format(folder)]
+
+    # PNR flow info messages
+    INFO_PNR_0 = [lambda runcode: "Selected runcode is: {}".format(runcode)]
+    INFO_PNR_1 = [lambda runcode: "Opening PnR database: {}".format(runcode)]
+    INFO_PNR_2 = [
+        lambda runcode: "Deleting and creating new PnR database: {}".format(runcode)
+    ]
+    INFO_PNR_3 = [
+        lambda tool_type, cmd: "Following {} cmd to be executed: {}".format(
+            tool_type, cmd
+        )
+    ]
+    INFO_PNR_4 = [lambda folder: "Creating folder: {}".format(folder)]
+    INFO_PNR_5 = [lambda folder: "Deleting folder: {}".format(folder)]
 
 
 def __ts_process_log(code: LogEnum, *opt_args):

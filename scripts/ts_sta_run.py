@@ -23,11 +23,11 @@ import sys
 import argcomplete
 from internal.ts_hw_args import (
     TsArgumentParser,
+    add_batch_mode_arg,
     add_cfg_files_arg,
     add_force_arg,
     add_lic_wait_arg,
     add_pd_common_args,
-    add_batch_mode_arg,
     add_release_arg,
     add_runcode_arg,
     add_source_data_arg,
@@ -35,10 +35,17 @@ from internal.ts_hw_args import (
     add_ts_common_args,
     add_ts_sta_run_args,
 )
+from internal.ts_hw_cfg_parser import (
+    check_valid_design_target,
+    check_valid_mode_arg,
+    check_valid_source_data_arg,
+    do_design_config_init,
+    do_sim_config_init,
+)
 from internal.ts_hw_common import (
     exec_cmd_in_dir,
     init_signals_handler,
-    ts_get_root_rel_path
+    ts_get_root_rel_path,
 )
 from internal.ts_hw_global_vars import TsGlobals
 from internal.ts_hw_logging import (
@@ -62,19 +69,7 @@ from internal.ts_hw_sta_support import (
     sta_open_design,
     sta_setup,
 )
-from internal.ts_hw_syn_support import (
-    delete_syn_sub_dir,
-    release,
-    set_license_queuing,
-)
-
-from internal.ts_hw_cfg_parser import (
-    check_valid_design_target,
-    check_valid_mode_arg,
-    check_valid_source_data_arg,
-    do_design_config_init,
-    do_sim_config_init,
-)
+from internal.ts_hw_syn_support import delete_syn_sub_dir, release, set_license_queuing
 
 if __name__ == "__main__":
 
@@ -119,7 +114,7 @@ if __name__ == "__main__":
     # Execute load of source list according to selected target - ts_hw_souce_list_files
     load_source_list_files(args.target)
 
-    # Check --source selector valitity
+    # Check --source selector validity
     check_valid_source_data_arg(args)
 
     # Check --mode selector validity
@@ -167,10 +162,10 @@ if __name__ == "__main__":
     # Generates design configuration tcl file
     sta_design_cfg_file(args)
 
-    # Generate synthesis setup tcl file
+    # Generate static timing analysis setup tcl file
     sta_setup(TsGlobals.TS_STA_SETUP_FILE, args)
 
-    # Generate synthesis dmsa setup tcl file
+    # Generate static timing analysis dmsa setup tcl file
     if args.dmsa:
         sta_dmsa_file(TsGlobals.TS_STA_DMSA_FILE, args)
 
@@ -182,9 +177,7 @@ if __name__ == "__main__":
 
     # Run STA
     exec_cmd_in_dir(
-        directory=TsGlobals.TS_STA_RUN_DIR,
-        command=pt_cmd,
-        batch_mode=args.batch_mode
+        directory=TsGlobals.TS_STA_RUN_DIR, command=pt_cmd, batch_mode=args.batch_mode
     )
 
     # Goodbye STA!
