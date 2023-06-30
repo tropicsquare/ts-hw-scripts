@@ -579,14 +579,27 @@ def syn_open_design(args):
     lines.append(f"\n")
     lines.append(f"source -echo -verbose $env(TS_SYN_FLOW_PATH)/common/dc_setup.tcl\n")
     lines.append(f"set_app_var case_analysis_propagate_through_icg true\n")
-    lines.append(
-        f"read_file -format ddc ${{RESULTS_DIR}}/${{DCRM_FINAL_DDC_OUTPUT_FILE}}\n"
-    )
+    lines.append(open_ddc(args))
     lines.append(f"\n")
 
     # Create and write
     with open(TsGlobals.TS_SYN_DC_RM_OPENFILE, "w") as run_file:
         run_file.writelines(lines)
+
+
+def open_ddc(args):
+    """
+    Checks existance of DDC file
+    : param args: arguments
+    """
+    if args.ddc is not None and os.path.exists(
+        f"{TsGlobals.TS_SYN_RESULTS_DIR}/{args.ddc}"
+    ):
+        return f"read_file -format ddc ${{RESULTS_DIR}}/{args.ddc}\n"
+    else:
+        return (
+            f"read_file -format ddc ${{RESULTS_DIR}}/${{DCRM_FINAL_DDC_OUTPUT_FILE}}\n"
+        )
 
 
 def release(source_dir, release_dir, flow_dir_type):
