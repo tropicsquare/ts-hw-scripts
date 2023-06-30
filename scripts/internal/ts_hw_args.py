@@ -758,7 +758,14 @@ def add_ts_syn_run_args(parser, tool_type):
         "--open-result",
         action="store_true",
         default=False,
-        help=f"Open {tool_type} results of selected runcode.",
+        help=f"Open {tool_type} results of selected runcode. If used with --ddc, then opens <runcode>/<results>/<ddc_file>.ddc",
+    )
+
+    parser.add_argument(
+        "--ddc",
+        nargs="?",
+        default=None,
+        help=f"Use DDC file name from target <runcode>/<results> folder. Use full DDC file name without a file path.",
     )
 
     parser.add_argument(
