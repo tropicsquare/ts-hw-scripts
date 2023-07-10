@@ -103,8 +103,12 @@ if __name__ == "__main__":
     # Config for ts_design_cfg
     if args.sign_off:
         setattr(args, "filter_mode_usage", "sta-signoff")
+    elif args.open_result:
+        # Do not filter for open design
+        setattr(args, "filter_mode_usage", None)
     else:
         setattr(args, "filter_mode_usage", "sta")
+
     do_design_config_init(args)
     # Target need to be defined from TS_DESIGN_CFG (holder of value)
     setattr(args, "target", TsGlobals.TS_DESIGN_CFG["design"]["target"])
