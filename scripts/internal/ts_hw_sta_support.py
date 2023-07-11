@@ -478,17 +478,22 @@ def sta_open_design(args):
     """
     Generates pt_shell run file for re-opening sta database
     Opens only local data
+    Includes autochecked for dmsa vs single mode opening
     : param args: arguments
     """
     # Empty buffer - generation to be line by line
     lines = []
-    for i, mode in enumerate(TsGlobals.TS_DESIGN_CFG["design"]["modes"]):
-        if args.mode in mode["name"]:
-            lines.append(f"\n")
-            lines.append(
-                f'restore_session ./{mode["name"]}_{mode["corner"]}/{str(ts_get_design_top()).lower()}_ss \n'
-            )
-            lines.append(f"\n")
+    # Content of a file
+    lines.append(f"\n")
+    if args.mode is not None:
+        for i, mode in enumerate(TsGlobals.TS_DESIGN_CFG["design"]["modes"]):
+            if args.mode in mode["name"]:
+                lines.append(
+                    f'restore_session ./{mode["name"]}_{mode["corner"]}/{str(ts_get_design_top()).lower()}_ss \n'
+                )
+    else:
+        lines.append(f"restore_session ./{str(ts_get_design_top()).lower()}_ss \n")
+    lines.append(f"\n")
 
     # Create and write
     with open(TsGlobals.TS_STA_DC_RM_OPENFILE, "w") as run_file:
