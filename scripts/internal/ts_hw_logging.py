@@ -342,7 +342,7 @@ class TsErrCode(LogEnum):
     ERR_STA_4 = [lambda netlist: "Netlist {} was not found".format(netlist)]
     ERR_STA_5 = [lambda mode: "Mode {} was not found".format(mode)]
     ERR_STA_6 = [lambda: "Either --dmsa or --mode <mode_name> must be used."]
-    ERR_STA_7 = [lambda: "Either --open-result or --dmsa shall be used."]
+    ERR_STA_7 = [lambda: "Switch --open-result shall not be used with --dmsa switch."]
 
     # DFT error messages
     ERR_DFT_0 = [lambda: "Missing runcode parameter"]
