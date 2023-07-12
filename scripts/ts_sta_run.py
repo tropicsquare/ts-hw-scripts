@@ -133,14 +133,13 @@ if __name__ == "__main__":
         set_sta_global_vars(args)
 
     # Check dmsa vs mode selector usage
-    if not (bool(args.dmsa) ^ bool(args.mode)):
-        ts_throw_error(TsErrCode.ERR_STA_6)
-
     # Check dmsa vs open selector usage
     if bool(args.dmsa) and bool(args.open_result):
         ts_throw_error(TsErrCode.ERR_STA_7)
+    elif not (bool(args.dmsa) ^ bool(args.mode)):
+        ts_throw_error(TsErrCode.ERR_STA_6)
 
-    # Check if user requires either to run new synthesis or to open existing synthesis database
+    # Check if user requires either running a new sta or opennig an existing sta session database
     if args.open_result is False:
         if args.force is True:
             ts_info(TsInfoCode.INFO_STA_2, TsGlobals.TS_STA_RUNCODE)
