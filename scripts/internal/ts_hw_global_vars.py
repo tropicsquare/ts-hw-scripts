@@ -141,6 +141,12 @@ class TsGlobals:
     # Synthesis multi-corner multi-mode setup file
     TS_SYN_MCMM_FILE = "mcmm_setup.tcl"
 
+    # Synthesis DFT exception file
+    TS_SYN_DFT_EXCEPTION_FILE = "dft_exception.tcl"
+
+    # Synthesis DFT insertion file
+    TS_SYN_DFT_INSERTION_FILE = "dft_insertion.tcl"
+
     # Synthesis RTL target
     TS_SYN_TARGET = None
 
