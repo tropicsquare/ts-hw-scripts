@@ -61,6 +61,7 @@ from internal.ts_hw_source_list_files import load_source_list_files
 from internal.ts_hw_sta_support import (
     build_sta_cmd,
     create_sta_sub_dirs,
+    delete_sta_sub_dir,
     runcode_dir_test,
     set_sta_global_vars,
     sta_design_cfg_file,
@@ -69,7 +70,7 @@ from internal.ts_hw_sta_support import (
     sta_open_design,
     sta_setup,
 )
-from internal.ts_hw_syn_support import delete_syn_sub_dir, release, set_license_queuing
+from internal.ts_hw_syn_support import release, set_license_queuing
 
 if __name__ == "__main__":
 
@@ -132,11 +133,17 @@ if __name__ == "__main__":
         # Set sta flow global variables
         set_sta_global_vars(args)
 
-    # Check dmsa vs mode selector usage
-    # Check dmsa vs open selector usage
-    if bool(args.dmsa) and bool(args.open_result):
+    # dmsa
+    #   no open-result
+    #   no mode - mutual exclusivity
+
+    # open-result
+    #   no dmsa
+    #   mode is possible
+
+    if bool(args.open_result) & bool(args.dmsa):
         ts_throw_error(TsErrCode.ERR_STA_7)
-    elif not (bool(args.dmsa) ^ bool(args.mode)):
+    elif not bool(args.open_result) and not (bool(args.dmsa) ^ bool(args.mode)):
         ts_throw_error(TsErrCode.ERR_STA_6)
 
     # Check if user requires either running a new sta or opennig an existing sta session database
@@ -144,7 +151,7 @@ if __name__ == "__main__":
         if args.force is True:
             ts_info(TsInfoCode.INFO_STA_2, TsGlobals.TS_STA_RUNCODE)
             # Delete DIR of runcode name if exists
-            delete_syn_sub_dir()
+            delete_sta_sub_dir()
         else:
             # Test if database already exists, otherwise create sub-folder
             if runcode_dir_test(args) is True:
