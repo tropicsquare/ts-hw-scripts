@@ -93,7 +93,7 @@ def delete_pnr_sub_dir():
 
     """
     ts_info(TsInfoCode.INFO_SYS_5, TsGlobals.TS_PNR_RUN_DIR)
-    shutil.rmtree(TsGlobals.TS_SYN_RUN_DIR, ignore_errors=True)
+    shutil.rmtree(TsGlobals.TS_PNR_RUN_DIR, ignore_errors=True)
 
 
 def get_pnr_rundir(runcode: str):
