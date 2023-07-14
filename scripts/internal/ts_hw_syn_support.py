@@ -475,6 +475,16 @@ def syn_setup(path: str, args):
         f"set DCRM_RTL_READ_SCRIPT {TsGlobals.TS_SYN_RUN_DIR}/{TsGlobals.TS_SYN_SRC_RTL_FILE}\n"
     )
     lines.append(f"\n")
+    lines.append(
+        f"set DCRM_DFT_EXCEPTION_FILE {get_repo_root_path()}/syn/{TsGlobals.TS_SYN_DFT_EXCEPTION_FILE} \n"
+    )
+    lines.append(f"\n")
+    lines.append(
+        f"set DCRM_DFT_INSERTION_FILE {get_repo_root_path()}/syn/{TsGlobals.TS_SYN_DFT_INSERTION_FILE} \n"
+    )
+    lines.append(f"\n")
+
+    lines.append(f"\n")
     lines.append(f"# Constaints as an TCL, not SDC standard\n")
     lines.append(
         f'set DCRM_CONSTRAINTS_INPUT_FILE "$TS_{str(ts_get_design_top())}_GLOBAL_CONSTRAINTS"\n'
