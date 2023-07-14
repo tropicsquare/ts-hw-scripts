@@ -476,11 +476,11 @@ def syn_setup(path: str, args):
     )
     lines.append(f"\n")
     lines.append(
-        f"set DCRM_DFT_EXCEPTION_FILE {TsGlobals.TS_SYN_RUN_DIR}/{TsGlobals.TS_SYN_DFT_EXCEPTION_FILE} \n"
+        f"set DCRM_DFT_EXCEPTION_FILE {get_repo_root_path()}/syn/{TsGlobals.TS_SYN_DFT_EXCEPTION_FILE} \n"
     )
     lines.append(f"\n")
     lines.append(
-        f"set DCRM_DFT_INSERTION_FILE {TsGlobals.TS_SYN_RUN_DIR}/{TsGlobals.TS_SYN_DFT_INSERTION_FILE} \n"
+        f"set DCRM_DFT_INSERTION_FILE {get_repo_root_path()}/syn/{TsGlobals.TS_SYN_DFT_INSERTION_FILE} \n"
     )
     lines.append(f"\n")
 
