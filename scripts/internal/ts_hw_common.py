@@ -169,11 +169,10 @@ def load_yaml_file(yaml_file: str) -> dict:
             TsErrCode.GENERIC,
             f"{yaml_file} config file was not found. Make sure it exists!",
         )
-    except:
+    except Exception as e:
         ts_throw_error(
             TsErrCode.GENERIC,
-            f"Failed to load {yaml_file} config file probably due "
-            "to incorrect YAML syntax.",
+            f"Failed to load {yaml_file} file due to:\n" + str(e),
         )
 
 
