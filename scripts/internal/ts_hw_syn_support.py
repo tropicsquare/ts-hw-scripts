@@ -151,7 +151,7 @@ def build_synthesis_cmd(args):
     # Report final dc_cmd
     ts_info(TsInfoCode.INFO_SYS_3, "dc_shell", dc_cmd)
 
-    return dc_cmd
+    return [dc_cmd, logfile]
 
 
 def syn_logging(args):
