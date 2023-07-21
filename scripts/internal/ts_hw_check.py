@@ -436,3 +436,41 @@ class TSLogChecker:
             self.SEPARATOR,
             sep="\n",
         )
+
+def check_snps_log_file(flow_type, log_file_path: str) -> int:
+    """
+    Simple checker of synopsys DC and PT logs
+    """
+    with open(log_file_path, encoding="latin-1") as fd:
+        lines = fd.readlines()
+
+    errors = []
+    warnings = []
+
+    # DC and PT Error format is luckily simple enough that there is no need for regex
+    for line_number, line in enumerate(lines):
+        if (line.startswith("Error:") or line.startswith("[Error]")):
+            errors.append([line_number, line])
+        if (line.startswith("Warning:") or line.startswith("[Warning]")):
+            warnings.append([line_number, line])
+
+    if warnings:
+        ts_print(f"{flow_type} log Warnings:", color=TsColors.ORANGE, big=True)
+        for warning in warnings:
+            tmp = warning[1].strip('\n')
+            ts_print(f"Line {warning[0]}: {tmp}")
+    else:
+        ts_print(f"No warnings in {flow_type} log", color=TsColors.PURPLE, big=True)
+
+    if errors:
+        ts_print(f"{flow_type} log Errors:", color=TsColors.RED, big=True)
+        for error in errors:
+            tmp = error[1].strip('\n')
+            ts_print(f"Line {error[0]}: {tmp}")
+    else:
+        ts_print(f"No errors in {flow_type} log", color=TsColors.PURPLE, big=True)
+
+    # Fail if an error was detected
+    return (len(errors) > 0)
+
+
