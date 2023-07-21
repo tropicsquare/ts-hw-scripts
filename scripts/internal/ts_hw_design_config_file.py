@@ -251,9 +251,9 @@ def __check_pdk_config_file(pdk_cfg_file: dict, path: str):
                         obj_type_name, obj["name"], obj["version"]
                     ),
                 )
-                __check_valid_opcond_corners(pdk, obj)
                 __check_valid_view_corners(pdk, obj)
                 __validate_views_exist(pdk, obj, path)
+                __check_valid_opcond_corners(pdk, obj)
                 __check_obj_duplicities(pdk, obj, obj_type, obj_type_name)
 
 
