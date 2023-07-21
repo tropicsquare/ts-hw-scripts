@@ -47,6 +47,9 @@ from internal.ts_hw_common import (
     init_signals_handler,
     ts_get_root_rel_path,
 )
+from internal.ts_hw_check import (
+    check_snps_log_file
+)
 from internal.ts_hw_global_vars import TsGlobals
 from internal.ts_hw_logging import (
     TsColors,
@@ -183,12 +186,14 @@ if __name__ == "__main__":
     set_license_queuing(args, "pt_shell", "SNPSLMD_QUEUE")
 
     # Prepare pt_cmd
-    pt_cmd = build_sta_cmd(args)
+    [pt_cmd, log_file] = build_sta_cmd(args)
 
     # Run STA
     exec_cmd_in_dir(
         directory=TsGlobals.TS_STA_RUN_DIR, command=pt_cmd, batch_mode=args.batch_mode
     )
+
+    exit_code = check_snps_log_file("STA", log_file)
 
     # Goodbye STA!
     ts_print("STA is done!", color=TsColors.PURPLE, big=True)
@@ -207,4 +212,4 @@ if __name__ == "__main__":
         )
         release(TsGlobals.TS_STA_RUN_DIR, TsGlobals.TS_STA_RELEASE_DIR, "sta")
 
-sys.exit(0)
+    sys.exit(exit_code)

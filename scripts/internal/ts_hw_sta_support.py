@@ -177,7 +177,7 @@ def build_sta_cmd(args):
     # Report final dc_cmd
     ts_info(TsInfoCode.INFO_SYS_3, "pt_shell", pt_cmd)
 
-    return pt_cmd
+    return [pt_cmd, logfile]
 
 
 def sta_logging(args):

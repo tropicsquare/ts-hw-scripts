@@ -54,6 +54,9 @@ from internal.ts_hw_logging import (
     ts_print,
     ts_throw_error,
 )
+from internal.ts_hw_check import (
+    check_snps_log_file
+)
 from internal.ts_hw_source_list_files import load_source_list_files
 from internal.ts_hw_syn_support import (
     build_synthesis_cmd,
@@ -162,12 +165,14 @@ if __name__ == "__main__":
     set_license_wait_time(args, "dc_shell", "SNPS_MAX_QUEUETIME", "1")
 
     # Prepare dc_cmd
-    dc_cmd = build_synthesis_cmd(args)
+    [dc_cmd, log_file] = build_synthesis_cmd(args)
 
     # Run DC
     exec_cmd_in_dir(
         directory=TsGlobals.TS_SYN_RUN_DIR, command=dc_cmd, batch_mode=args.batch_mode
     )
+
+    exit_code = check_snps_log_file("Synthesis", log_file)
 
     # Goodbye synthesis!
     ts_print("Synthesis is done!", color=TsColors.PURPLE, big=True)
@@ -185,4 +190,4 @@ if __name__ == "__main__":
         )
         release(TsGlobals.TS_SYN_RUN_DIR, TsGlobals.TS_SYN_RELEASE_DIR, "syn")
 
-sys.exit(0)
+    sys.exit(exit_code)
