@@ -312,6 +312,7 @@ class TsErrCode(LogEnum):
             filename
         )
     ]
+    ERR_MMAP_7 = [lambda env_var: "Envivonment variable ({}) used but not found.".format(env_var)]
 
     ERR_SYN_0 = [lambda: "Missing runcode parameter"]
     ERR_SYN_1 = [

@@ -13,7 +13,7 @@ import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
 from textwrap import dedent
-from typing import ClassVar, List, Optional, Union
+from typing import ClassVar, List, Optional, Union, Tuple
 
 import yaml
 
@@ -117,12 +117,24 @@ def ordt_build_parms_file(output_parms_file, base_address: str = "0"):
     with open(output_parms_file, "w") as fp:
         fp.write(default_parms)
 
+def unpack_env_var_path(path: str) -> Optional[Path]:
+    env_var_name, _, temp_relative_path = path[1:].partition("/")
+    env_var_value = os.environ.get(env_var_name)
+
+    if env_var_value is None:
+        ts_throw_error(TsErrCode.ERR_MMAP_7, env_var_name)
+    else:
+        return Path(env_var_value) / Path(temp_relative_path)
+
 
 def load_rdl(target_filepath: str, current_level: Optional[str] = None):
+    # assume environment variable will always be an absolute path
+    if target_filepath.startswith("$"):
+        target = unpack_env_var_path(target_filepath)
 
-    current_dir = Path(current_level).parent
-
-    target = current_dir.joinpath(Path(target_filepath))
+    else:
+        current_dir = Path(current_level).parent
+        target = current_dir.joinpath(Path(target_filepath))
 
     if not target.exists():
         ts_throw_error(TsErrCode.ERR_MMAP_4, target)
@@ -130,14 +142,17 @@ def load_rdl(target_filepath: str, current_level: Optional[str] = None):
     return target
 
 
-def load_yaml(target_filepath: str, current_level: Optional[str] = None):
+def load_yaml(target_filepath: str, current_level: Optional[str] = None) -> Tuple[dict, Path]:
+    if target_filepath.startswith("$"):
+        target_filepath = unpack_env_var_path(target_filepath)
 
-    if current_level is None:
-        current_dir = Path(target_filepath).parent
-        target_filepath = current_dir.joinpath(Path(target_filepath).name)
     else:
-        current_dir = Path(current_level).parent
-        target_filepath = current_dir.joinpath(Path(target_filepath))
+        if current_level is None:
+            current_dir = Path(target_filepath).parent
+            target_filepath = current_dir.joinpath(Path(target_filepath).name)
+        else:
+            current_dir = Path(current_level).parent
+            target_filepath = current_dir.joinpath(Path(target_filepath))
     try:
         with open(target_filepath) as ft:
             return yaml.safe_load(ft), target_filepath
