@@ -122,6 +122,10 @@ if __name__ == "__main__":
         # Set synthesis flow global variables
         set_syn_global_vars(args)
 
+    # Check that global constraints exist in non-topo mode
+    if ((not args.topo) and ("constraints" not in TsGlobals.TS_DESIGN_CFG["design"])):
+        ts_throw_error(TsErrCode.ERR_PDK_26)
+
     # Check if user requires either to run new synthesis or to open existing synthesis database
     if args.open_result is False:
         if args.force is True:

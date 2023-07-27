@@ -281,6 +281,11 @@ class TsErrCode(LogEnum):
         )
     ]
 
+    ERR_PDK_26 = [
+        lambda: "When running ts_syn_run.py with \"--topo\", global \"constraints\" keyword must be "
+                "defined in Design config file under \"design\"."
+    ]
+
     # Power error messages
     ERR_PWR_0 = [lambda e: "Power config file is invalid.\n {}".format(e)]
     ERR_PWR_1 = [lambda: "Power config file not found. \n {}"]
