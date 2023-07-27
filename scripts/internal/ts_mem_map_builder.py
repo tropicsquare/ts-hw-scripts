@@ -13,7 +13,7 @@ import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
 from textwrap import dedent
-from typing import ClassVar, List, Optional, Union
+from typing import ClassVar, List, Optional, Union, Tuple
 
 import yaml
 
@@ -117,11 +117,22 @@ def ordt_build_parms_file(output_parms_file, base_address: str = "0"):
     with open(output_parms_file, "w") as fp:
         fp.write(default_parms)
 
+def unpack_env_var_path(path: str) -> Optional[Path]:
+    """Unpacks environment variables in path, returns Path object."""
 
-def load_rdl(target_filepath: str, current_level: Optional[str] = None):
+    unpacked_path = Path(os.path.expandvars(path))
+
+    if "$" in path and unpacked_path == Path(path):
+        ts_throw_error(TsErrCode.ERR_MMAP_7, path)
+
+    return unpacked_path
+
+
+def load_rdl(target_filepath: str, current_level: Optional[str] = None) -> Path:
+
+    target_filepath = unpack_env_var_path(target_filepath)
 
     current_dir = Path(current_level).parent
-
     target = current_dir.joinpath(Path(target_filepath))
 
     if not target.exists():
@@ -130,14 +141,17 @@ def load_rdl(target_filepath: str, current_level: Optional[str] = None):
     return target
 
 
-def load_yaml(target_filepath: str, current_level: Optional[str] = None):
+def load_yaml(target_filepath: str, current_level: Optional[str] = None) -> Tuple[dict, Path]:
 
+    target_filepath = unpack_env_var_path(target_filepath)
     if current_level is None:
         current_dir = Path(target_filepath).parent
         target_filepath = current_dir.joinpath(Path(target_filepath).name)
     else:
         current_dir = Path(current_level).parent
         target_filepath = current_dir.joinpath(Path(target_filepath))
+
+    # TODO why wrap one FileNotFound error into another?
     try:
         with open(target_filepath) as ft:
             return yaml.safe_load(ft), target_filepath
