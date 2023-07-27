@@ -120,15 +120,7 @@ def ordt_build_parms_file(output_parms_file, base_address: str = "0"):
 def unpack_env_var_path(path: str) -> Optional[Path]:
     """Unpacks environment variables in path, returns Path object."""
 
-    print('received', path)
-
-    print('repo root is: ', Path(os.path.expandvars("$TS_REPO_ROOT")))
-    print('repo root is: ', os.environ.get("TS_REPO_ROOT"))
-    print('repo root is: ', os.getenv("TS_REPO_ROOT"))
-
     unpacked_path = Path(os.path.expandvars(path))
-
-    print('unpacked', unpacked_path)
 
     if "$" in path and unpacked_path == Path(path):
         ts_throw_error(TsErrCode.ERR_MMAP_7, path)
