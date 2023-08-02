@@ -1075,7 +1075,7 @@ def __build_sim_command(
             fd.writelines(map(lambda x: x + "\n", lines))
         sim_cmd.append(sim_cmds["sim_cmd_file"].format(sim_cmd_file))
     # VCS runs in ucli mode when a do file is specified or gui is activated
-    if lines or ts_get_cfg("gui") is not None or ts_get_cfg("compile_debug"):
+    if lines or ts_get_cfg("gui") is not None:
         sim_cmd.append("-ucli")
 
     # Add UVM test name if specified
