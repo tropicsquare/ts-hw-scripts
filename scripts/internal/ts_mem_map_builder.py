@@ -303,10 +303,13 @@ class Node:
 
                         current_level.pop()
 
-                        # overwrite from same node in parent file except short_name
+                        # overwrite from same node in parent file
                         child_node.name = region["name"]
-                        child_node.short_name = child_node.short_name or (
-                            region["short_name"] if "short_name" in region else ""
+                        # parent node has priority on short_name, then child
+                        child_node.short_name = (
+                            region["short_name"]
+                            if "short_name" in region
+                            else (child_node.short_name or "")
                         )
                         child_node.start_addr = region["start_addr"]
                         child_node.end_addr = region["end_addr"]
