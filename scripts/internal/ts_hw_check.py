@@ -441,8 +441,14 @@ def check_snps_log_file(flow_type, log_file_path: str) -> int:
     """
     Simple checker of synopsys DC and PT logs
     """
-    with open(log_file_path, encoding="latin-1") as fd:
-        lines = fd.readlines()
+    try:
+        with open(log_file_path, encoding="latin-1") as fd:
+            lines = fd.readlines()
+    except FileNotFoundError:
+        ts_throw_error(
+            TsErrCode.GENERIC,
+            f"{log_file_path} log file was not found. Synthesis probably did not run...",
+        )
 
     errors = []
     warnings = []
