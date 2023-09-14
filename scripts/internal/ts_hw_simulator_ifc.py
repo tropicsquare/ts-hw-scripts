@@ -785,16 +785,6 @@ def __build_elab_command(
     # Add extra options passed from command line
     elab_cmd.append(ts_get_cfg("add_elab_options"))
 
-    # Add global, target, test  and verbosity level specific generics and parameters
-    for function in (__add_generics, __add_parameters):
-        for cfg_dict in (
-            ts_get_cfg(),
-            ts_get_cfg("targets")[ts_get_cfg("target")],
-            test,
-            ts_get_cfg("sim_verbosity_levels")[ts_get_cfg("sim_verbosity")],
-        ):
-            elab_cmd.extend(function(cfg_dict))
-
     # Add test name generic/parameter (if set)
     for single_dict in (ts_get_cfg(), ts_get_cfg("targets")[ts_get_cfg("target")]):
         if single_dict["test_name_strategy"] == "generic_parameter":
@@ -806,6 +796,16 @@ def __build_elab_command(
                     elab_cmd.extend(
                         function({item: {single_dict[param]: test["base_name"]}})
                     )
+
+    # Add global, target, test  and verbosity level specific generics and parameters
+    for function in (__add_generics, __add_parameters):
+        for cfg_dict in (
+            ts_get_cfg(),
+            ts_get_cfg("targets")[ts_get_cfg("target")],
+            test,
+            ts_get_cfg("sim_verbosity_levels")[ts_get_cfg("sim_verbosity")],
+        ):
+            elab_cmd.extend(function(cfg_dict))
 
     # Add simulation resolution
     if "simulation_resolution" in ts_get_cfg():
