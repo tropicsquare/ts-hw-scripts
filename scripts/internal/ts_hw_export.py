@@ -339,9 +339,16 @@ def export_vivado_tcl(tcl_file: str):
                     )
 
             # write file synthesis command
-            lines.append(
-                f"{cmd} -library {lib} \\\n\t\t\t\t{source_file['full_path']}\n"
-            )
+            if (cmd == "read_vhdl"):
+                lines.append(
+                    f"{cmd} -library {lib} \\\n\t\t\t\t{source_file['full_path']}\n"
+                )
+            else:
+                # do not define library for Verilog and SystemVerilog sources
+                lines.append(
+                    f"{cmd} \\\n\t\t\t\t{source_file['full_path']}\n"
+                )
+
 
             # src list file defines and include_dirs (only Verilog and SystemVerilog)
             if lang != "vhdl":
