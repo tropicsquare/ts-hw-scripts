@@ -198,7 +198,7 @@ class TSLogChecker:
             test_results["sim_exit_code"] = int(lines[-2].split()[1])
             test_results["run_time"] = float(lines[-1].split()[1])
 
-        if test_results["sim_exit_code"] != 0:
+        if test_results["sim_exit_code"] != 0 and ts_get_cfg("check_exit_code"):
             test_results["result"] = False
             test_results["errors"].append(
                 {

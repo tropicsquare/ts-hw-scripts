@@ -194,6 +194,7 @@ class GRAMMAR_SIM_CFG:
             Optional("no_sim_out", default=False): bool,
             Optional("no_check", default=False): bool,
             Optional("check_elab_log", default=False): bool,
+            Optional("check_exit_code", default=True): bool,
             Optional("recompile", default=False): bool,
             Optional("loop", default=1): int,
             Optional("dump_waves", default=False): bool,
