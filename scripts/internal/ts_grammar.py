@@ -139,7 +139,7 @@ _key_val_dict = {str: Or(None, str, int, float, bool)}
 
 # Allowed simulator specific compile options. See format below.
 _simulator_comp_sim_elab_opts = {
-    Or("common", "vcs"): str,
+    Or("common", "vcs", "ghdl", "nvc"): str,
 }
 
 _verbosity_options = GrammarSchema(
