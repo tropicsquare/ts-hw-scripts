@@ -177,6 +177,10 @@ no_check: false
 #check_elab_log = [true | false] (default = false)
 check_elab_log: true
 
+# Check simulator exit code. If non-zero, makes test fail
+#check_exit_code = [true | false] (default = true)
+check_exit_code: true
+
 # Check severity
 # When check severity is set to warning, lines from simulation/elaboration log
 # file classified as Warnings or Errors cause test failure. When check

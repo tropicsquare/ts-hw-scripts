@@ -797,6 +797,13 @@ def __build_elab_command(
                         function({item: {single_dict[param]: test["base_name"]}})
                     )
 
+    # Add seed generic if it is define.
+    if "seed_generic" in ts_get_cfg():
+        seed_dict = {
+            "generics": {ts_get_cfg("seed_generic"): test["seed"]}
+        }
+        elab_cmd.extend(__add_generics(seed_dict))
+
     # Add global, target, test  and verbosity level specific generics and parameters
     for function in (__add_generics, __add_parameters):
         for cfg_dict in (
