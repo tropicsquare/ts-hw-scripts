@@ -183,6 +183,7 @@ class GRAMMAR_SIM_CFG:
             Optional("fail_fast", default=False): bool,
             Optional("no_color", default=False): bool,
             Optional("seed"): int,
+            Optional("seed_generic"): str,
             Optional("target"): str,
             Optional("test_name_strategy", default=None): Among(
                 None, "uvm", "generic_parameter"
