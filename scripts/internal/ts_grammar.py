@@ -139,7 +139,7 @@ _key_val_dict = {str: Or(None, str, int, float, bool)}
 
 # Allowed simulator specific compile options. See format below.
 _simulator_comp_sim_elab_opts = {
-    Or("common", "vcs"): str,
+    Or("common", "vcs", "ghdl", "nvc"): str,
 }
 
 _verbosity_options = GrammarSchema(
@@ -183,6 +183,7 @@ class GRAMMAR_SIM_CFG:
             Optional("fail_fast", default=False): bool,
             Optional("no_color", default=False): bool,
             Optional("seed"): int,
+            Optional("seed_generic"): str,
             Optional("target"): str,
             Optional("test_name_strategy", default=None): Among(
                 None, "uvm", "generic_parameter"
@@ -194,6 +195,7 @@ class GRAMMAR_SIM_CFG:
             Optional("no_sim_out", default=False): bool,
             Optional("no_check", default=False): bool,
             Optional("check_elab_log", default=False): bool,
+            Optional("check_exit_code", default=True): bool,
             Optional("recompile", default=False): bool,
             Optional("loop", default=1): int,
             Optional("dump_waves", default=False): bool,
