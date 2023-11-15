@@ -10,9 +10,10 @@ import logging
 import sys
 import traceback
 from enum import Enum
+from typing import Any
 
 
-class TsColors:
+class TsColors(str, Enum):
 
     RED = "\033[91m"
     ORANGE = "\033[93m"
@@ -21,6 +22,8 @@ class TsColors:
     BLUE = "\033[96m"
     END = "\033[0m"
     NONE = None
+
+    __str__ = str.__str__
 
 
 class ColorMode:
@@ -37,7 +40,7 @@ class TSFormatter(logging.Formatter):
         logging.CRITICAL: TsColors.RED,
     }
 
-    def __init__(self, use_colors=True):
+    def __init__(self, use_colors: bool = True):
         if use_colors:
             log_format = "%(prefix)s%(levelname)s: %(message)s%(suffix)s"
             self.format = self._format_with_colors
@@ -45,7 +48,7 @@ class TSFormatter(logging.Formatter):
             log_format = "%(levelname)s: %(message)s"
         super().__init__(fmt=log_format)
 
-    def _format_with_colors(self, record):
+    def _format_with_colors(self, record: logging.LogRecord):
         record.prefix = self.COLORS[record.levelno]
         record.suffix = TsColors.END
         return super().format(record)
@@ -57,7 +60,7 @@ class TSFormatter(logging.Formatter):
 
 
 class LogEnum(Enum):
-    def __call__(self, *args):
+    def __call__(self, *args: Any):
         return self.value[0](*args)
 
 
@@ -477,7 +480,7 @@ class TsInfoCode(LogEnum):
 
     # Memory map generator error messages
     INFO_MMAP_0 = [
-        lambda start_addr, end_addr: "with start address: {} and end address: {}".format(
+        lambda start_addr, end_addr: "with start address: 0x{:08X} and end address: 0x{:08X}".format(
             start_addr, end_addr
         )
     ]
@@ -541,7 +544,7 @@ class TsInfoCode(LogEnum):
     INFO_PNR_5 = [lambda folder: "Deleting folder: {}".format(folder)]
 
 
-def __ts_process_log(code: LogEnum, *opt_args):
+def __ts_process_log(code: LogEnum, *opt_args: Any):
     """
     Processes info/warning/error level code.
     :param code: info/warning/error code
@@ -572,7 +575,7 @@ def __ts_process_log(code: LogEnum, *opt_args):
 ####################################################################################################
 
 
-def ts_throw_error(err_code: TsErrCode, *opt_args):
+def ts_throw_error(err_code: TsErrCode, *opt_args: Any):
     """
     Throws colorized error message for simple debug.
     :param err_code: Error code
@@ -581,7 +584,7 @@ def ts_throw_error(err_code: TsErrCode, *opt_args):
     sys.exit(1)
 
 
-def ts_warning(warn_code: TsWarnCode, *opt_args):
+def ts_warning(warn_code: TsWarnCode, *opt_args: Any):
     """
     Throws colorized warning message for simple debug.
     :param warn_code: Warning code
@@ -589,7 +592,7 @@ def ts_warning(warn_code: TsWarnCode, *opt_args):
     __ts_process_log(warn_code, *opt_args)
 
 
-def ts_info(info_code: TsInfoCode, *opt_args):
+def ts_info(info_code: TsInfoCode, *opt_args: Any):
     """
     Throws colorized info message for simple debug.
     :param info_code: Info code
@@ -597,7 +600,7 @@ def ts_info(info_code: TsInfoCode, *opt_args):
     __ts_process_log(info_code, *opt_args)
 
 
-def ts_debug(msg):
+def ts_debug(msg: object):
     """
     Prints debug line to a terminal.
     :param msg: Message to be shown. This is for developer only, so string is enough!
@@ -605,21 +608,21 @@ def ts_debug(msg):
     logging.debug(msg)
 
 
-def ts_print(*args, color: TsColors = TsColors.NONE, big: bool = False, **kwargs):
+def ts_print(*args: str, color: TsColors = TsColors.NONE, big: bool = False, **kwargs: Any):
     """
     Override builtin print function while adding some options
     """
-    args = list(args)
+    _args = list(args)
     if big:
-        args[0] = "*" * 80 + "\n" + str(args[0])
-        args[-1] = str(args[-1]) + "\n" + "*" * 80
+        _args[0] = "*" * 80 + "\n" + str(_args[0])
+        _args[-1] = str(_args[-1]) + "\n" + "*" * 80
     if ColorMode.UseColors and color != TsColors.NONE:
-        args[0] = color + str(args[0])
-        args[-1] = str(args[-1]) + TsColors.END
-    print(*args, **kwargs)
+        _args[0] = color + str(_args[0])
+        _args[-1] = str(_args[-1]) + TsColors.END
+    print(*_args, **kwargs)
 
 
-def ts_script_bug(msg):
+def ts_script_bug(msg: object):
     """
     Throw indication that this is bug in the scripting system and exception.
     :param msg: Message to be printed!

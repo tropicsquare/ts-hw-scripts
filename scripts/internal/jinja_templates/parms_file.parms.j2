@@ -1,0 +1,17 @@
+global {
+    base_address = {{ "0x%X" % body.base_address }}
+}
+// rdl input parameters
+input rdl {
+    resolve_reg_category    = true      // if register category is unspecified, try to determine from rdl
+    lint_rdl                = false
+}
+
+// Latex output parameters
+output tslatexdoc {
+    add_latex_preamble      = false     // Add LaTex preamble (standalone document)
+    add_latex_reg_summary   = true      // Add register summary table on top
+    add_landscape_tables    = true      // Add register table in landscape mode
+    add_absolute_addresses  = true      // Sums up absolute address from parameters to offsets
+    add_hyperlinks          = true      // Links register tables to field tables
+}

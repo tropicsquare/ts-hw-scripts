@@ -6,20 +6,37 @@
 # TODO: License
 ####################################################################################################
 
+__author__ = "Henri LHote"
+__copyright__ = "Tropic Square"
+__license___ = "TODO:"
+__maintainer__ = "Henri LHote"
+
 import os
 import re
+import shutil
 import subprocess
 from dataclasses import dataclass, field
 from datetime import datetime
+from functools import partial
 from pathlib import Path
-from textwrap import dedent
-from typing import ClassVar, List, Optional, Tuple, Union
+from typing import (
+    Any,
+    ClassVar,
+    List,
+    Literal,
+    Optional,
+    Protocol,
+    Tuple,
+    TypedDict,
+    Union,
+)
 
+import jinja2
 import yaml
+from typing_extensions import NotRequired, Self
 
 from .ts_grammar import GRAMMAR_MEM_MAP_CONFIG
 from .ts_hw_logging import (
-    LogEnum,
     TsColors,
     TsErrCode,
     TsInfoCode,
@@ -31,352 +48,314 @@ from .ts_hw_logging import (
     ts_warning,
 )
 
-current_level = []
+TEMPLATE_DIRECTORY = Path(__file__).parent / "jinja_templates"
 
 
-def pretty_hex(num: int):
-    """force print 8 hex digits, add space in between"""
-
-    tmp = hex(num).upper()
-    tmp = tmp[2:].zfill(8)
-    tmp = f"0x{tmp[:4]} {tmp[4:]}"
-
-    return tmp
+# TODO fix logging
+def info(__msg: str, /) -> None:
+    ts_info(TsInfoCode.GENERIC, __msg)
 
 
-def write_line(file, line):
-    with open(file, "a") as f:
-        f.write(line)
+print_in_blue = partial(ts_print, color=TsColors.BLUE)
 
 
-def ordt_run(source, output, parms):
-    if Path(output).suffix == ".xml":
-        command = f"ordt_run.sh -parms {parms} -xml {output} {source}"
-    else:
-        command = f"ordt_run.sh -parms {parms} -tslatexdoc {output} {source}"
+class RenderFn(Protocol):
+    def __call__(self, template_file: str, header: Any, body: Any) -> str:
+        ...
 
-    ts_info(TsInfoCode.GENERIC, f"Running ORDT command: {command}")
 
-    process = subprocess.Popen(
+def create_render_fn() -> RenderFn:
+    environment = jinja2.Environment(
+        trim_blocks=False,
+        lstrip_blocks=True,
+        loader=jinja2.FileSystemLoader(TEMPLATE_DIRECTORY),
+    )
+
+    def _render(template_file: str, header: Any, body: Any) -> str:
+        return environment.get_template(template_file).render(
+            header=header, body=body, date=datetime.now()
+        )
+
+    return _render
+
+
+class RegionsDict(TypedDict):
+    name: str
+    short_name: NotRequired[str]
+    start_addr: int
+    end_addr: int
+    reg_map: NotRequired[str]
+    regions: NotRequired[Union["List[RegionsDict]", str]]
+
+
+# TODO keep this?
+def _write_file(filepath: Union[Path, str], content: str) -> None:
+    with open(filepath, "w") as fd:
+        fd.write(content.rstrip())
+
+
+def _ordt_run(
+    source: Path, output: Path, parms: Path, arg: Literal["xml", "tslatexdoc"]
+) -> None:
+    command = f"ordt_run.sh -parms {parms} -{arg} {output} {source}"
+
+    info(f"Running ORDT command: {command}")
+
+    completed_process = subprocess.run(
         command.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE
     )
-    std_out, std_err = process.communicate()
 
-    if process.returncode != 0:
-        ts_throw_error(TsErrCode.ERR_MMAP_5, str(std_err, encoding="utf-8"))
+    if completed_process.returncode != 0:
+        ts_throw_error(TsErrCode.ERR_MMAP_5, completed_process.stderr.decode())
 
-    ts_warning(TsWarnCode.GENERIC, f"Built using ORDT: {Path(output)}")
-
-
-def is_yaml_file(file: str):
-    if Path(file).suffix in [".yml", ".yaml"]:
-        return True
-    else:
-        ts_throw_error(TsErrCode.ERR_MMAP_2, os.path.basename(file))
+    ts_warning(TsWarnCode.GENERIC, f"Built using ORDT: {output}")
 
 
-def is_rdl_file(file: str):
-    if Path(file).suffix == ".rdl":
-        return True
-    else:
-        ts_throw_error(TsErrCode.ERR_MMAP_3, os.path.basename(file))
+_ordt_generate_xml = partial(_ordt_run, arg="xml")
+
+_ordt_generate_latex = partial(_ordt_run, arg="tslatexdoc")
 
 
-def is_h_file(file: Path) -> bool:
-    if file.parent.is_dir() and file.suffix == ".h":
-        return True
-    else:
-        ts_throw_error(TsErrCode.ERR_MMAP_6, file.name)
+# TODO keep this?
+def is_yaml_file(file: Union[Path, str]) -> bool:
+    return Path(file).suffix in (".yml", ".yaml")
 
 
-def ordt_build_parms_file(output_parms_file, base_address: str = "0"):
+# TODO keep this?
+def is_xml_file(file: Union[Path, str]) -> bool:
+    return Path(file).suffix == ".xml"
+
+
+# TODO keep this?
+def is_rdl_file(file: Union[Path, str]) -> bool:
+    return Path(file).suffix == ".rdl"
+
+
+# TODO keep this?
+def is_h_file(file: Union[Path, str]) -> bool:
+    return (p := Path(file)).parent.is_dir() and p.suffix == ".h"
+
+
+def ordt_build_parms_file(
+    output_parms_file: Path, base_address: int, render_fn: RenderFn
+) -> None:
     """builds a parameters file with default parameters for ordt in the output directory"""
-
-    default_parms = dedent(
-        f"""\
-        global {{
-            base_address = {base_address}
-        }}
-        // rdl input parameters
-        input rdl {{
-            resolve_reg_category    = true      // if register category is unspecified, try to determine from rdl
-            lint_rdl                = false
-        }}
-
-        // Latex output parameters
-        output tslatexdoc {{
-            add_latex_preamble      = false     // Add LaTex pre-amble (stand-alone document)
-            add_latex_reg_summary   = true      // Add register summary table on top
-            add_landscape_tables    = true	    // Add register table in landscape mode
-            add_absolute_addresses  = true      // Sums up absolute address from parameters to offsets
-            add_hyperlinks    = true      // Links register tables to field tables
-        }}
-    """
+    _write_file(
+        output_parms_file,
+        render_fn(
+            "parms_file.parms.j2", header={}, body={"base_address": base_address}
+        ),
     )
 
-    with open(output_parms_file, "w") as fp:
-        fp.write(default_parms)
 
-
-def unpack_env_var_path(path: str) -> Optional[Path]:
-    """Unpacks environment variables in path, returns Path object."""
-
-    unpacked_path = Path(os.path.expandvars(path))
-
-    if "$" in path and unpacked_path == Path(path):
+def unpack_env_var_path(path: str) -> str:
+    """Unpacks environment variables in path."""
+    unpacked_path = os.path.expandvars(path)
+    if "$" in path and unpacked_path == path:
         ts_throw_error(TsErrCode.ERR_MMAP_7, path)
-
     return unpacked_path
 
 
-def load_rdl(target_filepath: str, current_level: Optional[str] = None) -> Path:
+def load_yaml(filepath: Union[Path, str]) -> RegionsDict:
+    filepath = unpack_env_var_path(str(filepath))
+    assert is_yaml_file(filepath)
 
-    target_filepath = unpack_env_var_path(target_filepath)
+    ts_debug(f"Opening YAML file: {filepath}")
+    with open(filepath) as fd:
+        content = yaml.safe_load(fd)
 
-    current_dir = Path(current_level).parent
-    target = current_dir.joinpath(Path(target_filepath))
-
-    if not target.exists():
-        ts_throw_error(TsErrCode.ERR_MMAP_4, target)
-
-    return target
-
-
-def load_yaml(
-    target_filepath: str, current_level: Optional[str] = None
-) -> Tuple[dict, Path]:
-
-    target_filepath = unpack_env_var_path(target_filepath)
-    if current_level is None:
-        current_dir = Path(target_filepath).parent
-        target_filepath = current_dir.joinpath(Path(target_filepath).name)
-    else:
-        current_dir = Path(current_level).parent
-        target_filepath = current_dir.joinpath(Path(target_filepath))
-
-    # TODO why wrap one FileNotFound error into another?
-    try:
-        with open(target_filepath) as ft:
-            return yaml.safe_load(ft), target_filepath
-    except FileNotFoundError:
-        ts_throw_error(TsErrCode.ERR_MMAP_4, target_filepath)
+    GRAMMAR_MEM_MAP_CONFIG.validate(content)  # type: ignore
+    return content
 
 
+# TODO use Path everywhere
 def render_yaml_parent(
-    ordt_parms_file,
-    top_level_filepath,
+    top_level_filepath: str,
     lint: bool,
-    latex_dir=None,
-    xml_dir=None,
-    c_header_file=None,
-    do_not_clear: int = 0,
+    ordt_parms_file: str,
+    latex_dir: Optional[str] = None,
+    xml_dir: Optional[str] = None,
+    c_header_file: Optional[str] = None,
+    do_not_clear: object = 0,
 ):
+    tree = Node.load_tree(Path(top_level_filepath))
+    ts_debug(tree)
+    ts_print(tree.pretty_repr())
 
-    rendered_yaml, tmp_current_level = load_yaml(top_level_filepath, current_level=None)
-    current_level.append(tmp_current_level)
-
-    ts_warning(TsWarnCode.WARN_MMAP_1, rendered_yaml["name"])
-
-    ts_info(
-        TsInfoCode.INFO_MMAP_0,
-        pretty_hex(rendered_yaml["start_addr"]),
-        pretty_hex(rendered_yaml["end_addr"]),
-    )
-
-    GRAMMAR_MEM_MAP_CONFIG.validate(rendered_yaml)
-
-    tree = Node.load_regions(rendered_yaml)
+    ts_info(TsInfoCode.INFO_MMAP_0, tree.start_addr, tree.end_addr)
 
     if lint:
-        l = linter()
-        l.lint(tree)
+        run_linter(tree)
+
+    if (latex_dir, xml_dir, c_header_file) == (None, None, None):
+        return
+
+    render_fn = create_render_fn()
 
     if latex_dir is not None:
-        b = latex_builder(latex_dir, top_level_filepath, ordt_parms_file)
-        b.build_output(tree)
+        b = LatexBuilder(Path(latex_dir), Path(top_level_filepath), render_fn)
+        b.build(tree)
         b.clear(do_not_clear)
 
     if xml_dir is not None:
-        r = xml_builder(xml_dir, top_level_filepath, ordt_parms_file)
+        r = XmlBuilder(xml_dir, top_level_filepath, ordt_parms_file)
         r.build_output(tree)
         r.clear(do_not_clear)
 
     if c_header_file is not None:
-        h = c_header_builder(output_file=Path(c_header_file))
-        h.build_output(tree=tree)
-
-    tree.draw()
+        h = CHeaderBuilder(Path(c_header_file), render_fn)
+        h.build(tree)
 
 
-@dataclass
+@dataclass(frozen=True)
 class Node:
+    MAX_NESTING_LEVEL: ClassVar[int] = 5
     name: str
     start_addr: int
     end_addr: int
+    level: int
+    source: Path
     short_name: str = ""
-    reg_map: str = ""
-    parent: "Node" = field(init=False, default=None)
-    children: List["Node"] = field(init=False, default_factory=list)
+    reg_map: Optional[Path] = None
+    parent: Optional[Self] = field(repr=False, default=None)
+    children: List[Self] = field(init=False, default_factory=list)
 
-    nesting_level: ClassVar[int] = 0
-    MAX_NESTING_LEVEL: ClassVar[int] = 5
-
-    recursion_error_list: ClassVar[list] = []
-
-    def draw(self, level=0):
-        ts_print("{}[L{}] {}".format("\t" * level, self.get_nesting_level(), self.name))
-        for child in self.children:
-            child.draw(level=level + 1)
-
-    def get_nesting_level(self):
-        temp = self.parent
-        count = 0
-        while temp != None:
-            count += 1
-            temp = temp.parent
-        return count
+    def pretty_repr(self) -> str:
+        l = ["{}[L{}] {}".format("\t" * self.level, self.level, self.name)]
+        l.extend(child.pretty_repr() for child in self.children)
+        return "\n".join(l)
 
     @classmethod
-    def load_regions(cls, top: Union[dict, str]) -> "Node":
-        cls.nesting_level += 1
-        cls.recursion_error_list.append(top["name"] + " ->")
+    def new(
+        cls,
+        cfg: RegionsDict,
+        source: Path,
+        level: int = 0,
+        parent: Optional[Self] = None,
+    ) -> Self:
+        top_node = cls(
+            name=cfg["name"],
+            start_addr=cfg["start_addr"],
+            end_addr=cfg["end_addr"],
+            level=level,
+            source=source,
+            short_name=cfg.get("short_name", ""),
+            parent=parent,
+        )
 
-        if cls.nesting_level > cls.MAX_NESTING_LEVEL:
-            ts_print(*cls.recursion_error_list, color=TsColors.BLUE)
+        if (level := level + 1) > cls.MAX_NESTING_LEVEL:
+            error_path = [top_node.name] + [
+                _parent.name for _parent in top_node.parents()
+            ]
+            print_in_blue(" -> ".join(reversed(error_path)))
             raise RecursionError(
-                f"Nesting level: {cls.nesting_level} exceeds limit of {cls.MAX_NESTING_LEVEL}"
+                f"Nesting {level} exceeds limit of {cls.MAX_NESTING_LEVEL}"
             )
 
-        if "regions" in top and top["regions"] is not None:
-            top_node = cls(
-                name=top["name"],
-                short_name=top["short_name"] if "short_name" in top else "",
-                start_addr=top["start_addr"],
-                end_addr=top["end_addr"],
-                reg_map=top.get("reg_map", ""),
-            )
+        if (reg_map := cfg.get("reg_map")) is not None:
+            assert cfg.get("regions") is None
+            assert is_rdl_file(reg_map)
+            ts_debug(f"Including RDL file: {reg_map}")
+            object.__setattr__(top_node, "reg_map", source.parent / reg_map)
+            return top_node
 
-            # force validate all immediate child nodes
-            for region in top["regions"]:
-                ts_debug(f"currently validating: {region['name']}")
-                GRAMMAR_MEM_MAP_CONFIG.validate(region)
-
-            for region in top["regions"]:
-                ts_warning(TsWarnCode.WARN_MMAP_0, region["name"])
-                ts_info(
-                    TsInfoCode.INFO_MMAP_0,
-                    pretty_hex(region["start_addr"]),
-                    pretty_hex(region["end_addr"]),
-                )
-
-                # node has no children
-                if "reg_map" in region and is_rdl_file(region["reg_map"]):
-                    ts_debug(f'Including RDL file: {region["reg_map"]}')
-                    region["reg_map"] = load_rdl(region["reg_map"], current_level[-1])
-
-                    temp_child = cls(
-                        name=region["name"],
-                        short_name=region["short_name"]
-                        if "short_name" in region
-                        else "",
-                        start_addr=region["start_addr"],
-                        end_addr=region["end_addr"],
-                        reg_map=region["reg_map"],
-                    )
-                    temp_child.parent = top_node
-                    top_node.children.append(temp_child)
-
-                elif "regions" in region:
-
-                    if isinstance(region["regions"], str) and is_yaml_file(
-                        region["regions"]
-                    ):
-                        ts_debug(f'Opening YAML file: {region["regions"]}')
-
-                        temp_yaml, temp_current_level = load_yaml(
-                            region["regions"], current_level[-1]
-                        )
-
-                        current_level.append(temp_current_level)
-
-                        child_node = cls.load_regions(temp_yaml)
-
-                        current_level.pop()
-
-                        # overwrite from same node in parent file
-                        child_node.name = region["name"]
-                        # parent node has priority on short_name, then child
-                        child_node.short_name = (
-                            region["short_name"]
-                            if "short_name" in region
-                            else (child_node.short_name or "")
-                        )
-                        child_node.start_addr = region["start_addr"]
-                        child_node.end_addr = region["end_addr"]
-
-                    elif isinstance(region["regions"], list):
-                        child_node = cls.load_regions(region)
-
-                    child_node.parent = top_node
-                    top_node.children.append(child_node)
-                elif "reg_map" not in region:
-                    temp_child = cls(
-                        name=region["name"],
-                        short_name=region["short_name"]
-                        if "short_name" in region
-                        else "",
-                        start_addr=region["start_addr"],
-                        end_addr=region["end_addr"],
-                    )
-
-                    temp_child.parent = top_node
-                    top_node.children.append(temp_child)
-
-            cls.nesting_level -= 1
-
-        else:
-            ts_throw_error(TsErrCode.ERR_MMAP_1, current_level[-1])
-
+        object.__setattr__(
+            top_node,
+            "children",
+            cls._load_regions(cfg.get("regions", []), source, level, top_node),
+        )
         return top_node
 
+    @classmethod
+    def _load_regions(
+        cls,
+        regions: Union[List[RegionsDict], str],
+        source: Path,
+        level: int,
+        parent: Self,
+    ) -> List[Self]:
+        if isinstance(regions, str):
+            filepath = source.parent / regions
+            region_dict = load_yaml(filepath)
+            assert region_dict.get("reg_map") is None
+            return cls._load_regions(
+                region_dict.get("regions", []), filepath, level, parent
+            )
 
-class linter:
-    def get_absolute_addr(self, node, start=True):
-        temp = node.parent
-        addr = node.start_addr if start else node.end_addr
-        while temp != None:
-            addr += temp.start_addr
-            temp = temp.parent
-        return addr
+        # TODO add some verbosity
+        return [cls.new(region, source, level, parent) for region in regions]
 
-    def lint(self, tree):
-        for child in tree.children:
+    @classmethod
+    def load_tree(cls, filepath: Path) -> Self:
+        return cls.new(load_yaml(filepath), filepath)
 
-            if (
-                not self.get_absolute_addr(tree)
-                <= self.get_absolute_addr(child)
-                <= self.get_absolute_addr(tree, start=False)
-            ):
-                ts_throw_error(
-                    TsErrCode.GENERIC,
-                    f"Start address for sub-region: {child.name} is out of bounds of its parent: {tree.name}",
-                )
+    # TODO remove
+    def is_leaf(self) -> bool:
+        return not self.children
 
-            if (
-                not self.get_absolute_addr(tree)
-                <= self.get_absolute_addr(child, start=False)
-                <= self.get_absolute_addr(tree, start=False)
-            ):
-                ts_throw_error(
-                    TsErrCode.GENERIC,
-                    f"End address for sub-region: {child.name} is out of bounds of its parent: {tree.name}",
-                )
+    # TODO remove
+    def has_reg_map(self) -> bool:
+        return self.reg_map is not None
 
-            self.lint(child)
+    @property
+    def abs_start_addr(self) -> int:
+        if self.parent is None:
+            return self.start_addr
+        return self.start_addr + self.parent.abs_start_addr
+
+    @property
+    def abs_end_addr(self) -> int:
+        if self.parent is None:
+            return self.end_addr
+        return self.end_addr + self.parent.abs_start_addr
+
+    def parents(self) -> List[Self]:
+        if self.parent is None:
+            return []
+        return [self.parent] + self.parent.parents()
 
 
-class xml_builder:
-    def __init__(self, output_dir, source_file, ordt_parms_file):
+def run_linter(tree: Node) -> None:
+    for child in tree.children:
+        if not tree.abs_start_addr <= child.abs_start_addr <= tree.abs_end_addr:
+            ts_throw_error(
+                TsErrCode.GENERIC,
+                f"Start address for sub-region: {child.name} is out of bounds of its parent: {tree.name}",
+            )
+
+        if not tree.abs_start_addr <= child.abs_end_addr <= tree.abs_end_addr:
+            ts_throw_error(
+                TsErrCode.GENERIC,
+                f"End address for sub-region: {child.name} is out of bounds of its parent: {tree.name}",
+            )
+
+        run_linter(child)
+
+
+def _remove_directory(dirpath: Path, build_type: Optional[str] = None) -> None:
+    if build_type is None:
+        build_type = ""
+    else:
+        build_type = f" {build_type}"
+    print_in_blue(f"Removing temporary{build_type} files directory: {dirpath}")
+    shutil.rmtree(dirpath, ignore_errors=True)
+    ts_debug("Done.")
+
+
+def _create_directory(dirpath: Path, build_type: Optional[str] = None) -> None:
+    if build_type is None:
+        build_type = ""
+    else:
+        build_type = f" {build_type}"
+    print_in_blue(f"Removing temporary{build_type} files directory: {dirpath}")
+    dirpath.mkdir(parents=True, exist_ok=True)
+    ts_debug("Done.")
+
+
+class XmlBuilder:
+    def __init__(
+        self, output_dir: str, source_file: str, ordt_parms_file: Optional[str]
+    ) -> None:
         self.output_dir = Path(output_dir)
         main_filename = Path(source_file).stem
 
@@ -389,44 +368,18 @@ class xml_builder:
         self.xml_path = self.output_dir / f"{main_filename}.xml"
 
         self.ordt_parms_path = ordt_parms_file
-        self.rdl_list = []
+        self.rdl_list: List[Node] = []
 
-    def clear(self, do_not_clear):
+    def clear(self, do_not_clear: object):
         if do_not_clear:
             return
+        _remove_directory(self.temp_rdl_files_path, "RDL")
 
-        ts_print(
-            f"Removing temporary RDL files directory: {self.temp_rdl_files_path}",
-            color=TsColors.BLUE,
-        )
-        for temp_file in self.temp_rdl_files_path.glob("*"):
-            temp_file.unlink()
-        self.temp_rdl_files_path.rmdir()
-
-    def is_leaf(self, node):
-        return len(node.children) == 0 and node.reg_map != ""
-
-    def is_empty_region(self, node):
-        return len(node.children) == 0 and node.reg_map == ""
-
-    def get_absolute_addr(self, node):
-        temp = node.parent
-        addr = node.start_addr
-        while temp != None:
-            addr += temp.start_addr
-            temp = temp.parent
-        return addr
-
-    def ordt_valid_identifier(self, name):
+    def ordt_valid_identifier(self, name: str) -> str:
         """(very naive) If string is not a valid ORDT identifier name, convert it to one."""
-        name = name.replace("{", "_").replace("}", "_")
-        name = name.replace("[", "_").replace("]", "_")
-        name = name.replace("(", "_").replace(")", "_")
-        name = name.replace("-", "_")
-        name = name.replace(" ", "_")
-        return name
+        return re.sub(f"[{re.escape(r'{}[]()-_ ')}]", "_", name)
 
-    def build_output(self, tree):
+    def build_output(self, tree: Node):
         self.walk_tree(tree)
 
         # match start and end of addrmap{...};
@@ -436,11 +389,9 @@ class xml_builder:
         addrMap_str = "\naddrmap { "
 
         with open(self.rdl_path, "w") as output_file:
-
             rdl_dupes_list = [rdl.name for rdl in self.rdl_list]
 
             for rdl in self.rdl_list:
-
                 with open(rdl.reg_map, "r") as rf:
                     lines = rf.readlines()
 
@@ -466,9 +417,8 @@ class xml_builder:
                 # note: ORDT cares only about exact duplicates, case is irrelevant
                 if rdl_dupes_list.count(rdl.name) > 1:
                     rf_name = f"{rdl.parent.name} {rdl.name}"
-                    ts_print(
-                        f"Changing duplicate component name: ({rdl.name}) -> ({rf_name})",
-                        color=TsColors.BLUE,
+                    print_in_blue(
+                        f"Changing duplicate component name: ({rdl.name}) -> ({rf_name})"
                     )
                 else:
                     rf_name = rdl.name
@@ -483,7 +433,7 @@ class xml_builder:
 
                 # addrmap string instantiates all regfile objects with start addresses
                 addrMap_str += "\n\texternal {0} TOP_{0}@{1};".format(
-                    rf_name, self.get_absolute_addr(rdl)
+                    rf_name, rdl.abs_start_addr
                 )
                 output_file.write("\n")
 
@@ -493,336 +443,176 @@ class xml_builder:
             )
             output_file.write(addrMap_str)
 
-        ordt_run(source=self.rdl_path, output=self.xml_path, parms=self.ordt_parms_path)
+        _ordt_generate_xml(
+            source=self.rdl_path, output=self.xml_path, parms=self.ordt_parms_path
+        )
 
-    def walk_tree(self, tree):
+    def walk_tree(self, tree: Node) -> None:
         for child in tree.children:
             # ignore parent nodes
-            if self.is_leaf(child):
-                self.rdl_list.append(child)
 
-            elif self.is_empty_region(child):
-                self.make_empty_region_rdl(child)
+            if child.is_leaf():
+                if not child.has_reg_map():
+                    self.make_empty_region_rdl(child)
                 self.rdl_list.append(child)
 
             self.walk_tree(child)
 
-    def make_empty_region_rdl(self, node):
-
+    def make_empty_region_rdl(self, node: Node):
         # output directory is always relative to where script is running
         temp_empty_rdl = (
             self.temp_rdl_files_path / f"{self.ordt_valid_identifier(node.name)}.rdl"
         )
 
-        with open(temp_empty_rdl, "w") as fr:
-            fr.write(f"addrmap{{\n\n}} {self.ordt_valid_identifier(node.name)};")
+        with open(temp_empty_rdl, "w") as fd:
+            fd.write(f"addrmap{{\n\n}} {self.ordt_valid_identifier(node.name)};")
 
         node.reg_map = str(temp_empty_rdl)
 
 
-class latex_builder:
-    def __init__(self, output_dir, source_file, ordt_parms_file):
-        self.output_dir = Path(output_dir)
-        main_filename = Path(source_file).stem
+class LatexRegionsDict(TypedDict):
+    name: str
+    start_addr: int
+    end_addr: int
+    abs_start_addr: int
+    abs_end_addr: int
+    size: str
+    regions: NotRequired["List[LatexRegionsDict]"]
+    generated_file: NotRequired[Path]
 
-        self.latex_path = Path(output_dir) / f"{main_filename}.tex"
-        self.latex_path.touch()
-        open(self.latex_path, "w").close()
 
-        self.ordt_parms_path = ordt_parms_file
+class LatexBuilder:
+    TEMPLATE = "memory_map.tex.j2"
+    SUBSECTION_NESTING_LMIT = 3
 
-        self.temp_parms_files_path = self.output_dir / "temp_parms_files"
-        self.temp_parms_files_path.mkdir(exist_ok=True)
+    def __init__(
+        self, output_dir: Path, source_file: Path, render_fn: RenderFn
+    ) -> None:
+        self.output_file = output_dir / source_file.with_suffix(".tex").name
 
-        self.temp_tex_files_path = self.output_dir / "temp_tex_files"
-        self.temp_tex_files_path.mkdir(exist_ok=True)
+        self._tmp_parms_dir = output_dir / "temp_parms_files"
+        self._tmp_tex_dir = output_dir / "temp_tex_files"
+
+        _remove_directory(output_dir)
+        _create_directory(self._tmp_parms_dir)
+        _create_directory(self._tmp_tex_dir)
 
         self.source_file = source_file
+        self.render_fn = render_fn
 
-    def clear(self, do_not_clear):
+    def clear(self, do_not_clear: object) -> None:
         if do_not_clear:
             return
+        _remove_directory(self._tmp_parms_dir, "PARMS")
+        _remove_directory(self._tmp_tex_dir, "TEX")
 
-        ts_print(
-            f"Removing temporary TEX files directory: {self.temp_tex_files_path}",
-            color=TsColors.BLUE,
-        )
-        for temp_file in self.temp_parms_files_path.glob("*"):
-            temp_file.unlink()
-        self.temp_parms_files_path.rmdir()
-
-        ts_print(
-            f"Removing temporary PARMS files directory: {self.temp_parms_files_path}",
-            color=TsColors.BLUE,
-        )
-        for temp_file in self.temp_tex_files_path.glob("*"):
-            temp_file.unlink()
-        self.temp_tex_files_path.rmdir()
-
-    def latex_valid_identifier(self, name: str) -> str:
-        """Replaces curly brackets (latex inappropriate) with underscores"""
-
-        return name.replace("{", "_").replace("}", "_")
-
-    def get_nesting_level(self, node):
-        temp = node.parent
-        count = 0
-        while temp != None:
-            count += 1
-            temp = temp.parent
-        return count
-
-    def get_absolute_addr(self, node, start=True):
-        temp = node.parent
-        addr = node.start_addr if start else node.end_addr
-        while temp != None:
-            addr += temp.start_addr
-            temp = temp.parent
-        return addr
-
-    def is_leaf(self, node):
-        if len(node.children) == 0:
-            # naive assumption b/c node was already validated in class Node
-            return "rdl" if node.reg_map != "" else "empty"
-
-    def get_size(self, node: "Node") -> str:
-        """returns size of address space in bytes/KB/MB/GB"""
-
+    @staticmethod
+    def get_size(node: Node) -> str:
+        # Returns size of address space in bytes/KB/MB/GB
         _size_bytes = (node.end_addr - node.start_addr) + 1
-
         if _size_bytes < 1024:
             return f"{_size_bytes} bytes"
-
-        elif _size_bytes < pow(1024, 2):
+        if _size_bytes < 1024**2:
             return f"{round(_size_bytes/1024)} KB"
+        if _size_bytes < 1024**3:
+            return f"{round(_size_bytes/1024 ** 2)} MB"
+        return f"{round(_size_bytes/1024 ** 3)} GB"
 
-        elif _size_bytes < pow(1024, 3):
-            return f"{round(_size_bytes/(pow(1024,2)))} MB"
-
-        elif _size_bytes < pow(1024, 4):
-            return f"{round(_size_bytes/(pow(1024,3)))} GB"
-
-    def build_output(self, tree):
-        _pre_header_content = dedent(
-            f"""
-        % Autogenerated by TS Memory Map Generator
-        % Input: {self.source_file}
-        % Date: {datetime.now().strftime("%I:%M%p on %B %d, %Y")}
-        %"""
-        )
-        self.add_comment(_pre_header_content)
-
-        self.add_subregion_table(tree)
-        self.walk_tree(tree)
-
-    def walk_tree(self, tree):
-        for child in tree.children:
-            if self.is_leaf(child) == "rdl":
-                self.add_texfile(child)
-            elif self.is_leaf(child) != "empty":
-                self.add_subregion_table(child)
-                self.walk_tree(child)
-
-    def add_texfile(self, node):
-        tmp_output = self.temp_tex_files_path / f"{Path(node.reg_map).stem}.tex"
-        tmp_parms = self.temp_parms_files_path / f"{Path(node.reg_map).stem}.parms"
-
-        ordt_build_parms_file(
-            output_parms_file=tmp_parms,
-            base_address=hex(self.get_absolute_addr(node)),
-        )
-
-        ordt_run(
-            source=node.reg_map,
-            output=tmp_output,
-            parms=tmp_parms,
-        )
-
-        self.add_subsection(node)
-
-        # copy entire file instead of including
-        with open(tmp_output, "r") as tmp_file:
-            write_line(self.latex_path, tmp_file.read())
-
-    def add_subregion_table(self, node):
-
-        self.add_subsection(node)
-
-        write_line(self.latex_path, latex_content.subregion_table_start())
-
-        temp_nesting_level = self.get_nesting_level(node) + 1
-
-        for child in node.children:
-            write_line(
-                self.latex_path,
-                latex_content.subregion_table_row(
-                    self.latex_valid_identifier(child.name),
-                    pretty_hex(child.start_addr),
-                    pretty_hex(child.end_addr),
-                    temp_nesting_level,
-                    self.get_size(child),
-                ),
-            )
-
-        write_line(self.latex_path, latex_content.subregion_table_end())
-
-    def add_comment(self, comment=""):
-        write_line(self.latex_path, latex_content.comment(comment))
-
-    def add_subsection(self, node):
-        """add LaTeX section/subsection/subsubsection based on nesting level"""
-
-        nesting_level = self.get_nesting_level(node)
-
-        # 0 -> section, 1 -> subsection, 2 -> subsubsection
-        if nesting_level >= 3:
+    def get_regions(self, node: Node) -> LatexRegionsDict:
+        if node.level >= self.SUBSECTION_NESTING_LMIT:
             raise RecursionError("Latex subsection nesting limit reached.")
 
-        self.add_comment(node.name)
-        write_line(
-            self.latex_path,
-            latex_content.section_start(
-                nesting_level,
-                self.latex_valid_identifier(node.name),
-                pretty_hex(self.get_absolute_addr(node)),
-                pretty_hex(self.get_absolute_addr(node, start=False)),
+        regions: LatexRegionsDict = {
+            "name": node.name,
+            "start_addr": node.start_addr,
+            "end_addr": node.end_addr,
+            "abs_start_addr": node.abs_start_addr,
+            "abs_end_addr": node.abs_end_addr,
+            "size": self.get_size(node),
+        }
+
+        if node.reg_map is not None:
+            regions["generated_file"] = self.generate_texfile(node)
+
+        elif subregions := [self.get_regions(child) for child in node.children]:
+            regions["regions"] = subregions
+
+        return regions
+
+    def build(self, tree: Node) -> None:
+        regions = self.get_regions(tree)
+        ts_debug(regions)
+        _write_file(
+            self.output_file,
+            self.render_fn(
+                template_file=self.TEMPLATE,
+                header={
+                    "filename": self.source_file,
+                },
+                body=regions,
             ),
         )
+        print_in_blue(f"Generated Latex file at {self.output_file}")
+
+    def generate_texfile(self, node: Node) -> Path:
+        assert node.reg_map is not None
+
+        id_ = datetime.now().strftime("%M%S%f")
+        output = self._tmp_tex_dir / node.reg_map.with_suffix(f".{id_}.tex").name
+        parms = self._tmp_parms_dir / node.reg_map.with_suffix(f".{id_}.parms").name
+
+        ordt_build_parms_file(parms, node.abs_start_addr, self.render_fn)
+        _ordt_generate_latex(node.reg_map, output, parms)
+        return output
 
 
-class latex_content(LogEnum):
+class CHeaderBuilder:
+    TEMPLATE = "memory_map.h.j2"
 
-    section_start = [
-        lambda nesting_level, block_name, start_addr, end_addr: dedent(
-            rf"""
-        \pagebreak
-        \Ts{'Sub'*nesting_level}Section {{{block_name}}}
-        
-        \textbf{{Base Address:}} {start_addr}
-        \newline
-        \textbf{{End Address:}} {end_addr}
-        \vspace{{4mm}}
-        """
-        )
-    ]
-
-    comment = [lambda comment="": dedent(f"\n{'%'*69}\n% {comment}\n{'%'*69}")]
-
-    subregion_table_start = [
-        lambda: dedent(
-            r"""
-        \begin{TropicRatioTable3Col}
-        {0.6}                                         {0.3}                               {0.1}
-        {Memory region                                & Address offset range              & Size}
-        """
-        )
-    ]
-
-    subregion_table_row = [
-        lambda block_name, start_addr, end_addr, nesting_level, size: rf"""
-        \multirow {{2}} {{*}} {{\hyperref[{'sub'* nesting_level}sec:{block_name}] {{{block_name}}}}} & {start_addr} & \multirow {{2}} {{*}} {{{size}}} \\
-                                                    & {end_addr} &    \Ttlb%
-        """
-    ]
-
-    subregion_table_end = [lambda: dedent("\n\end{TropicRatioTable3Col}\n")]
-
-
-class c_header_builder:
-    def __init__(self, output_file: Path):
+    def __init__(self, output_file: Path, render_fn: RenderFn) -> None:
         self.output_file = output_file
-        self.defs = []
+        self.render_fn = render_fn
 
-    def absolute_hex_address(self, node: "Node") -> str:
-        """Accepts int address of node, returns hex str of absolute address."""
+    @staticmethod
+    def format_to_valid_c_def(name: str) -> str:
+        # Replaces variable inappropriate characters with underscores
+        # Adds underscore to beginning if string starts with digit
+        return re.sub(r"\W|^(?=\d)", "_", name).upper()
 
-        temp = node.parent
-        addr = node.start_addr
+    @classmethod
+    def get_name(cls, node: Node) -> str:
+        assert node.parent is not None
 
-        while temp != None:
-            addr += temp.start_addr
-            temp = temp.parent
+        def _name(node: Node) -> str:
+            if node.short_name:
+                return cls.format_to_valid_c_def(node.short_name)
+            return cls.format_to_valid_c_def(node.name)
 
-        return pretty_hex(addr).replace(" ", "")
+        return f"{_name(node.parent)}_{_name(node)}_BASE_ADDR"
 
-    def valid_c_def(self, name: str) -> str:
-        """Converts name to a capitalized C identifier + adds _BASE_ADDR suffix:
-        * Replaces variable inappropriate characters with underscores,
-        * Adds underscore to beginning if string starts with digit.
-        """
+    @classmethod
+    def get_defines(cls, node: Node) -> List[List[Tuple[str, int]]]:
+        assert node.children
+        defs = [
+            [(cls.get_name(child), child.abs_start_addr) for child in node.children]
+        ]
+        for child in node.children:
+            if child.children:
+                defs.extend(cls.get_defines(child))
+        return defs
 
-        return re.sub("\W|^(?=\d)", "_", name).upper()
-
-    def get_name(self, node: "Node") -> str:
-        """Returns concatenated short names of node and immediate
-        parent, making sure they're valid C identifiers."""
-
-        short_name = (
-            self.valid_c_def(node.name)
-            if node.short_name == ""
-            else self.valid_c_def(node.short_name)
+    def build(self, tree: Node) -> None:
+        defs = self.get_defines(tree)
+        ts_debug(defs)
+        _write_file(
+            self.output_file,
+            self.render_fn(
+                template_file=self.TEMPLATE,
+                header={
+                    "filename": self.output_file,
+                    "header_name": self.format_to_valid_c_def(self.output_file.name),
+                },
+                body=defs,
+            ),
         )
-
-        short_name_parent = (
-            self.valid_c_def(node.parent.name)
-            if node.parent.short_name == ""
-            else self.valid_c_def(node.parent.short_name)
-        )
-
-        return f"{short_name_parent}_{short_name}_BASE_ADDR"
-
-    def walk_tree(self, tree: "Node"):
-        """Breadth-first recursively traverses entire
-        tree, creates a list of macro definitions."""
-
-        for child in tree.children:
-            self.defs.append(
-                f"#define {self.get_name(child):<58}{' ' * 4}{self.absolute_hex_address(child):<10}\n"
-            )
-
-        for child in tree.children:
-            if len(child.children) > 0:
-                self.defs.append("\n")
-                self.walk_tree(child)
-
-    def header_content(self) -> str:
-        """Generates include guards placed at the top of header file."""
-
-        _pre_header_content = dedent(
-            f"""
-        /{'*' * 79}
-        * @file {self.output_file.name}
-        * @author Tropic Square
-        * @brief {self.output_file.stem} top base address definitions
-        * @note Autogenerated by TS Memory Map Generator at {datetime.now().strftime("%I:%M%p on %B %d, %Y")}
-        *
-        * @license TODO
-        {'*' * 79}/"""
-        )
-
-        _header_name = f"__{self.output_file.stem.upper()}"
-
-        return f"{_pre_header_content}\n\n#ifndef {_header_name}\n#define {_header_name}\n\n"
-
-    def footer_content(self) -> str:
-        """Generates include guards placed at the bottom of header file."""
-
-        return f"\n\n#endif  /*__{self.output_file.stem.upper()}*/"
-
-    def build_output(self, tree: "Node"):
-        """Writes to output file."""
-
-        self.walk_tree(tree)
-
-        # force clear file
-        open(self.output_file, "w").close()
-
-        with open(self.output_file, "w") as fh:
-            fh.write(self.header_content())
-            fh.writelines(self.defs)
-            fh.write(self.footer_content())
-
-        ts_print(
-            f"Generated header file with base address definitions at:\n{self.output_file}",
-            color=TsColors.BLUE,
-        )
+        print_in_blue(f"Generated header file at {self.output_file}")
