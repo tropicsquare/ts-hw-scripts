@@ -13,7 +13,7 @@
 #ifndef {{ header.header_name | upper }}
 #define {{ header.header_name | upper }}
 
-{% for tuple_list in body -%}
+{% for tuple_list in defines -%}
     {%- for name, value in tuple_list -%}
         {{ format_line(name, value) }}
     {% endfor %}
