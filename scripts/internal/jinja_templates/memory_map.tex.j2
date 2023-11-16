@@ -9,26 +9,26 @@
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% {{ body.name }}
+% {{ root_node.name }}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \pagebreak
-\TsSection { {{- body.name -}} }
+\TsSection { {{- root_node.name -}} }
 
-\textbf{Base Address:} {{ format_address(body.start_addr) }}
+\textbf{Base Address:} {{ format_address(root_node.start_addr) }}
 \newline
-\textbf{End Address:} {{ format_address(body.end_addr) }}
+\textbf{End Address:} {{ format_address(root_node.end_addr) }}
 \vspace{4mm}
 
 \begin{TropicRatioTable3Col}
 {0.6}                                         {0.3}                               {0.1}
 {Memory region                                & Address offset range              & Size}
-{% for subsection in body.regions %}
+{% for subsection in root_node.regions %}
     \multirow {2} {*} {\hyperref[subsec:{{ subsection.name }}] { {{- subsection.name -}} }} & {{ format_address(subsection.start_addr) }} & \multirow {2} {*} { {{- subsection.size -}} } \\
                                                     & {{ format_address(subsection.end_addr) }} &    \Ttlb%
 {% endfor %}
 \end{TropicRatioTable3Col}
 
-{% for subsection in body.regions -%}
+{% for subsection in root_node.regions -%}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % {{ subsection.name }}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

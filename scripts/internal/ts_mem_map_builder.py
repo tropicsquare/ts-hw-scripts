@@ -60,7 +60,7 @@ print_in_blue = partial(ts_print, color=TsColors.BLUE)
 
 
 class RenderFn(Protocol):
-    def __call__(self, template_file: str, header: Any, body: Any) -> str:
+    def __call__(self, template_file: str, **kwargs: Any) -> str:
         ...
 
 
@@ -71,9 +71,9 @@ def create_render_fn() -> RenderFn:
         loader=jinja2.FileSystemLoader(TEMPLATE_DIRECTORY),
     )
 
-    def _render(template_file: str, header: Any, body: Any) -> str:
+    def _render(template_file: str, **kwargs: Any) -> str:
         return environment.get_template(template_file).render(
-            header=header, body=body, date=datetime.now()
+            **kwargs, date=datetime.now()
         )
 
     return _render
@@ -85,7 +85,7 @@ class RegionsDict(TypedDict):
     start_addr: int
     end_addr: int
     reg_map: NotRequired[str]
-    regions: NotRequired[Union["List[RegionsDict]", str]]
+    regions: NotRequired[Union[List["RegionsDict"], str]]
 
 
 # TODO keep this?
@@ -220,11 +220,6 @@ class Node:
     parent: Optional[Self] = field(repr=False, default=None)
     children: List[Self] = field(init=False, default_factory=list)
 
-    def pretty_repr(self) -> str:
-        l = ["{}[L{}] {}".format("\t" * self.level, self.level, self.name)]
-        l.extend(child.pretty_repr() for child in self.children)
-        return "\n".join(l)
-
     @classmethod
     def new(
         cls,
@@ -233,7 +228,7 @@ class Node:
         level: int = 0,
         parent: Optional[Self] = None,
     ) -> Self:
-        top_node = cls(
+        node = cls(
             name=cfg["name"],
             start_addr=cfg["start_addr"],
             end_addr=cfg["end_addr"],
@@ -244,9 +239,7 @@ class Node:
         )
 
         if (level := level + 1) > cls.MAX_NESTING_LEVEL:
-            error_path = [top_node.name] + [
-                _parent.name for _parent in top_node.parents()
-            ]
+            error_path = [node.name] + [p.name for p in node.parents()]
             print_in_blue(" -> ".join(reversed(error_path)))
             raise RecursionError(
                 f"Nesting {level} exceeds limit of {cls.MAX_NESTING_LEVEL}"
@@ -256,15 +249,15 @@ class Node:
             assert cfg.get("regions") is None
             assert is_rdl_file(reg_map)
             ts_debug(f"Including RDL file: {reg_map}")
-            object.__setattr__(top_node, "reg_map", source.parent / reg_map)
-            return top_node
+            object.__setattr__(node, "reg_map", source.parent / reg_map)
+            return node
 
         object.__setattr__(
-            top_node,
+            node,
             "children",
-            cls._load_regions(cfg.get("regions", []), source, level, top_node),
+            cls._load_regions(cfg.get("regions", []), source, level, node),
         )
-        return top_node
+        return node
 
     @classmethod
     def _load_regions(
@@ -276,11 +269,9 @@ class Node:
     ) -> List[Self]:
         if isinstance(regions, str):
             filepath = source.parent / regions
-            region_dict = load_yaml(filepath)
-            assert region_dict.get("reg_map") is None
-            return cls._load_regions(
-                region_dict.get("regions", []), filepath, level, parent
-            )
+            cfg = load_yaml(filepath)
+            assert cfg.get("reg_map") is None
+            return cls._load_regions(cfg.get("regions", []), filepath, level, parent)
 
         # TODO add some verbosity
         return [cls.new(region, source, level, parent) for region in regions]
@@ -314,6 +305,11 @@ class Node:
             return []
         return [self.parent] + self.parent.parents()
 
+    def pretty_repr(self) -> str:
+        l = ["{}[L{}] {}".format("\t" * self.level, self.level, self.name)]
+        l.extend(child.pretty_repr() for child in self.children)
+        return "\n".join(l)
+
 
 def run_linter(tree: Node) -> None:
     for child in tree.children:
@@ -322,13 +318,11 @@ def run_linter(tree: Node) -> None:
                 TsErrCode.GENERIC,
                 f"Start address for sub-region: {child.name} is out of bounds of its parent: {tree.name}",
             )
-
         if not tree.abs_start_addr <= child.abs_end_addr <= tree.abs_end_addr:
             ts_throw_error(
                 TsErrCode.GENERIC,
                 f"End address for sub-region: {child.name} is out of bounds of its parent: {tree.name}",
             )
-
         run_linter(child)
 
 
@@ -474,11 +468,11 @@ class LatexRegionsDict(TypedDict):
     name: str
     start_addr: int
     end_addr: int
-    abs_start_addr: int
-    abs_end_addr: int
     size: str
-    regions: NotRequired["List[LatexRegionsDict]"]
+    abs_start_addr: NotRequired[int]
+    abs_end_addr: NotRequired[int]
     generated_file: NotRequired[Path]
+    regions: NotRequired[List["LatexRegionsDict"]]
 
 
 class LatexBuilder:
@@ -526,12 +520,12 @@ class LatexBuilder:
             "name": node.name,
             "start_addr": node.start_addr,
             "end_addr": node.end_addr,
-            "abs_start_addr": node.abs_start_addr,
-            "abs_end_addr": node.abs_end_addr,
             "size": self.get_size(node),
         }
 
         if node.reg_map is not None:
+            regions["abs_start_addr"] = node.abs_start_addr
+            regions["abs_end_addr"] = node.abs_end_addr
             regions["generated_file"] = self.generate_texfile(node)
 
         elif subregions := [self.get_regions(child) for child in node.children]:
@@ -549,7 +543,7 @@ class LatexBuilder:
                 header={
                     "filename": self.source_file,
                 },
-                body=regions,
+                root_node=regions,
             ),
         )
         print_in_blue(f"Generated Latex file at {self.output_file}")
@@ -602,8 +596,8 @@ class CHeaderBuilder:
         return defs
 
     def build(self, tree: Node) -> None:
-        defs = self.get_defines(tree)
-        ts_debug(defs)
+        defines = self.get_defines(tree)
+        ts_debug(defines)
         _write_file(
             self.output_file,
             self.render_fn(
@@ -612,7 +606,7 @@ class CHeaderBuilder:
                     "filename": self.output_file,
                     "header_name": self.format_to_valid_c_def(self.output_file.name),
                 },
-                body=defs,
+                defines=defines,
             ),
         )
         print_in_blue(f"Generated header file at {self.output_file}")
