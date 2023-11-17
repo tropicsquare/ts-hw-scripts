@@ -11,6 +11,7 @@ __copyright__ = "Tropic Square"
 __license___ = "TODO:"
 __maintainer__ = "Henri LHote"
 
+import fileinput
 import os
 import re
 import shutil
@@ -18,15 +19,18 @@ import subprocess
 from dataclasses import dataclass, field
 from datetime import datetime
 from functools import partial
+from itertools import chain, count
+from mmap import mmap
 from pathlib import Path
 from typing import (
     Any,
     ClassVar,
     List,
     Literal,
+    NamedTuple,
     Optional,
     Protocol,
-    Tuple,
+    Set,
     TypedDict,
     Union,
 )
@@ -72,6 +76,7 @@ def create_render_fn() -> RenderFn:
     )
 
     def _render(template_file: str, **kwargs: Any) -> str:
+        assert kwargs.get("date") is None, "Key 'date' is reserved."
         return environment.get_template(template_file).render(
             **kwargs, date=datetime.now()
         )
@@ -88,7 +93,7 @@ class RegionsDict(TypedDict):
     regions: NotRequired[Union[List["RegionsDict"], str]]
 
 
-# TODO keep this?
+# TODO remove
 def _write_file(filepath: Union[Path, str], content: str) -> None:
     with open(filepath, "w") as fd:
         fd.write(content.rstrip())
@@ -142,12 +147,11 @@ def ordt_build_parms_file(
     """builds a parameters file with default parameters for ordt in the output directory"""
     _write_file(
         output_parms_file,
-        render_fn(
-            "parms_file.parms.j2", header={}, body={"base_address": base_address}
-        ),
+        render_fn("parms_file.parms.j2", top={"base_address": base_address}),
     )
 
 
+# TODO move to argparser
 def unpack_env_var_path(path: str) -> str:
     """Unpacks environment variables in path."""
     unpacked_path = os.path.expandvars(path)
@@ -168,14 +172,13 @@ def load_yaml(filepath: Union[Path, str]) -> RegionsDict:
     return content
 
 
-# TODO use Path everywhere
 def render_yaml_parent(
-    top_level_filepath: str,
+    top_level_filepath: Path,
     lint: bool,
-    ordt_parms_file: str,
-    latex_dir: Optional[str] = None,
-    xml_dir: Optional[str] = None,
-    c_header_file: Optional[str] = None,
+    ordt_parms_file: Optional[Path] = None,
+    latex_dir: Optional[Path] = None,
+    xml_dir: Optional[Path] = None,
+    c_header_file: Optional[Path] = None,
     do_not_clear: object = 0,
 ):
     tree = Node.load_tree(Path(top_level_filepath))
@@ -193,17 +196,17 @@ def render_yaml_parent(
     render_fn = create_render_fn()
 
     if latex_dir is not None:
-        b = LatexBuilder(Path(latex_dir), Path(top_level_filepath), render_fn)
+        b = LatexBuilder(latex_dir, top_level_filepath, render_fn)
         b.build(tree)
         b.clear(do_not_clear)
 
     if xml_dir is not None:
-        r = XmlBuilder(xml_dir, top_level_filepath, ordt_parms_file)
-        r.build_output(tree)
+        r = XmlBuilder(xml_dir, top_level_filepath, ordt_parms_file, render_fn)
+        r.build(tree)
         r.clear(do_not_clear)
 
     if c_header_file is not None:
-        h = CHeaderBuilder(Path(c_header_file), render_fn)
+        h = CHeaderBuilder(c_header_file, render_fn)
         h.build(tree)
 
 
@@ -239,7 +242,7 @@ class Node:
         )
 
         if (level := level + 1) > cls.MAX_NESTING_LEVEL:
-            error_path = [node.name] + [p.name for p in node.parents()]
+            error_path = [node.name] + [p.name for p in node.parents]
             print_in_blue(" -> ".join(reversed(error_path)))
             raise RecursionError(
                 f"Nesting {level} exceeds limit of {cls.MAX_NESTING_LEVEL}"
@@ -300,10 +303,11 @@ class Node:
             return self.end_addr
         return self.end_addr + self.parent.abs_start_addr
 
+    @property
     def parents(self) -> List[Self]:
         if self.parent is None:
             return []
-        return [self.parent] + self.parent.parents()
+        return [self.parent] + self.parent.parents
 
     def pretty_repr(self) -> str:
         l = ["{}[L{}] {}".format("\t" * self.level, self.level, self.name)]
@@ -326,6 +330,7 @@ def run_linter(tree: Node) -> None:
         run_linter(child)
 
 
+# TODO rework
 def _remove_directory(dirpath: Path, build_type: Optional[str] = None) -> None:
     if build_type is None:
         build_type = ""
@@ -336,6 +341,7 @@ def _remove_directory(dirpath: Path, build_type: Optional[str] = None) -> None:
     ts_debug("Done.")
 
 
+# TODO rework
 def _create_directory(dirpath: Path, build_type: Optional[str] = None) -> None:
     if build_type is None:
         build_type = ""
@@ -346,125 +352,153 @@ def _create_directory(dirpath: Path, build_type: Optional[str] = None) -> None:
     ts_debug("Done.")
 
 
+class XmlCfgTuple(NamedTuple):
+    name: str
+    addr: int
+    reg_map: Path
+
+
 class XmlBuilder:
+    # match start and end of addrmap{...};
+    START_ADDR_MAP_PATTERN = re.compile(r"addrmap\s*{")
+    END_ADDR_MAP_PATTERN = re.compile(r"\s*}\s*\w+\s*;")
+
     def __init__(
-        self, output_dir: str, source_file: str, ordt_parms_file: Optional[str]
+        self,
+        output_dir: Path,
+        source_file: Path,
+        ordt_parms_file: Optional[Path] = None,
+        render_fn: Optional[RenderFn] = None,
     ) -> None:
-        self.output_dir = Path(output_dir)
-        main_filename = Path(source_file).stem
+        if ordt_parms_file is None:
+            ordt_parms_file = output_dir / source_file.with_suffix(".parms").name
+            if render_fn is None:
+                raise ValueError(
+                    "'render_fn' should be defined when 'ordt_parms_file' is not."
+                )
 
-        self.temp_rdl_files_path = self.output_dir / "temp_rdl_files"
-        self.temp_rdl_files_path.mkdir(exist_ok=True)
+        self.rdl_file = output_dir / source_file.with_suffix(".rdl").name
+        self.output_file = output_dir / source_file.with_suffix(".xml").name
+        self.ordt_parms_file = ordt_parms_file
+        self.render_fn = render_fn
 
-        self.rdl_path = self.output_dir / f"{main_filename}.rdl"
-        self.rdl_path.touch()
+        self._tmp_rdl_dir = output_dir / "temp_rdl_files"
 
-        self.xml_path = self.output_dir / f"{main_filename}.xml"
+        _remove_directory(output_dir)
+        _create_directory(self._tmp_rdl_dir)
 
-        self.ordt_parms_path = ordt_parms_file
-        self.rdl_list: List[Node] = []
+        # TODO assess usefulness
+        # avoid ORDT duplicate regfile component error
+        # note: ORDT cares only about exact duplicates, case is irrelevant
+        self.unique_node_names: Set[str] = set()
 
     def clear(self, do_not_clear: object):
         if do_not_clear:
             return
-        _remove_directory(self.temp_rdl_files_path, "RDL")
+        _remove_directory(self._tmp_rdl_dir, "RDL")
 
-    def ordt_valid_identifier(self, name: str) -> str:
-        """(very naive) If string is not a valid ORDT identifier name, convert it to one."""
-        return re.sub(f"[{re.escape(r'{}[]()-_ ')}]", "_", name)
+    def to_ordt_valid_name(self, name: str) -> str:
+        # Replace all sorts of brackets, dash and space by an underscore
+        return "RF_" + re.sub(f"[{re.escape(r'{}[]()- ')}]", "_", name)
 
-    def build_output(self, tree: Node):
-        self.walk_tree(tree)
+    def _get_temp_file(self, name: str, extension: str = ".rdl") -> Path:
+        id_ = datetime.now().strftime("%M%S%f")
+        return self._tmp_rdl_dir / f"{name}.{id_}{extension}"
 
-        # match start and end of addrmap{...};
-        startAddrMapPattern = re.compile(r"addrmap\s*{")
-        endAddrMapPattern = re.compile(r"\s*}\s*\w+\s*;")
+    # TODO remove if needed - see __init__ method
+    def get_unique_valid_name(self, node: Node) -> str:
+        if node.name.upper() not in self.unique_node_names:
+            name = self.to_ordt_valid_name(node.name)
 
-        addrMap_str = "\naddrmap { "
-
-        with open(self.rdl_path, "w") as output_file:
-            rdl_dupes_list = [rdl.name for rdl in self.rdl_list]
-
-            for rdl in self.rdl_list:
-                with open(rdl.reg_map, "r") as rf:
-                    lines = rf.readlines()
-
-                # search for start and end of addrmap element
-                start_index = next(
-                    (
-                        index
-                        for index, line in enumerate(lines)
-                        if startAddrMapPattern.match(line)
-                    ),
-                    0,
-                )
-                end_index = next(
-                    (
-                        index
-                        for index, line in reversed(list(enumerate(lines)))
-                        if endAddrMapPattern.match(line)
-                    ),
-                    -1,
-                )
-
-                # avoid ORDT duplicate regfile component error
-                # note: ORDT cares only about exact duplicates, case is irrelevant
-                if rdl_dupes_list.count(rdl.name) > 1:
-                    rf_name = f"{rdl.parent.name} {rdl.name}"
-                    print_in_blue(
-                        f"Changing duplicate component name: ({rdl.name}) -> ({rf_name})"
-                    )
-                else:
-                    rf_name = rdl.name
-                    rdl_dupes_list.append(rdl.name)
-
-                rf_name = f"RF_{self.ordt_valid_identifier(rf_name)}"
-
-                lines[start_index] = f"regfile {rf_name} {{"
-                lines[end_index] = "};"
-
-                output_file.writelines(lines[start_index : end_index + 1])
-
-                # addrmap string instantiates all regfile objects with start addresses
-                addrMap_str += "\n\texternal {0} TOP_{0}@{1};".format(
-                    rf_name, rdl.abs_start_addr
-                )
-                output_file.write("\n")
-
-            # use output rdl file name as addrmap name
-            addrMap_str += (
-                f"\n}} {self.ordt_valid_identifier(Path(self.rdl_path).stem)};"
+        else:
+            assert node.parent is not None
+            hier_name = f"{node.parent.name} {node.name}"
+            print_in_blue(
+                f"Changing duplicate component name: ({node.name}) -> ({hier_name})"
             )
-            output_file.write(addrMap_str)
+            name = self.to_ordt_valid_name(f"{node.parent.name} {node.name}")
 
-        _ordt_generate_xml(
-            source=self.rdl_path, output=self.xml_path, parms=self.ordt_parms_path
-        )
+        self.unique_node_names.add(node.name.upper())
+        return name
 
-    def walk_tree(self, tree: Node) -> None:
-        for child in tree.children:
-            # ignore parent nodes
+    def create_placeholder_reg_map(self, node: Node) -> XmlCfgTuple:
+        assert node.reg_map is None
 
-            if child.is_leaf():
-                if not child.has_reg_map():
-                    self.make_empty_region_rdl(child)
-                self.rdl_list.append(child)
+        name = self.get_unique_valid_name(node)
+        rdl = self._get_temp_file(name)
 
-            self.walk_tree(child)
+        with open(rdl, "w") as fd:
+            fd.write(f"regfile {name} {{\n}};\n")
 
-    def make_empty_region_rdl(self, node: Node):
-        # output directory is always relative to where script is running
-        temp_empty_rdl = (
-            self.temp_rdl_files_path / f"{self.ordt_valid_identifier(node.name)}.rdl"
-        )
+        return XmlCfgTuple(name, node.abs_start_addr, rdl)
 
-        with open(temp_empty_rdl, "w") as fd:
-            fd.write(f"addrmap{{\n\n}} {self.ordt_valid_identifier(node.name)};")
+    def process_reg_map(self, node: Node) -> XmlCfgTuple:
+        assert node.reg_map is not None
 
-        node.reg_map = str(temp_empty_rdl)
+        name = self.get_unique_valid_name(node)
+        rdl = self._get_temp_file(name)
+
+        with open(node.reg_map, "r") as fd:
+            lines = fd.readlines()
+
+        new_lines: List[str] = []
+
+        # look for the start regex from the start of the file
+        for i, line in enumerate(lines):
+            if self.START_ADDR_MAP_PATTERN.match(line) is not None:
+                new_lines.append(f"regfile {name} {{")
+                first_idx = i + 1
+                break
+        else:
+            raise RuntimeError(f"Could not find {self.START_ADDR_MAP_PATTERN.pattern}")
+
+        # Look for the end regex from the end of the file
+        for i, line in zip(count(start=-1, step=-1), reversed(lines)):
+            if self.END_ADDR_MAP_PATTERN.match(line) is not None:
+                new_lines.extend(lines[first_idx:i])
+                new_lines.append("};\n")
+                break
+        else:
+            raise RuntimeError(f"Could not find {self.END_ADDR_MAP_PATTERN.pattern}")
+
+        with open(rdl, "w") as fd:
+            fd.writelines(new_lines)
+
+        return XmlCfgTuple(name, node.abs_start_addr, rdl)
+
+    def get_cfg_tuples(self, node: Node) -> List[XmlCfgTuple]:
+        if node.children:
+            return list(
+                chain.from_iterable(
+                    self.get_cfg_tuples(child) for child in node.children
+                )
+            )
+
+        if node.reg_map is None:
+            return [self.create_placeholder_reg_map(node)]
+
+        return [self.process_reg_map(node)]
+
+    def build(self, tree: Node) -> None:
+        cfg_tuples = self.get_cfg_tuples(tree)
+        ts_debug(cfg_tuples)
+
+        with open(self.rdl_file, "w") as dst:
+            with fileinput.input((tup.reg_map for tup in cfg_tuples)) as src:
+                dst.writelines(src)
+            dst.write("\n")
+
+            dst.write("addrmap {\n")
+            for tup in cfg_tuples:
+                dst.write(f"\texternal {tup.name} TOP_{tup.name}@{tup.addr};\n")
+            dst.write(f"}} {self.rdl_file.with_suffix('').name};")
+
+        _ordt_generate_xml(self.rdl_file, self.output_file, self.ordt_parms_file)
+
+        print_in_blue(f"Generated XML file at {self.output_file}")
 
 
-class LatexRegionsDict(TypedDict):
+class LatexRegionDict(TypedDict):
     name: str
     start_addr: int
     end_addr: int
@@ -472,7 +506,7 @@ class LatexRegionsDict(TypedDict):
     abs_start_addr: NotRequired[int]
     abs_end_addr: NotRequired[int]
     generated_file: NotRequired[Path]
-    regions: NotRequired[List["LatexRegionsDict"]]
+    regions: NotRequired[List["LatexRegionDict"]]
 
 
 class LatexBuilder:
@@ -483,6 +517,8 @@ class LatexBuilder:
         self, output_dir: Path, source_file: Path, render_fn: RenderFn
     ) -> None:
         self.output_file = output_dir / source_file.with_suffix(".tex").name
+        self.source_file = source_file
+        self.render_fn = render_fn
 
         self._tmp_parms_dir = output_dir / "temp_parms_files"
         self._tmp_tex_dir = output_dir / "temp_tex_files"
@@ -490,9 +526,6 @@ class LatexBuilder:
         _remove_directory(output_dir)
         _create_directory(self._tmp_parms_dir)
         _create_directory(self._tmp_tex_dir)
-
-        self.source_file = source_file
-        self.render_fn = render_fn
 
     def clear(self, do_not_clear: object) -> None:
         if do_not_clear:
@@ -512,11 +545,11 @@ class LatexBuilder:
             return f"{round(_size_bytes/1024 ** 2)} MB"
         return f"{round(_size_bytes/1024 ** 3)} GB"
 
-    def get_regions(self, node: Node) -> LatexRegionsDict:
+    def get_regions(self, node: Node) -> LatexRegionDict:
         if node.level >= self.SUBSECTION_NESTING_LMIT:
             raise RecursionError("Latex subsection nesting limit reached.")
 
-        regions: LatexRegionsDict = {
+        regions: LatexRegionDict = {
             "name": node.name,
             "start_addr": node.start_addr,
             "end_addr": node.end_addr,
@@ -560,6 +593,11 @@ class LatexBuilder:
         return output
 
 
+class CDefineTuple(NamedTuple):
+    name: str
+    value: int
+
+
 class CHeaderBuilder:
     TEMPLATE = "memory_map.h.j2"
 
@@ -568,9 +606,9 @@ class CHeaderBuilder:
         self.render_fn = render_fn
 
     @staticmethod
-    def format_to_valid_c_def(name: str) -> str:
-        # Replaces variable inappropriate characters with underscores
-        # Adds underscore to beginning if string starts with digit
+    def to_valid_c_define_name(name: str) -> str:
+        # Replace variable inappropriate characters with underscores
+        # Add underscore to the beginning if string starts with digit
         return re.sub(r"\W|^(?=\d)", "_", name).upper()
 
     @classmethod
@@ -579,16 +617,19 @@ class CHeaderBuilder:
 
         def _name(node: Node) -> str:
             if node.short_name:
-                return cls.format_to_valid_c_def(node.short_name)
-            return cls.format_to_valid_c_def(node.name)
+                return cls.to_valid_c_define_name(node.short_name)
+            return cls.to_valid_c_define_name(node.name)
 
         return f"{_name(node.parent)}_{_name(node)}_BASE_ADDR"
 
     @classmethod
-    def get_defines(cls, node: Node) -> List[List[Tuple[str, int]]]:
+    def get_defines(cls, node: Node) -> List[List[CDefineTuple]]:
         assert node.children
         defs = [
-            [(cls.get_name(child), child.abs_start_addr) for child in node.children]
+            [
+                CDefineTuple(cls.get_name(child), child.abs_start_addr)
+                for child in node.children
+            ]
         ]
         for child in node.children:
             if child.children:
@@ -604,7 +645,7 @@ class CHeaderBuilder:
                 template_file=self.TEMPLATE,
                 header={
                     "filename": self.output_file,
-                    "header_name": self.format_to_valid_c_def(self.output_file.name),
+                    "header_name": self.to_valid_c_define_name(self.output_file.name),
                 },
                 defines=defines,
             ),
