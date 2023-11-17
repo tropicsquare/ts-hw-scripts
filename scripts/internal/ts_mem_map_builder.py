@@ -12,7 +12,6 @@ __license___ = "TODO:"
 __maintainer__ = "Henri LHote"
 
 import fileinput
-import os
 import re
 import shutil
 import subprocess
@@ -20,11 +19,11 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from functools import partial
 from itertools import chain, count
-from mmap import mmap
 from pathlib import Path
 from typing import (
     Any,
     ClassVar,
+    Container,
     List,
     Literal,
     NamedTuple,
@@ -63,6 +62,39 @@ def info(__msg: str, /) -> None:
 print_in_blue = partial(ts_print, color=TsColors.BLUE)
 
 
+def _has_ext(file: Union[Path, str], *, extensions: Container[str]) -> bool:
+    if isinstance(file, str):
+        file = Path(file)
+    return file.suffix in extensions
+
+
+_is_yaml_file = partial(_has_ext, extensions=(".yml", ".yaml"))
+
+_is_rdl_file = partial(_has_ext, extensions=(".rdl",))
+
+
+# TODO rework
+def _remove_directory(dirpath: Path, build_type: Optional[str] = None) -> None:
+    if build_type is None:
+        build_type = ""
+    else:
+        build_type = f" {build_type}"
+    print_in_blue(f"Removing temporary{build_type} files directory: {dirpath}")
+    shutil.rmtree(dirpath, ignore_errors=True)
+    ts_debug("Done.")
+
+
+# TODO rework
+def _create_directory(dirpath: Path, build_type: Optional[str] = None) -> None:
+    if build_type is None:
+        build_type = ""
+    else:
+        build_type = f" {build_type}"
+    print_in_blue(f"Removing temporary{build_type} files directory: {dirpath}")
+    dirpath.mkdir(parents=True, exist_ok=True)
+    ts_debug("Done.")
+
+
 class RenderFn(Protocol):
     def __call__(self, template_file: str, **kwargs: Any) -> str:
         ...
@@ -82,21 +114,6 @@ def create_render_fn() -> RenderFn:
         )
 
     return _render
-
-
-class RegionsDict(TypedDict):
-    name: str
-    short_name: NotRequired[str]
-    start_addr: int
-    end_addr: int
-    reg_map: NotRequired[str]
-    regions: NotRequired[Union[List["RegionsDict"], str]]
-
-
-# TODO remove
-def _write_file(filepath: Union[Path, str], content: str) -> None:
-    with open(filepath, "w") as fd:
-        fd.write(content.rstrip())
 
 
 def _ordt_run(
@@ -121,93 +138,22 @@ _ordt_generate_xml = partial(_ordt_run, arg="xml")
 _ordt_generate_latex = partial(_ordt_run, arg="tslatexdoc")
 
 
-# TODO keep this?
-def is_yaml_file(file: Union[Path, str]) -> bool:
-    return Path(file).suffix in (".yml", ".yaml")
-
-
-# TODO keep this?
-def is_xml_file(file: Union[Path, str]) -> bool:
-    return Path(file).suffix == ".xml"
-
-
-# TODO keep this?
-def is_rdl_file(file: Union[Path, str]) -> bool:
-    return Path(file).suffix == ".rdl"
-
-
-# TODO keep this?
-def is_h_file(file: Union[Path, str]) -> bool:
-    return (p := Path(file)).parent.is_dir() and p.suffix == ".h"
-
-
-def ordt_build_parms_file(
+def _ordt_build_parms_file(
     output_parms_file: Path, base_address: int, render_fn: RenderFn
 ) -> None:
     """builds a parameters file with default parameters for ordt in the output directory"""
-    _write_file(
-        output_parms_file,
-        render_fn("parms_file.parms.j2", top={"base_address": base_address}),
-    )
+    content = render_fn("parms_file.parms.j2", top={"base_address": base_address})
+    with open(output_parms_file, "w") as fd:
+        fd.write(content)
 
 
-# TODO move to argparser
-def unpack_env_var_path(path: str) -> str:
-    """Unpacks environment variables in path."""
-    unpacked_path = os.path.expandvars(path)
-    if "$" in path and unpacked_path == path:
-        ts_throw_error(TsErrCode.ERR_MMAP_7, path)
-    return unpacked_path
-
-
-def load_yaml(filepath: Union[Path, str]) -> RegionsDict:
-    filepath = unpack_env_var_path(str(filepath))
-    assert is_yaml_file(filepath)
-
-    ts_debug(f"Opening YAML file: {filepath}")
-    with open(filepath) as fd:
-        content = yaml.safe_load(fd)
-
-    GRAMMAR_MEM_MAP_CONFIG.validate(content)  # type: ignore
-    return content
-
-
-def render_yaml_parent(
-    top_level_filepath: Path,
-    lint: bool,
-    ordt_parms_file: Optional[Path] = None,
-    latex_dir: Optional[Path] = None,
-    xml_dir: Optional[Path] = None,
-    c_header_file: Optional[Path] = None,
-    do_not_clear: object = 0,
-):
-    tree = Node.load_tree(Path(top_level_filepath))
-    ts_debug(tree)
-    ts_print(tree.pretty_repr())
-
-    ts_info(TsInfoCode.INFO_MMAP_0, tree.start_addr, tree.end_addr)
-
-    if lint:
-        run_linter(tree)
-
-    if (latex_dir, xml_dir, c_header_file) == (None, None, None):
-        return
-
-    render_fn = create_render_fn()
-
-    if latex_dir is not None:
-        b = LatexBuilder(latex_dir, top_level_filepath, render_fn)
-        b.build(tree)
-        b.clear(do_not_clear)
-
-    if xml_dir is not None:
-        r = XmlBuilder(xml_dir, top_level_filepath, ordt_parms_file, render_fn)
-        r.build(tree)
-        r.clear(do_not_clear)
-
-    if c_header_file is not None:
-        h = CHeaderBuilder(c_header_file, render_fn)
-        h.build(tree)
+class RegionsDict(TypedDict):
+    name: str
+    short_name: NotRequired[str]
+    start_addr: int
+    end_addr: int
+    reg_map: NotRequired[str]
+    regions: NotRequired[Union[List[Self], str]]
 
 
 @dataclass(frozen=True)
@@ -249,8 +195,8 @@ class Node:
             )
 
         if (reg_map := cfg.get("reg_map")) is not None:
-            assert cfg.get("regions") is None
-            assert is_rdl_file(reg_map)
+            assert cfg.get("regions") is None, "node should be a leaf"
+            assert _is_rdl_file(reg_map), f"{reg_map} should be an rdl file"
             ts_debug(f"Including RDL file: {reg_map}")
             object.__setattr__(node, "reg_map", source.parent / reg_map)
             return node
@@ -272,8 +218,8 @@ class Node:
     ) -> List[Self]:
         if isinstance(regions, str):
             filepath = source.parent / regions
-            cfg = load_yaml(filepath)
-            assert cfg.get("reg_map") is None
+            cfg = cls.load_yaml(filepath)
+            assert cfg.get("reg_map") is None, "node should be a leaf"
             return cls._load_regions(cfg.get("regions", []), filepath, level, parent)
 
         # TODO add some verbosity
@@ -281,15 +227,18 @@ class Node:
 
     @classmethod
     def load_tree(cls, filepath: Path) -> Self:
-        return cls.new(load_yaml(filepath), filepath)
+        return cls.new(cls.load_yaml(filepath), filepath)
 
-    # TODO remove
-    def is_leaf(self) -> bool:
-        return not self.children
+    @staticmethod
+    def load_yaml(filepath: Path) -> RegionsDict:
+        assert _is_yaml_file(filepath), f"{filepath} should be a yaml file"
 
-    # TODO remove
-    def has_reg_map(self) -> bool:
-        return self.reg_map is not None
+        ts_debug(f"Opening YAML file: {filepath}")
+        with open(filepath) as fd:
+            content = yaml.safe_load(fd)
+
+        GRAMMAR_MEM_MAP_CONFIG.validate(content)  # type: ignore
+        return content
 
     @property
     def abs_start_addr(self) -> int:
@@ -315,41 +264,19 @@ class Node:
         return "\n".join(l)
 
 
-def run_linter(tree: Node) -> None:
-    for child in tree.children:
-        if not tree.abs_start_addr <= child.abs_start_addr <= tree.abs_end_addr:
+def run_linter(node: Node) -> None:
+    for child in node.children:
+        if not node.abs_start_addr <= child.abs_start_addr <= node.abs_end_addr:
             ts_throw_error(
                 TsErrCode.GENERIC,
-                f"Start address for sub-region: {child.name} is out of bounds of its parent: {tree.name}",
+                f"Start address for sub-region: {child.name} is out of bounds of its parent: {node.name}",
             )
-        if not tree.abs_start_addr <= child.abs_end_addr <= tree.abs_end_addr:
+        if not node.abs_start_addr <= child.abs_end_addr <= node.abs_end_addr:
             ts_throw_error(
                 TsErrCode.GENERIC,
-                f"End address for sub-region: {child.name} is out of bounds of its parent: {tree.name}",
+                f"End address for sub-region: {child.name} is out of bounds of its parent: {node.name}",
             )
         run_linter(child)
-
-
-# TODO rework
-def _remove_directory(dirpath: Path, build_type: Optional[str] = None) -> None:
-    if build_type is None:
-        build_type = ""
-    else:
-        build_type = f" {build_type}"
-    print_in_blue(f"Removing temporary{build_type} files directory: {dirpath}")
-    shutil.rmtree(dirpath, ignore_errors=True)
-    ts_debug("Done.")
-
-
-# TODO rework
-def _create_directory(dirpath: Path, build_type: Optional[str] = None) -> None:
-    if build_type is None:
-        build_type = ""
-    else:
-        build_type = f" {build_type}"
-    print_in_blue(f"Removing temporary{build_type} files directory: {dirpath}")
-    dirpath.mkdir(parents=True, exist_ok=True)
-    ts_debug("Done.")
 
 
 class XmlCfgTuple(NamedTuple):
@@ -411,7 +338,7 @@ class XmlBuilder:
             name = self.to_ordt_valid_name(node.name)
 
         else:
-            assert node.parent is not None
+            assert node.parent is not None, "node should not be root"
             hier_name = f"{node.parent.name} {node.name}"
             print_in_blue(
                 f"Changing duplicate component name: ({node.name}) -> ({hier_name})"
@@ -422,7 +349,7 @@ class XmlBuilder:
         return name
 
     def create_placeholder_reg_map(self, node: Node) -> XmlCfgTuple:
-        assert node.reg_map is None
+        assert node.reg_map is None, "node should not have a reg_map"
 
         name = self.get_unique_valid_name(node)
         rdl = self._get_temp_file(name)
@@ -433,7 +360,7 @@ class XmlBuilder:
         return XmlCfgTuple(name, node.abs_start_addr, rdl)
 
     def process_reg_map(self, node: Node) -> XmlCfgTuple:
-        assert node.reg_map is not None
+        assert node.reg_map is not None, "node should have a reg_map"
 
         name = self.get_unique_valid_name(node)
         rdl = self._get_temp_file(name)
@@ -506,7 +433,7 @@ class LatexRegionDict(TypedDict):
     abs_start_addr: NotRequired[int]
     abs_end_addr: NotRequired[int]
     generated_file: NotRequired[Path]
-    regions: NotRequired[List["LatexRegionDict"]]
+    regions: NotRequired[List[Self]]
 
 
 class LatexBuilder:
@@ -569,26 +496,25 @@ class LatexBuilder:
     def build(self, tree: Node) -> None:
         regions = self.get_regions(tree)
         ts_debug(regions)
-        _write_file(
-            self.output_file,
-            self.render_fn(
-                template_file=self.TEMPLATE,
-                header={
-                    "filename": self.source_file,
-                },
-                root_node=regions,
-            ),
+        content = self.render_fn(
+            template_file=self.TEMPLATE,
+            header={
+                "filename": self.source_file,
+            },
+            root_node=regions,
         )
+        with open(self.output_file, "w") as fd:
+            fd.write(content)
         print_in_blue(f"Generated Latex file at {self.output_file}")
 
     def generate_texfile(self, node: Node) -> Path:
-        assert node.reg_map is not None
+        assert node.reg_map is not None, "node should have a reg_map"
 
         id_ = datetime.now().strftime("%M%S%f")
         output = self._tmp_tex_dir / node.reg_map.with_suffix(f".{id_}.tex").name
         parms = self._tmp_parms_dir / node.reg_map.with_suffix(f".{id_}.parms").name
 
-        ordt_build_parms_file(parms, node.abs_start_addr, self.render_fn)
+        _ordt_build_parms_file(parms, node.abs_start_addr, self.render_fn)
         _ordt_generate_latex(node.reg_map, output, parms)
         return output
 
@@ -606,25 +532,25 @@ class CHeaderBuilder:
         self.render_fn = render_fn
 
     @staticmethod
-    def to_valid_c_define_name(name: str) -> str:
+    def to_valid_name(name: str) -> str:
         # Replace variable inappropriate characters with underscores
         # Add underscore to the beginning if string starts with digit
         return re.sub(r"\W|^(?=\d)", "_", name).upper()
 
     @classmethod
     def get_name(cls, node: Node) -> str:
-        assert node.parent is not None
+        assert node.parent is not None, "node should not be root"
 
         def _name(node: Node) -> str:
             if node.short_name:
-                return cls.to_valid_c_define_name(node.short_name)
-            return cls.to_valid_c_define_name(node.name)
+                return cls.to_valid_name(node.short_name)
+            return cls.to_valid_name(node.name)
 
         return f"{_name(node.parent)}_{_name(node)}_BASE_ADDR"
 
     @classmethod
     def get_defines(cls, node: Node) -> List[List[CDefineTuple]]:
-        assert node.children
+        assert node.children, "node should not be a leaf"
         defs = [
             [
                 CDefineTuple(cls.get_name(child), child.abs_start_addr)
@@ -639,15 +565,52 @@ class CHeaderBuilder:
     def build(self, tree: Node) -> None:
         defines = self.get_defines(tree)
         ts_debug(defines)
-        _write_file(
-            self.output_file,
-            self.render_fn(
-                template_file=self.TEMPLATE,
-                header={
-                    "filename": self.output_file,
-                    "header_name": self.to_valid_c_define_name(self.output_file.name),
-                },
-                defines=defines,
-            ),
+        content = self.render_fn(
+            template_file=self.TEMPLATE,
+            header={
+                "filename": self.output_file,
+                "header_name": self.to_valid_name(self.output_file.name),
+            },
+            defines=defines,
         )
+        with open(self.output_file, "w") as fd:
+            fd.write(content.rstrip())
         print_in_blue(f"Generated header file at {self.output_file}")
+
+
+def ts_render_yaml(
+    source_file: Path,
+    lint: bool,
+    ordt_parms: Optional[Path] = None,
+    latex_dir: Optional[Path] = None,
+    xml_dir: Optional[Path] = None,
+    h_file: Optional[Path] = None,
+    do_not_clear: object = False,
+):
+    tree = Node.load_tree(source_file)
+    ts_debug(tree)
+    ts_print(tree.pretty_repr())
+
+    ts_info(TsInfoCode.INFO_MMAP_0, tree.start_addr, tree.end_addr)
+
+    if lint:
+        run_linter(tree)
+
+    if (latex_dir, xml_dir, h_file) == (None, None, None):
+        return
+
+    render_fn = create_render_fn()
+
+    if latex_dir is not None:
+        b = LatexBuilder(latex_dir, source_file, render_fn)
+        b.build(tree)
+        b.clear(do_not_clear)
+
+    if xml_dir is not None:
+        r = XmlBuilder(xml_dir, source_file, ordt_parms, render_fn)
+        r.build(tree)
+        r.clear(do_not_clear)
+
+    if h_file is not None:
+        h = CHeaderBuilder(h_file, render_fn)
+        h.build(tree)
