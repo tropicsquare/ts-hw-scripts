@@ -706,35 +706,6 @@ def add_ts_pwr_run_args(parser, tool_type):
     )
 
 
-def add_ts_mem_map_generator_args(parser):
-    """
-    Adds arguments specific to ts_memory_map_generator
-    :param parser: Argparse parser to which arguments shall be added
-    """
-
-    parser.add_argument("--xml-dir")
-    parser.add_argument("--latex-dir")
-    parser.add_argument(
-        "--h-file",
-        help="One or multiple of (--latex-dir, --xml-dir, --h-file) required",
-    )
-    parser.add_argument(
-        "--ordt-parms",
-        help=dedent(
-            """\
-                        Parameters file for ORDT XML output.
-                        If a file is not specified, it will be created in the xml output directory.
-                        """
-        ),
-    )
-    parser.add_argument("--source-file", required=True)
-    parser.add_argument(
-        "--lint",
-        action="store_true",
-        help=dedent("""Script will refuse overlapping address ranges."""),
-    )
-
-
 def add_ts_syn_run_args(parser, tool_type):
     """
     Adds arguments specific to ts_syn_run.py
