@@ -20,7 +20,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Callable, List, TypedDict
 
-import argcomplete
 import jinja2
 
 __version__ = "0.3"
@@ -294,7 +293,6 @@ def get_cli_args():
         default=_existing_file(_with_ext(".py.j2"))(str(DEFAULT_TEMPLATE)),
         help="Template file. Defaults to %(default)s.",
     )
-    argcomplete.autocomplete(parser)
 
     return vars(parser.parse_args())
 

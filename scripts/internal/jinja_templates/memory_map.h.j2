@@ -13,9 +13,9 @@
 #ifndef {{ header.header_name | upper }}
 #define {{ header.header_name | upper }}
 
-{% for tuple_list in defines -%}
-    {%- for name, value in tuple_list -%}
-        {{ format_line(name, value) }}
+{% for define_tuple_list in defines -%}
+    {%- for define_tuple in define_tuple_list -%}
+        {{ format_line(define_tuple.name, define_tuple.value) }}
     {% endfor %}
 {% endfor -%}
 
