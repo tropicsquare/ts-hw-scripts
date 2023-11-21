@@ -285,8 +285,8 @@ class TsErrCode(LogEnum):
     ]
 
     ERR_PDK_26 = [
-        lambda: "When running ts_syn_run.py with \"--topo\", global \"constraints\" keyword must be "
-                "defined in Design config file under \"design\"."
+        lambda: 'When running ts_syn_run.py with "--topo", global "constraints" keyword must be '
+        'defined in Design config file under "design".'
     ]
 
     # Power error messages
@@ -297,30 +297,6 @@ class TsErrCode(LogEnum):
             pwr_file, e
         )
     ]
-
-    # Memory map generator error messages
-    ERR_MMAP_0 = [
-        lambda e: "Key error: Sub-block '{}' should contain exactly one of (Key->'reg_map' or Key->'regions')".format(
-            e
-        )
-    ]
-    ERR_MMAP_1 = [
-        lambda e: "Missing key: File '{}' has no Key->'regions' defined at top most level".format(
-            e
-        )
-    ]
-    ERR_MMAP_2 = [
-        lambda e: "Invalid file: File '{}' is not a valid YAML file".format(e)
-    ]
-    ERR_MMAP_3 = [lambda e: "Invalid file: File '{}' is not a valid RDL file".format(e)]
-    ERR_MMAP_4 = [lambda e: "Invalid file: '{}' not found.".format(e)]
-    ERR_MMAP_5 = [lambda e: "ORDT returned the following error(s): \n{}".format(e)]
-    ERR_MMAP_6 = [
-        lambda filename: "Invalid file: ({}) is not a C header file or has an invalid path.".format(
-            filename
-        )
-    ]
-    ERR_MMAP_7 = [lambda env_var: "Envivonment variable(s) used but not defined in path ({})".format(env_var)]
 
     ERR_SYN_0 = [lambda: "Missing runcode parameter"]
     ERR_SYN_1 = [
@@ -478,13 +454,6 @@ class TsInfoCode(LogEnum):
     # PWR info messages
     INFO_PWR_0 = [lambda path: "Loading Power configuration file: '{}'".format(path)]
 
-    # Memory map generator error messages
-    INFO_MMAP_0 = [
-        lambda start_addr, end_addr: "with start address: 0x{:08X} and end address: 0x{:08X}".format(
-            start_addr, end_addr
-        )
-    ]
-
     # Syn flow info messages
     INFO_SYS_0 = [lambda runcode: "Selected runcode is: {}".format(runcode)]
     INFO_SYS_1 = [lambda runcode: "Opening synthesis database: {}".format(runcode)]
@@ -608,7 +577,9 @@ def ts_debug(msg: object):
     logging.debug(msg)
 
 
-def ts_print(*args: str, color: TsColors = TsColors.NONE, big: bool = False, **kwargs: Any):
+def ts_print(
+    *args: str, color: TsColors = TsColors.NONE, big: bool = False, **kwargs: Any
+):
     """
     Override builtin print function while adding some options
     """

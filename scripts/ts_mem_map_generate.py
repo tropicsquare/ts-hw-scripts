@@ -16,7 +16,6 @@ from pathlib import Path
 from typing import Callable
 
 from internal.ts_hw_args import TsArgumentParser, add_ts_common_args
-from internal.ts_hw_logging import ts_configure_logging
 from internal.ts_mem_map_builder import ts_render_yaml
 
 
@@ -105,10 +104,9 @@ def get_cli_args():
 
 if __name__ == "__main__":
     args = get_cli_args()
-    ts_configure_logging(args)
 
     args_dict = vars(args)
     args_dict.pop("no_color")
-    args_dict["do_not_clear"] = args_dict.pop("verbose")
+    args_dict["do_not_clear"] = args_dict["verbose"]
 
     ts_render_yaml(**args_dict)

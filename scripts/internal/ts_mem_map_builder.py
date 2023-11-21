@@ -12,6 +12,7 @@ __license___ = "TODO:"
 __maintainer__ = "Henri LHote"
 
 import fileinput
+import logging
 import re
 import shutil
 import subprocess
@@ -38,28 +39,22 @@ import jinja2
 import yaml
 from typing_extensions import NotRequired, Self
 
-from .ts_grammar import GRAMMAR_MEM_MAP_CONFIG
-from .ts_hw_logging import (
-    TsColors,
-    TsErrCode,
-    TsInfoCode,
-    TsWarnCode,
-    ts_debug,
-    ts_info,
-    ts_print,
-    ts_throw_error,
-    ts_warning,
-)
+try:
+    from .ts_grammar import GRAMMAR_MEM_MAP_CONFIG  # type: ignore
+
+except ImportError:
+
+    class GRAMMAR_MEM_MAP_CONFIG:
+        @staticmethod
+        def validate(_: Any):
+            pass
+
 
 TEMPLATE_DIRECTORY = Path(__file__).parent / "jinja_templates"
 
 
-# TODO fix logging
-def info(__msg: str, /) -> None:
-    ts_info(TsInfoCode.GENERIC, __msg)
-
-
-print_in_blue = partial(ts_print, color=TsColors.BLUE)
+class MemMapGenerateError(Exception):
+    pass
 
 
 def _has_ext(file: Union[Path, str], *, extensions: Container[str]) -> bool:
@@ -73,26 +68,14 @@ _is_yaml_file = partial(_has_ext, extensions=(".yml", ".yaml"))
 _is_rdl_file = partial(_has_ext, extensions=(".rdl",))
 
 
-# TODO rework
-def _remove_directory(dirpath: Path, build_type: Optional[str] = None) -> None:
-    if build_type is None:
-        build_type = ""
-    else:
-        build_type = f" {build_type}"
-    print_in_blue(f"Removing temporary{build_type} files directory: {dirpath}")
+def _remove_directory(dirpath: Path) -> None:
+    logging.info("Removing directory: %s", dirpath)
     shutil.rmtree(dirpath, ignore_errors=True)
-    ts_debug("Done.")
 
 
-# TODO rework
-def _create_directory(dirpath: Path, build_type: Optional[str] = None) -> None:
-    if build_type is None:
-        build_type = ""
-    else:
-        build_type = f" {build_type}"
-    print_in_blue(f"Removing temporary{build_type} files directory: {dirpath}")
+def _create_directory(dirpath: Path) -> None:
+    logging.debug("Creating directory: %s", dirpath)
     dirpath.mkdir(parents=True, exist_ok=True)
-    ts_debug("Done.")
 
 
 class RenderFn(Protocol):
@@ -120,17 +103,21 @@ def _ordt_run(
     source: Path, output: Path, parms: Path, arg: Literal["xml", "tslatexdoc"]
 ) -> None:
     command = f"ordt_run.sh -parms {parms} -{arg} {output} {source}"
-
-    info(f"Running ORDT command: {command}")
+    logging.info("Running ORDT command: %s", command)
 
     completed_process = subprocess.run(
         command.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE
     )
-
     if completed_process.returncode != 0:
-        ts_throw_error(TsErrCode.ERR_MMAP_5, completed_process.stderr.decode())
+        logging.error(
+            "ORDT returned the following error(s): \n%s",
+            completed_process.stderr.decode(),
+        )
+        raise MemMapGenerateError(
+            f"ORDT error: returncode = {completed_process.returncode}"
+        )
 
-    ts_warning(TsWarnCode.GENERIC, f"Built using ORDT: {output}")
+    logging.warning("Built using ORDT: %s", output)
 
 
 _ordt_generate_xml = partial(_ordt_run, arg="xml")
@@ -139,11 +126,12 @@ _ordt_generate_latex = partial(_ordt_run, arg="tslatexdoc")
 
 
 def _ordt_build_parms_file(
-    output_parms_file: Path, base_address: int, render_fn: RenderFn
+    filepath: Path, base_address: int, render_fn: RenderFn
 ) -> None:
     """builds a parameters file with default parameters for ordt in the output directory"""
     content = render_fn("parms_file.parms.j2", top={"base_address": base_address})
-    with open(output_parms_file, "w") as fd:
+    logging.info("Writing ORDT parms file: %s", filepath)
+    with open(filepath, "w") as fd:
         fd.write(content)
 
 
@@ -177,6 +165,14 @@ class Node:
         level: int = 0,
         parent: Optional[Self] = None,
     ) -> Self:
+
+        logging.warning("Creating new node: %s.", cfg["name"])
+        logging.info(
+            "with start address: 0x%08X and end address: 0x%08X",
+            cfg["start_addr"],
+            cfg["end_addr"],
+        )
+
         node = cls(
             name=cfg["name"],
             start_addr=cfg["start_addr"],
@@ -189,15 +185,15 @@ class Node:
 
         if (level := level + 1) > cls.MAX_NESTING_LEVEL:
             error_path = [node.name] + [p.name for p in node.parents]
-            print_in_blue(" -> ".join(reversed(error_path)))
-            raise RecursionError(
-                f"Nesting {level} exceeds limit of {cls.MAX_NESTING_LEVEL}"
+            logging.error(" -> ".join(reversed(error_path)))
+            raise MemMapGenerateError(
+                f"Nesting {level = } exceeds limit of {cls.MAX_NESTING_LEVEL}"
             )
 
         if (reg_map := cfg.get("reg_map")) is not None:
             assert cfg.get("regions") is None, "node should be a leaf"
             assert _is_rdl_file(reg_map), f"{reg_map} should be an rdl file"
-            ts_debug(f"Including RDL file: {reg_map}")
+            logging.debug("Including RDL file: %s", reg_map)
             object.__setattr__(node, "reg_map", source.parent / reg_map)
             return node
 
@@ -218,11 +214,11 @@ class Node:
     ) -> List[Self]:
         if isinstance(regions, str):
             filepath = source.parent / regions
+            logging.warning("Found new memory sub-region: %s.", regions)
             cfg = cls.load_yaml(filepath)
             assert cfg.get("reg_map") is None, "node should be a leaf"
             return cls._load_regions(cfg.get("regions", []), filepath, level, parent)
 
-        # TODO add some verbosity
         return [cls.new(region, source, level, parent) for region in regions]
 
     @classmethod
@@ -233,11 +229,12 @@ class Node:
     def load_yaml(filepath: Path) -> RegionsDict:
         assert _is_yaml_file(filepath), f"{filepath} should be a yaml file"
 
-        ts_debug(f"Opening YAML file: {filepath}")
+        logging.debug("Opening YAML file: %s", filepath)
         with open(filepath) as fd:
             content = yaml.safe_load(fd)
 
-        GRAMMAR_MEM_MAP_CONFIG.validate(content)  # type: ignore
+        GRAMMAR_MEM_MAP_CONFIG.validate(content)
+        logging.debug("New region validated: %s.", content["name"])
         return content
 
     @property
@@ -267,13 +264,11 @@ class Node:
 def run_linter(node: Node) -> None:
     for child in node.children:
         if not node.abs_start_addr <= child.abs_start_addr <= node.abs_end_addr:
-            ts_throw_error(
-                TsErrCode.GENERIC,
+            raise MemMapGenerateError(
                 f"Start address for sub-region: {child.name} is out of bounds of its parent: {node.name}",
             )
         if not node.abs_start_addr <= child.abs_end_addr <= node.abs_end_addr:
-            ts_throw_error(
-                TsErrCode.GENERIC,
+            raise MemMapGenerateError(
                 f"End address for sub-region: {child.name} is out of bounds of its parent: {node.name}",
             )
         run_linter(child)
@@ -322,7 +317,7 @@ class XmlBuilder:
     def clear(self, do_not_clear: object):
         if do_not_clear:
             return
-        _remove_directory(self._tmp_rdl_dir, "RDL")
+        _remove_directory(self._tmp_rdl_dir)
 
     def to_ordt_valid_name(self, name: str) -> str:
         # Replace all sorts of brackets, dash and space by an underscore
@@ -340,8 +335,8 @@ class XmlBuilder:
         else:
             assert node.parent is not None, "node should not be root"
             hier_name = f"{node.parent.name} {node.name}"
-            print_in_blue(
-                f"Changing duplicate component name: ({node.name}) -> ({hier_name})"
+            logging.warning(
+                "Changing duplicate component name: (%s) -> (%s)", node.name, hier_name
             )
             name = self.to_ordt_valid_name(f"{node.parent.name} {node.name}")
 
@@ -408,7 +403,7 @@ class XmlBuilder:
 
     def build(self, tree: Node) -> None:
         cfg_tuples = self.get_cfg_tuples(tree)
-        ts_debug(cfg_tuples)
+        logging.debug(cfg_tuples)
 
         with open(self.rdl_file, "w") as dst:
             with fileinput.input((tup.reg_map for tup in cfg_tuples)) as src:
@@ -422,7 +417,7 @@ class XmlBuilder:
 
         _ordt_generate_xml(self.rdl_file, self.output_file, self.ordt_parms_file)
 
-        print_in_blue(f"Generated XML file at {self.output_file}")
+        logging.info("Generated XML file at %s", self.output_file)
 
 
 class LatexRegionDict(TypedDict):
@@ -457,8 +452,8 @@ class LatexBuilder:
     def clear(self, do_not_clear: object) -> None:
         if do_not_clear:
             return
-        _remove_directory(self._tmp_parms_dir, "PARMS")
-        _remove_directory(self._tmp_tex_dir, "TEX")
+        _remove_directory(self._tmp_parms_dir)
+        _remove_directory(self._tmp_tex_dir)
 
     @staticmethod
     def get_size(node: Node) -> str:
@@ -495,7 +490,7 @@ class LatexBuilder:
 
     def build(self, tree: Node) -> None:
         regions = self.get_regions(tree)
-        ts_debug(regions)
+        logging.debug(regions)
         content = self.render_fn(
             template_file=self.TEMPLATE,
             header={
@@ -505,7 +500,7 @@ class LatexBuilder:
         )
         with open(self.output_file, "w") as fd:
             fd.write(content)
-        print_in_blue(f"Generated Latex file at {self.output_file}")
+        logging.info("Generated Latex file at %s", self.output_file)
 
     def generate_texfile(self, node: Node) -> Path:
         assert node.reg_map is not None, "node should have a reg_map"
@@ -564,7 +559,7 @@ class CHeaderBuilder:
 
     def build(self, tree: Node) -> None:
         defines = self.get_defines(tree)
-        ts_debug(defines)
+        logging.debug(defines)
         content = self.render_fn(
             template_file=self.TEMPLATE,
             header={
@@ -575,7 +570,18 @@ class CHeaderBuilder:
         )
         with open(self.output_file, "w") as fd:
             fd.write(content.rstrip())
-        print_in_blue(f"Generated header file at {self.output_file}")
+        logging.debug("Generated header file at %s", self.output_file)
+
+
+def configure_logging(verbose: int) -> None:
+    try:
+        level = [
+            logging.WARNING,  # 0
+            logging.INFO,  # 1
+        ][verbose]
+    except IndexError:
+        level = logging.DEBUG  # >= 2
+    logging.basicConfig(level=level, format="%(levelname)s: %(message)s")
 
 
 def ts_render_yaml(
@@ -586,12 +592,14 @@ def ts_render_yaml(
     xml_dir: Optional[Path] = None,
     h_file: Optional[Path] = None,
     do_not_clear: object = False,
+    verbose: int = 0,
 ):
-    tree = Node.load_tree(source_file)
-    ts_debug(tree)
-    ts_print(tree.pretty_repr())
 
-    ts_info(TsInfoCode.INFO_MMAP_0, tree.start_addr, tree.end_addr)
+    configure_logging(verbose)
+
+    tree = Node.load_tree(source_file)
+    logging.debug(tree)
+    print(tree.pretty_repr())
 
     if lint:
         run_linter(tree)
