@@ -293,11 +293,11 @@ class XmlBuilder:
         render_fn: Optional[RenderFn] = None,
     ) -> None:
         if ordt_parms_file is None:
-            ordt_parms_file = output_dir / source_file.with_suffix(".parms").name
             if render_fn is None:
                 raise ValueError(
                     "'render_fn' should be defined when 'ordt_parms_file' is not."
                 )
+            ordt_parms_file = output_dir / source_file.with_suffix(".parms").name
 
         self.rdl_file = output_dir / source_file.with_suffix(".rdl").name
         self.output_file = output_dir / source_file.with_suffix(".xml").name
@@ -309,9 +309,6 @@ class XmlBuilder:
         _remove_directory(output_dir)
         _create_directory(self._tmp_rdl_dir)
 
-        # TODO assess usefulness
-        # avoid ORDT duplicate regfile component error
-        # note: ORDT cares only about exact duplicates, case is irrelevant
         self.unique_node_names: Set[str] = set()
 
     def clear(self, do_not_clear: object):
@@ -327,8 +324,8 @@ class XmlBuilder:
         id_ = datetime.now().strftime("%M%S%f")
         return self._tmp_rdl_dir / f"{name}.{id_}{extension}"
 
-    # TODO remove if needed - see __init__ method
     def get_unique_valid_name(self, node: Node) -> str:
+        # Avoid ORDT duplicate regfile component error
         if node.name.upper() not in self.unique_node_names:
             name = self.to_ordt_valid_name(node.name)
 
@@ -338,7 +335,7 @@ class XmlBuilder:
             logging.warning(
                 "Changing duplicate component name: (%s) -> (%s)", node.name, hier_name
             )
-            name = self.to_ordt_valid_name(f"{node.parent.name} {node.name}")
+            name = self.to_ordt_valid_name(hier_name)
 
         self.unique_node_names.add(node.name.upper())
         return name
@@ -414,6 +411,12 @@ class XmlBuilder:
             for tup in cfg_tuples:
                 dst.write(f"\texternal {tup.name} TOP_{tup.name}@{tup.addr};\n")
             dst.write(f"}} {self.rdl_file.with_suffix('').name};")
+
+        if not self.ordt_parms_file.exists():
+            assert self.render_fn is not None, "'render_fn' should be defined"
+            _ordt_build_parms_file(
+                self.ordt_parms_file, tree.abs_start_addr, self.render_fn
+            )
 
         _ordt_generate_xml(self.rdl_file, self.output_file, self.ordt_parms_file)
 
