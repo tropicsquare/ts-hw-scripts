@@ -13,6 +13,7 @@ __maintainer__ = "Henri LHote"
 
 import fileinput
 import logging
+import os
 import re
 import shutil
 import subprocess
@@ -91,6 +92,18 @@ def compute_sha256(filepath: Path) -> str:
         for byte_block in iter(lambda: fd.read(4096), b""):
             _hash.update(byte_block)
     return _hash.hexdigest()
+
+
+def expand_envvars(path: str) -> str:
+    """Expands environment variables in path, returns Path object."""
+    expanded_path = os.path.expandvars(path)
+
+    if "$" in path and Path(expanded_path) == Path(path):
+        raise MemMapGenerateError(
+            f"Environment variable(s) used but not defined in path ({path})"
+        )
+
+    return expanded_path
 
 
 # ############################## file rendering ###################################################
@@ -216,7 +229,9 @@ class Node:
 
         if (reg_map := cfg.get("reg_map")) is not None:
             assert cfg.get("regions") is None, "node should be a leaf"
-            assert _is_rdl_file(reg_map), f"{reg_map} should be an rdl file"
+            reg_map = expand_envvars(reg_map)
+            if not _is_rdl_file(reg_map):
+                raise MemMapGenerateError(f"{reg_map} should be an rdl file")
             logging.debug("Including RDL file: %s", reg_map)
             object.__setattr__(node, "reg_map", source.parent / reg_map)
             return node
@@ -237,7 +252,7 @@ class Node:
         parent: Self,
     ) -> List[Self]:
         if isinstance(regions, str):
-            filepath = source.parent / regions
+            filepath = source.parent / expand_envvars(regions)
             logging.warning("Found new memory sub-region: %s.", regions)
             cfg = cls.load_yaml(filepath)
             assert cfg.get("reg_map") is None, "node should be a leaf"
@@ -247,11 +262,17 @@ class Node:
 
     @classmethod
     def load_tree(cls, filepath: Path) -> Self:
-        return cls.new(cls.load_yaml(filepath), filepath)
+        root_cfg = cls.load_yaml(filepath)
+        if root_cfg.get("regions") is None:
+            raise MemMapGenerateError(
+                f"Top level in '{filepath}' does not define 'regions' key"
+            )
+        return cls.new(root_cfg, filepath)
 
     @staticmethod
     def load_yaml(filepath: Path) -> RegionsDict:
-        assert _is_yaml_file(filepath), f"{filepath} should be a yaml file"
+        if not _is_yaml_file(filepath):
+            raise MemMapGenerateError(f"{filepath} should be a yaml file")
 
         logging.debug("Opening YAML file: %s", filepath)
         with open(filepath) as fd:
@@ -289,6 +310,10 @@ class Node:
 
 
 def run_linter(node: Node) -> None:
+    if not node.abs_start_addr < node.abs_end_addr:
+        raise MemMapGenerateError(
+            f"Address range for region: {node.name}: start address should be lesser than end address",
+        )
     for child in node.children:
         if not node.abs_start_addr <= child.abs_start_addr <= node.abs_end_addr:
             raise MemMapGenerateError(
@@ -356,19 +381,25 @@ class XmlBuilder:
 
     def get_unique_valid_name(self, node: Node) -> str:
         # Avoid ORDT duplicate regfile component error
-        if node.name.upper() not in self.unique_node_names:
-            name = self.to_ordt_valid_name(node.name)
+        assert node.parent is not None, "node should not be root"
 
-        else:
-            assert node.parent is not None, "node should not be root"
+        if (
+            node.name.upper() in self.unique_node_names
+            or [child.name for child in node.parent.children].count(node.name) > 1
+        ):
             hier_name = f"{node.parent.name} {node.name}"
             logging.warning(
                 "Changing duplicate component name: (%s) -> (%s)", node.name, hier_name
             )
-            name = self.to_ordt_valid_name(hier_name)
+            name = hier_name
+        else:
+            name = node.name
 
-        self.unique_node_names.add(node.name.upper())
-        return name
+        if name.upper() in self.unique_node_names:
+            raise MemMapGenerateError(f"Name '{name}' already used by another region.")
+
+        self.unique_node_names.add(name.upper())
+        return self.to_ordt_valid_name(name)
 
     def create_placeholder_reg_map(self, node: Node) -> XmlCfgTuple:
         assert node.reg_map is None, "node should not have a reg_map"
@@ -808,7 +839,7 @@ def ts_render_yaml(
 
     if py_file is not None:
         if xml_dir is not None:
-            assert xb, "XML must have been generated."
+            assert xb, "XML must have been generated."  # type: ignore
             generate_python_memory_map(xb.output_file, py_file, render_fn)
         else:
             with TemporaryDirectory() as tmpd:

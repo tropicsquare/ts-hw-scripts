@@ -89,7 +89,7 @@ if __name__ == "__main__":
     add_stayin_arg(parser,"pt_shell")
     add_pd_common_args(parser)
     add_batch_mode_arg(parser)
-    add_ts_pwr_run_args(parser,"pt_shell")
+    add_ts_pwr_run_args(parser)
     argcomplete.autocomplete(parser)
     args = parser.parse_args()
 

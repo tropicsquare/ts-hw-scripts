@@ -112,7 +112,7 @@ def get_cli_args():
 if __name__ == "__main__":
     args = get_cli_args()
 
-    ts_configure_logging(args)
+    ts_configure_logging(args)  # type: ignore
 
     args_dict = vars(args)
     args_dict.pop("no_color")

@@ -9,20 +9,23 @@
 import os
 from argparse import SUPPRESS, ArgumentParser, RawTextHelpFormatter
 from textwrap import dedent
+from typing import Optional
 
 from .__version__ import __version__
 from .ts_hw_common import ts_get_root_rel_path
 from .ts_hw_global_vars import TsGlobals
 
-__norm_join = lambda *paths: os.path.normpath(os.path.join(*paths))
+
+def __norm_join(*paths: str) -> str:
+    return os.path.normpath(os.path.join(*paths))
 
 
 class TsArgumentParser(ArgumentParser):
-    def __init__(self, description):
+    def __init__(self, description: str) -> None:
         super().__init__(description=description, formatter_class=RawTextHelpFormatter)
 
 
-def add_ts_common_args(parser):
+def add_ts_common_args(parser: ArgumentParser) -> None:
     """
     Adds arguments which are common to all scripts (e.g. --verbose)
     :param parser: Argparse parser to which arguments shall be added
@@ -49,7 +52,7 @@ def add_ts_common_args(parser):
     )
 
 
-def add_cfg_files_arg(parser):
+def add_cfg_files_arg(parser: ArgumentParser) -> None:
     """
     Adds simulation and design config file arguments
     :param parser: Argparse parser to which arguments shall be added
@@ -75,7 +78,7 @@ def add_cfg_files_arg(parser):
     )
 
 
-def add_target_arg(parser):
+def add_target_arg(parser: ArgumentParser) -> None:
     """
     Adds compilation/simulation target argument.
     :param parser: Argparse parser to which arguments shall be added
@@ -87,7 +90,7 @@ def add_target_arg(parser):
     )
 
 
-def add_pdk_cfg_args(parser):
+def add_pdk_cfg_args(parser: ArgumentParser) -> None:
     """
     Adds PDK configuration arguments.
     :param parser: Argparse parser to which arguments shall be added
@@ -186,7 +189,7 @@ def add_pdk_cfg_args(parser):
     )
 
 
-def add_ts_sim_compile_args(parser):
+def add_ts_sim_compile_args(parser: ArgumentParser) -> None:
     """
     Adds arguments specific to ts_sim_compile.py
     :param parser: Argparse parser to which arguments shall be added
@@ -291,7 +294,7 @@ def add_ts_sim_compile_args(parser):
     )
 
 
-def add_ts_sim_run_args(parser):
+def add_ts_sim_run_args(parser: ArgumentParser) -> None:
     """
     Adds arguments specific to ts_sim_run.py
     :param parser: Argparse parser to which arguments shall be added
@@ -444,7 +447,7 @@ def add_ts_sim_run_args(parser):
     parser.add_argument("test_name", nargs="*", help="Name of the test to execute.")
 
 
-def add_ts_sim_regress_args(parser):
+def add_ts_sim_regress_args(parser: ArgumentParser) -> None:
     """
     Adds arguments specific to ts_sim_run.py
     :param parser: Argparse parser to which arguments shall be added
@@ -497,7 +500,7 @@ def add_ts_sim_regress_args(parser):
     )
 
 
-def add_ts_sim_check_args(parser):
+def add_ts_sim_check_args(parser: ArgumentParser) -> None:
     """
     Adds arguments specific to ts_sim_check.py
     :param parser: Argparse parser to which arguments shall be added
@@ -522,7 +525,7 @@ def add_ts_sim_check_args(parser):
     )
 
 
-def add_ts_sim_coverage_args(parser):
+def add_ts_sim_coverage_args(parser: ArgumentParser) -> None:
     """
     Adds arguments specific to ts_sim_coverage.py
     :param parser: Argparse parser to which arguments shall be added
@@ -594,7 +597,7 @@ def add_ts_sim_coverage_args(parser):
     )
 
 
-def add_ts_pwr_run_args(parser, tool_type):
+def add_ts_pwr_run_args(parser: ArgumentParser) -> None:
     """
     Adds arguments specific to ts_run_pwr.py
     :param parser: Argparse parser to which arguments shall be added
@@ -706,7 +709,7 @@ def add_ts_pwr_run_args(parser, tool_type):
     )
 
 
-def add_ts_syn_run_args(parser, tool_type):
+def add_ts_syn_run_args(parser: ArgumentParser, tool_type: str) -> None:
     """
     Adds arguments specific to ts_syn_run.py
     :param parser: Argparse parser to which arguments shall be added
@@ -775,7 +778,7 @@ def add_ts_syn_run_args(parser, tool_type):
     )
 
 
-def add_ts_sta_run_args(parser, tool_type):
+def add_ts_sta_run_args(parser: ArgumentParser, tool_type: str) -> None:
     """
     Adds arguments specific to ts_sta_run.py
     :param parser: Argparse parser to which arguments shall be added
@@ -827,7 +830,7 @@ def add_ts_sta_run_args(parser, tool_type):
     )
 
 
-def add_ts_pnr_run_args(parser, tool_type):
+def add_ts_pnr_run_args(parser: ArgumentParser, tool_type: str) -> None:
     """
     Adds arguments specific to ts_pnr_run.py
     :param parser: Argparse parser to which arguments shall be added
@@ -871,7 +874,7 @@ def add_ts_pnr_run_args(parser, tool_type):
     )
 
 
-def add_lint_rtl_args(parser, tool_type):
+def add_lint_rtl_args(parser: ArgumentParser, tool_type: str) -> None:
     """
     Adds arguments specific to ts_dft_run.py
     :param parser: Argparse parser to which arguments shall be added
@@ -905,7 +908,7 @@ def add_lint_rtl_args(parser, tool_type):
     )
 
 
-def add_dft_lint_args(parser, tool_type):
+def add_dft_lint_args(parser: ArgumentParser, tool_type: str) -> None:
     """
     Adds arguments specific to ts_dft_run.py
     :param parser: Argparse parser to which arguments shall be added
@@ -947,7 +950,7 @@ def add_dft_lint_args(parser, tool_type):
 
 
 # Common argument --licence-wait
-def add_lic_wait_arg(parser, tool_type):
+def add_lic_wait_arg(parser: ArgumentParser, tool_type: str) -> None:
     """
     Adds common argument --license-wait
     :param parser: Argparse parser to which arguments shall be added
@@ -962,7 +965,7 @@ def add_lic_wait_arg(parser, tool_type):
 
 
 # Common argument --runcode
-def add_runcode_arg(parser):
+def add_runcode_arg(parser: ArgumentParser) -> None:
     """
     Adds common argument --runcode <runcode_value>
     :param parser: Argparse parser to which arguments shall be added
@@ -971,7 +974,7 @@ def add_runcode_arg(parser):
 
 
 # Common argument --stay-in
-def add_stayin_arg(parser, tool_type):
+def add_stayin_arg(parser: ArgumentParser, tool_type: str) -> None:
     """
     Adds common argument --stay-in-tool
     :param parser: Argparse parser to which arguments shall be added
@@ -986,7 +989,7 @@ def add_stayin_arg(parser, tool_type):
 
 
 # Common argument --force
-def add_force_arg(parser):
+def add_force_arg(parser: ArgumentParser) -> None:
     """
     Adds common argument --force
     :param parser: Argparse parser to which arguments shall be added
@@ -1000,7 +1003,7 @@ def add_force_arg(parser):
 
 
 # Common argument --release
-def add_release_arg(parser):
+def add_release_arg(parser: ArgumentParser) -> None:
     """
     Adds common argument --release
     :param parser: Argparse parser to which arguments shall be added
@@ -1014,7 +1017,7 @@ def add_release_arg(parser):
 
 
 # Common argument, batch mode
-def add_batch_mode_arg(parser):
+def add_batch_mode_arg(parser: ArgumentParser) -> None:
     """
     Adds --batch-mode argument
     :param parser: Argparse parser to which arguments shall be added
@@ -1028,7 +1031,7 @@ def add_batch_mode_arg(parser):
 
 
 # Common argument --source
-def add_source_data_arg(parser, default=None):
+def add_source_data_arg(parser: ArgumentParser, default: Optional[str] = None) -> None:
     """
     Adds common argument --source-data
     :param parser: Argparse parser to which arguments shall be added
@@ -1042,7 +1045,7 @@ def add_source_data_arg(parser, default=None):
 
 
 # Common pdk/design_cfg argument --filter-mode-usage
-def add_pd_common_args(parser, default=None):
+def add_pd_common_args(parser: ArgumentParser, default: Optional[str] = None) -> None:
     """
     Adds common pdk/design_cfg argument --filter-mode-usage
     :param parser: Argparse parser to which arguments shall be added
@@ -1056,7 +1059,7 @@ def add_pd_common_args(parser, default=None):
     )
 
 
-def add_ts_req_tracing_args(parser):
+def add_ts_req_tracing_args(parser: ArgumentParser) -> None:
     """
     Adds arguments specific to ts_req_tracing.py
     :param parser: Argparse parser to which arguments shall be added
