@@ -170,14 +170,12 @@ class GRAMMAR_SIM_CFG:
             ),
             VerboseOptional("verilog_std", default="v01"): Among("v95", "v01", "v05"),
             Optional("coverage", default=False): bool,
-
             # "--gui" can have two formats on command line:
             #       --gui=(dve|verdi)   - For simulation
             #       --gui               - For DFT or Sim coverage view
             # Due to argument merging into TsGlobals.TS_SIM_CFG, we need to take into
             # account both possible formats!
             Optional("gui", default=None): Or(bool, Among(None, "dve", "verdi")),
-
             Optional("compile_debug", default=False): bool,
             Optional("verbose", default=0): int,
             Optional("fail_fast", default=False): bool,
@@ -622,6 +620,9 @@ class GRAMMAR_MEM_MAP_CONFIG:
             )
 
         if "regions" in value and "reg_map" in value:
-            ts_throw_error(TsErrCode.ERR_MMAP_0, value["name"])
+            ts_throw_error(
+                TsErrCode.GENERIC,
+                f"Key error: Sub-block '{value['name']}' should contain exactly one of (Key->'reg_map' or Key->'regions')",
+            )
 
         cls.schema.validate(value)

@@ -77,7 +77,7 @@ def __load_source_list_file(list_file_path: str, current_depth: int = 1) -> list
     try:
         GRAMMAR_SRC_LST.validate(list_file)
     except SchemaError as e:
-        ts_throw_error(TsErrCode.ERR_SLF_18, e, list_file_path)
+        ts_throw_error(TsErrCode.ERR_SLF_18, list_file_path, e)
     ts_debug("List file valid!")
 
     ts_debug("Merging compilation options in source file")
