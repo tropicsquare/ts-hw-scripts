@@ -69,7 +69,7 @@ _is_rdl_file = partial(_has_ext, extensions=(".rdl",))
 
 
 def _remove_directory(dirpath: Path) -> None:
-    logging.info("Removing directory: %s", dirpath)
+    logging.debug("Removing directory: %s", dirpath)
     shutil.rmtree(dirpath, ignore_errors=True)
 
 
@@ -311,7 +311,7 @@ class XmlBuilder:
 
         self.unique_node_names: Set[str] = set()
 
-    def clear(self, do_not_clear: object):
+    def clear(self, do_not_clear: bool):
         if do_not_clear:
             return
         _remove_directory(self._tmp_rdl_dir)
@@ -452,7 +452,7 @@ class LatexBuilder:
         _create_directory(self._tmp_parms_dir)
         _create_directory(self._tmp_tex_dir)
 
-    def clear(self, do_not_clear: object) -> None:
+    def clear(self, do_not_clear: bool) -> None:
         if do_not_clear:
             return
         _remove_directory(self._tmp_parms_dir)
@@ -576,17 +576,6 @@ class CHeaderBuilder:
         logging.debug("Generated header file at %s", self.output_file)
 
 
-def configure_logging(verbose: int) -> None:
-    try:
-        level = [
-            logging.WARNING,  # 0
-            logging.INFO,  # 1
-        ][verbose]
-    except IndexError:
-        level = logging.DEBUG  # >= 2
-    logging.basicConfig(level=level, format="%(levelname)s: %(message)s")
-
-
 def ts_render_yaml(
     source_file: Path,
     lint: bool,
@@ -594,11 +583,8 @@ def ts_render_yaml(
     latex_dir: Optional[Path] = None,
     xml_dir: Optional[Path] = None,
     h_file: Optional[Path] = None,
-    do_not_clear: object = False,
-    verbose: int = 0,
+    do_not_clear: bool = False,
 ):
-
-    configure_logging(verbose)
 
     tree = Node.load_tree(source_file)
     logging.debug(tree)
