@@ -1,4 +1,4 @@
-# GENERATED ON {{header.date}}
+# GENERATED ON {{ date.strftime("%I:%M%p on %B %d, %Y") }}
 # BY {{header.tool}} VERSION {{header.version}}
 # INPUT FILE: {{header.hash}}
 
@@ -82,8 +82,8 @@ class MemTop(metaclass=ReadOnlyMeta):
     """Top class"""
 
 
-class {{context.name}}(MemTop):
-{%- for region in context.regions %}
+class {{root.name}}(MemTop):
+{%- for region in root.regions %}
     class {{region.name}}(MemRegion):
         address = {{hex(region.address)}}
     {% for register in region.registers %}

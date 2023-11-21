@@ -57,6 +57,24 @@ def get_cli_args():
     add_ts_common_args(parser)
 
     parser.add_argument(
+        "--source-file",
+        type=_existing_file(_with_ext(".yml", ".yaml")),
+        required=True,
+        help="TASSIC memory map input file",
+        metavar="FILE",
+    )
+    parser.add_argument(
+        "--ordt-parms",
+        type=_file(_with_ext(".parms")),
+        help="Overrides the default parameters file for ORDT XML output.",
+        metavar="FILE",
+    )
+    parser.add_argument(
+        "--lint",
+        action="store_true",
+        help="Script will refuse overlapping address ranges.",
+    )
+    parser.add_argument(
         "--xml-dir",
         type=_dir,
         help="XML output directory",
@@ -75,29 +93,17 @@ def get_cli_args():
         metavar="FILE",
     )
     parser.add_argument(
-        "--source-file",
-        type=_existing_file(_with_ext(".yml", ".yaml")),
-        required=True,
-        help="TASSIC memory map input file",
+        "--py-file",
+        type=_file(_with_ext(".py")),
+        help="Python output file",
         metavar="FILE",
-    )
-    parser.add_argument(
-        "--ordt-parms",
-        type=_file(_with_ext(".parms")),
-        help="Overrides the default parameters file for ORDT XML output.",
-        metavar="FILE",
-    )
-    parser.add_argument(
-        "--lint",
-        action="store_true",
-        help="Script will refuse overlapping address ranges.",
     )
 
     args = parser.parse_args()
 
-    if not any((args.latex_dir, args.xml_dir, args.h_file)):
+    if not any((args.latex_dir, args.xml_dir, args.h_file, args.py_file)):
         parser.error(
-            "At least one of --latex-dir, --xml-dir or --h-file must be given."
+            "At least one of --latex-dir, --xml-dir, --h-file or --py-file must be given."
         )
 
     return args

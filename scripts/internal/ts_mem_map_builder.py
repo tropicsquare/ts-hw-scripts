@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
-####################################################################################################
+###################################################################################################
 # Functions for generating memory map files.
 #
 # TODO: License
-####################################################################################################
+###################################################################################################
 
 __author__ = "Henri LHote"
 __copyright__ = "Tropic Square"
@@ -16,11 +16,14 @@ import logging
 import re
 import shutil
 import subprocess
+import xml.etree.cElementTree as et
 from dataclasses import dataclass, field
 from datetime import datetime
 from functools import partial
+from hashlib import sha256
 from itertools import chain, count
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import (
     Any,
     ClassVar,
@@ -50,11 +53,15 @@ except ImportError:
             pass
 
 
-TEMPLATE_DIRECTORY = Path(__file__).parent / "jinja_templates"
+TOOL = Path(__file__)
+TEMPLATE_DIRECTORY = TOOL.parent / "jinja_templates"
 
 
 class MemMapGenerateError(Exception):
     pass
+
+
+# ############################## file and dir-related functions ###################################
 
 
 def _has_ext(file: Union[Path, str], *, extensions: Container[str]) -> bool:
@@ -78,6 +85,17 @@ def _create_directory(dirpath: Path) -> None:
     dirpath.mkdir(parents=True, exist_ok=True)
 
 
+def compute_sha256(filepath: Path) -> str:
+    _hash = sha256()
+    with open(filepath, "rb") as fd:
+        for byte_block in iter(lambda: fd.read(4096), b""):
+            _hash.update(byte_block)
+    return _hash.hexdigest()
+
+
+# ############################## file rendering ###################################################
+
+
 class RenderFn(Protocol):
     def __call__(self, template_file: str, **kwargs: Any) -> str:
         ...
@@ -97,6 +115,9 @@ def create_render_fn() -> RenderFn:
         )
 
     return _render
+
+
+# ############################## ORDT-related functions ###########################################
 
 
 def _ordt_run(
@@ -133,6 +154,9 @@ def _ordt_build_parms_file(
     logging.info("Writing ORDT parms file: %s", filepath)
     with open(filepath, "w") as fd:
         fd.write(content)
+
+
+# ############################## Data model #######################################################
 
 
 class RegionsDict(TypedDict):
@@ -261,6 +285,9 @@ class Node:
         return "\n".join(l)
 
 
+# ############################## Linting-related function #########################################
+
+
 def run_linter(node: Node) -> None:
     for child in node.children:
         if not node.abs_start_addr <= child.abs_start_addr <= node.abs_end_addr:
@@ -272,6 +299,9 @@ def run_linter(node: Node) -> None:
                 f"End address for sub-region: {child.name} is out of bounds of its parent: {node.name}",
             )
         run_linter(child)
+
+
+# ############################## XML file builder #################################################
 
 
 class XmlCfgTuple(NamedTuple):
@@ -399,6 +429,7 @@ class XmlBuilder:
         return [self.process_reg_map(node)]
 
     def build(self, tree: Node) -> None:
+        logging.info("--- Generating XML file.")
         cfg_tuples = self.get_cfg_tuples(tree)
         logging.debug(cfg_tuples)
 
@@ -421,6 +452,9 @@ class XmlBuilder:
         _ordt_generate_xml(self.rdl_file, self.output_file, self.ordt_parms_file)
 
         logging.info("Generated XML file at %s", self.output_file)
+
+
+# ############################## Latex file builder ###############################################
 
 
 class LatexRegionDict(TypedDict):
@@ -492,6 +526,7 @@ class LatexBuilder:
         return regions
 
     def build(self, tree: Node) -> None:
+        logging.info("--- Generating Latex file.")
         regions = self.get_regions(tree)
         logging.debug(regions)
         content = self.render_fn(
@@ -515,6 +550,9 @@ class LatexBuilder:
         _ordt_build_parms_file(parms, node.abs_start_addr, self.render_fn)
         _ordt_generate_latex(node.reg_map, output, parms)
         return output
+
+
+# ############################## C header file builder ############################################
 
 
 class CDefineTuple(NamedTuple):
@@ -561,6 +599,7 @@ class CHeaderBuilder:
         return defs
 
     def build(self, tree: Node) -> None:
+        logging.info("--- Generating C header file.")
         defines = self.get_defines(tree)
         logging.debug(defines)
         content = self.render_fn(
@@ -573,7 +612,161 @@ class CHeaderBuilder:
         )
         with open(self.output_file, "w") as fd:
             fd.write(content.rstrip())
-        logging.debug("Generated header file at %s", self.output_file)
+        logging.debug("Generated C header file at %s", self.output_file)
+
+
+# ############################## Python file builder ##############################################
+
+
+class _InputField(TypedDict):
+    shorttext: str
+    lowidx: int
+    width: int
+    reset: int
+
+
+class _InputRegister(TypedDict):
+    shorttext: str
+    baseaddr: int
+    field: List[_InputField]
+
+
+class _InputRegion(TypedDict):
+    shorttext: str
+    baseaddr: int
+    reg: List[_InputRegister]
+
+
+class InputDict(TypedDict):
+    shorttext: str
+    regset: List[_InputRegion]
+
+
+def parse_file(filepath: Path) -> InputDict:
+    def _parse_field(node: et.Element) -> _InputField:
+        return {
+            "shorttext": node.findtext("shorttext", ""),
+            "lowidx": int(node.findtext("lowidx", "")),
+            "width": int(node.findtext("width", "")),
+            "reset": int(node.findtext("reset", "0x00"), base=16),
+        }
+
+    def _parse_register(node: et.Element) -> _InputRegister:
+        return {
+            "shorttext": node.findtext("shorttext", ""),
+            "baseaddr": int(node.findtext("baseaddr", ""), base=16),
+            "field": [_parse_field(child) for child in node.iter("field")],
+        }
+
+    def _parse_region(node: et.Element) -> _InputRegion:
+        return {
+            "shorttext": node.findtext("shorttext", ""),
+            "baseaddr": int(node.findtext("baseaddr", ""), base=16),
+            "reg": [_parse_register(child) for child in node.iter("reg")],
+        }
+
+    def _parse_root(root: et.Element) -> InputDict:
+        return {
+            "shorttext": root.findtext("shorttext", ""),
+            "regset": [_parse_region(child) for child in root.iter("regset")],
+        }
+
+    return _parse_root(et.parse(filepath).getroot())
+
+
+class _ContextField(TypedDict):
+    name: str
+    lowidx: int
+    width: int
+    reset: int
+
+
+class _ContextRegister(TypedDict):
+    name: str
+    address: int
+    fields: List[_ContextField]
+
+
+class _ContextRegion(TypedDict):
+    name: str
+    address: int
+    registers: List[_ContextRegister]
+
+
+class RootDict(TypedDict):
+    name: str
+    regions: List[_ContextRegion]
+
+
+def convert(root: InputDict) -> RootDict:
+
+    _STARTS_WITH_NUMBER_REGEX = re.compile(r"\d+.*")
+
+    def _format_name(name: str) -> str:
+        if _STARTS_WITH_NUMBER_REGEX.match(new_name := name.split()[0]):
+            new_name = f"_{new_name}"
+        return new_name.upper()
+
+    def _convert_field(field: _InputField) -> _ContextField:
+        return {
+            "name": _format_name(field["shorttext"]),
+            "lowidx": field["lowidx"],
+            "width": field["width"],
+            "reset": field["reset"],
+        }
+
+    def _convert_register(register: _InputRegister) -> _ContextRegister:
+        return {
+            "name": _format_name(register["shorttext"]),
+            "address": register["baseaddr"],
+            "fields": [_convert_field(field) for field in register["field"]],
+        }
+
+    def _convert_region(region: _InputRegion) -> _ContextRegion:
+        return {
+            "name": _format_name(region["shorttext"]),
+            "address": region["baseaddr"],
+            "registers": [_convert_register(register) for register in region["reg"]],
+        }
+
+    def _convert_root(root: InputDict) -> RootDict:
+        return {
+            "name": _format_name(root["shorttext"]),
+            "regions": [_convert_region(region) for region in root["regset"]],
+        }
+
+    return _convert_root(root)
+
+
+def generate_python_memory_map(
+    input_file: Path,
+    output_file: Path,
+    render_fn: RenderFn,
+    template_file: str = "memory_map.py.j2",
+):
+    logging.info("--- Generating Python file.")
+
+    logging.info("Processing XML input file.")
+    header = {
+        "tool": TOOL.name,
+        "version": "0.3",
+        "hash": compute_sha256(input_file),
+    }
+    logging.debug("header = %s", header)
+
+    root = convert(parse_file(input_file))
+    logging.debug("root = %s", root)
+
+    logging.info("Rendering template.")
+    content = render_fn(template_file, header=header, root=root)
+
+    logging.info("Writing output file.")
+    with open(output_file, "w") as fd:
+        fd.write(content)
+    logging.debug("Generated Python file at %s", output_file)
+
+
+# ############################## High-level function ##############################################
 
 
 def ts_render_yaml(
@@ -583,6 +776,7 @@ def ts_render_yaml(
     latex_dir: Optional[Path] = None,
     xml_dir: Optional[Path] = None,
     h_file: Optional[Path] = None,
+    py_file: Optional[Path] = None,
     do_not_clear: bool = False,
 ):
 
@@ -593,21 +787,31 @@ def ts_render_yaml(
     if lint:
         run_linter(tree)
 
-    if (latex_dir, xml_dir, h_file) == (None, None, None):
+    if (latex_dir, xml_dir, h_file, py_file) == (None, None, None, None):
         return
 
     render_fn = create_render_fn()
 
     if latex_dir is not None:
-        b = LatexBuilder(latex_dir, source_file, render_fn)
-        b.build(tree)
-        b.clear(do_not_clear)
+        lb = LatexBuilder(latex_dir, source_file, render_fn)
+        lb.build(tree)
+        lb.clear(do_not_clear)
 
     if xml_dir is not None:
-        r = XmlBuilder(xml_dir, source_file, ordt_parms, render_fn)
-        r.build(tree)
-        r.clear(do_not_clear)
+        xb = XmlBuilder(xml_dir, source_file, ordt_parms, render_fn)
+        xb.build(tree)
+        xb.clear(do_not_clear)
 
     if h_file is not None:
-        h = CHeaderBuilder(h_file, render_fn)
-        h.build(tree)
+        hb = CHeaderBuilder(h_file, render_fn)
+        hb.build(tree)
+
+    if py_file is not None:
+        if xml_dir is not None:
+            assert xb, "XML must have been generated."
+            generate_python_memory_map(xb.output_file, py_file, render_fn)
+        else:
+            with TemporaryDirectory() as tmpd:
+                xb = XmlBuilder(Path(tmpd), source_file, ordt_parms, render_fn)
+                xb.build(tree)
+                generate_python_memory_map(xb.output_file, py_file, render_fn)
