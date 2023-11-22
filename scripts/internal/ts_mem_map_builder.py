@@ -44,6 +44,8 @@ import jinja2
 import yaml
 from typing_extensions import NotRequired, Self
 
+from .__version__ import __version__
+
 try:
     from .ts_grammar import GRAMMAR_MEM_MAP_CONFIG  # type: ignore
 
@@ -123,9 +125,13 @@ def create_render_fn() -> RenderFn:
     )
 
     def _render(template_file: str, **kwargs: Any) -> str:
-        assert kwargs.get("date") is None, "Key 'date' is reserved."
+        if common := {"date", "tool", "version"} & set(kwargs.keys()):
+            raise MemMapGenerateError(f"Keys '{common}' are reserved.")
         return environment.get_template(template_file).render(
-            **kwargs, date=datetime.now()
+            **kwargs,
+            date=datetime.now(),
+            tool=TOOL.stem.replace("_", " ").title(),
+            version=__version__,
         )
 
     return _render
@@ -821,8 +827,6 @@ class PythonBuilder:
 
         logging.info("Processing XML input file.")
         header = {
-            "tool": TOOL.name,
-            "version": "0.3",
             "hash": tree.configuration_hash,
         }
         logging.debug("header = %s", header)
