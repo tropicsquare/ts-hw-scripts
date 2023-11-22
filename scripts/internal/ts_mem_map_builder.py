@@ -11,6 +11,7 @@ __copyright__ = "Tropic Square"
 __license___ = "TODO:"
 __maintainer__ = "Henri LHote"
 
+import contextlib
 import fileinput
 import logging
 import os
@@ -20,7 +21,7 @@ import subprocess
 import xml.etree.cElementTree as et
 from dataclasses import dataclass, field
 from datetime import datetime
-from functools import partial
+from functools import cached_property, partial
 from hashlib import sha256
 from itertools import chain, count
 from pathlib import Path
@@ -33,10 +34,12 @@ from typing import (
     Literal,
     NamedTuple,
     Optional,
+    Pattern,
     Protocol,
     Set,
     TypedDict,
     Union,
+    runtime_checkable,
 )
 
 import jinja2
@@ -305,6 +308,48 @@ class Node:
         l.extend(child.pretty_repr() for child in self.children)
         return "\n".join(l)
 
+    @cached_property
+    def configuration_hash(self) -> str:
+        def _get_sources(node: Self) -> Set[Path]:
+            _s = {node.source}
+            if node.reg_map is not None:
+                _s.add(node.reg_map)
+            return _s | set(
+                chain.from_iterable(_get_sources(child) for child in node.children)
+            )
+
+        def _compute_sha256(filepaths: List[Path]) -> str:
+            _hash = sha256()
+            for filepath in filepaths:
+                with open(filepath, "rb") as fd:
+                    for byte_block in iter(lambda: fd.read(4096), b""):
+                        _hash.update(byte_block)
+            return _hash.hexdigest()
+
+        return _compute_sha256(sorted(_get_sources(self))).upper()
+
+
+# ############################## Up-to-date function ##############################################
+
+
+@runtime_checkable
+class HasOutputfile(Protocol):
+    output_file: Path
+    HASH_REGEX: Pattern[str]
+
+
+def is_up_to_date_obj(__object: HasOutputfile, __tree: Node, /) -> bool:
+    return is_up_to_date(__object.output_file, __tree, __object.HASH_REGEX)
+
+
+def is_up_to_date(filepath: Path, tree: Node, regex: Pattern[str]) -> bool:
+    with contextlib.suppress(FileNotFoundError):
+        with open(filepath, "r") as fd:
+            for line, _ in zip(map(str.strip, fd), range(10)):
+                if (match_ := regex.match(line)) is not None:
+                    return match_.group(1) == tree.configuration_hash
+    return False
+
 
 # ############################## Linting-related function #########################################
 
@@ -502,6 +547,7 @@ class LatexRegionDict(TypedDict):
 class LatexBuilder:
     TEMPLATE = "memory_map.tex.j2"
     SUBSECTION_NESTING_LMIT = 3
+    HASH_REGEX = re.compile(r"% Hash: ([a-zA-Z0-9]+)")
 
     def __init__(
         self, output_dir: Path, source_file: Path, render_fn: RenderFn
@@ -513,7 +559,8 @@ class LatexBuilder:
         self._tmp_parms_dir = output_dir / "temp_parms_files"
         self._tmp_tex_dir = output_dir / "temp_tex_files"
 
-        _remove_directory(output_dir)
+        _remove_directory(self._tmp_parms_dir)
+        _remove_directory(self._tmp_tex_dir)
         _create_directory(self._tmp_parms_dir)
         _create_directory(self._tmp_tex_dir)
 
@@ -564,6 +611,7 @@ class LatexBuilder:
             template_file=self.TEMPLATE,
             header={
                 "filename": self.source_file,
+                "hash": tree.configuration_hash,
             },
             root_node=regions,
         )
@@ -593,6 +641,7 @@ class CDefineTuple(NamedTuple):
 
 class CHeaderBuilder:
     TEMPLATE = "memory_map.h.j2"
+    HASH_REGEX = re.compile(r"\* @hash ([a-zA-Z0-9]+)")
 
     def __init__(self, output_file: Path, render_fn: RenderFn) -> None:
         self.output_file = output_file
@@ -638,6 +687,7 @@ class CHeaderBuilder:
             header={
                 "filename": self.output_file,
                 "header_name": self.to_valid_name(self.output_file.name),
+                "hash": tree.configuration_hash,
             },
             defines=defines,
         )
@@ -647,6 +697,9 @@ class CHeaderBuilder:
 
 
 # ############################## Python file builder ##############################################
+
+
+_PY_HASH_REGEX = re.compile(r"# HASH: ([a-zA-Z0-9]+)")
 
 
 class _InputField(TypedDict):
@@ -772,6 +825,7 @@ def convert(root: InputDict) -> RootDict:
 def generate_python_memory_map(
     input_file: Path,
     output_file: Path,
+    tree: Node,
     render_fn: RenderFn,
     template_file: str = "memory_map.py.j2",
 ):
@@ -781,7 +835,7 @@ def generate_python_memory_map(
     header = {
         "tool": TOOL.name,
         "version": "0.3",
-        "hash": compute_sha256(input_file),
+        "hash": tree.configuration_hash,
     }
     logging.debug("header = %s", header)
 
@@ -809,11 +863,13 @@ def ts_render_yaml(
     h_file: Optional[Path] = None,
     py_file: Optional[Path] = None,
     do_not_clear: bool = False,
+    force: bool = False,
 ):
 
     tree = Node.load_tree(source_file)
     logging.debug(tree)
     print(tree.pretty_repr())
+    logging.debug("configuration hash: %s", tree.configuration_hash)
 
     if lint:
         run_linter(tree)
@@ -825,7 +881,8 @@ def ts_render_yaml(
 
     if latex_dir is not None:
         lb = LatexBuilder(latex_dir, source_file, render_fn)
-        lb.build(tree)
+        if force or not is_up_to_date_obj(lb, tree):
+            lb.build(tree)
         lb.clear(do_not_clear)
 
     if xml_dir is not None:
@@ -835,14 +892,17 @@ def ts_render_yaml(
 
     if h_file is not None:
         hb = CHeaderBuilder(h_file, render_fn)
-        hb.build(tree)
+        if force or not is_up_to_date_obj(hb, tree):
+            logging.warning(f"{hb.output_file} outdated")
+            hb.build(tree)
 
     if py_file is not None:
-        if xml_dir is not None:
-            assert xb, "XML must have been generated."  # type: ignore
-            generate_python_memory_map(xb.output_file, py_file, render_fn)
-        else:
-            with TemporaryDirectory() as tmpd:
-                xb = XmlBuilder(Path(tmpd), source_file, ordt_parms, render_fn)
-                xb.build(tree)
-                generate_python_memory_map(xb.output_file, py_file, render_fn)
+        if force or not is_up_to_date(py_file, tree, _PY_HASH_REGEX):
+            if xml_dir is not None:
+                assert xb, "XML must have been generated."  # type: ignore
+                generate_python_memory_map(xb.output_file, py_file, tree, render_fn)
+            else:
+                with TemporaryDirectory() as tmpd:
+                    xb = XmlBuilder(Path(tmpd), source_file, ordt_parms, render_fn)
+                    xb.build(tree)
+                    generate_python_memory_map(xb.output_file, py_file, tree, render_fn)
