@@ -11,7 +11,6 @@ __copyright__ = "Tropic Square"
 __license___ = "TODO:"
 __maintainer__ = "Henri LHote"
 
-import contextlib
 import fileinput
 import logging
 import os
@@ -39,7 +38,6 @@ from typing import (
     Set,
     TypedDict,
     Union,
-    runtime_checkable,
 )
 
 import jinja2
@@ -332,22 +330,19 @@ class Node:
 # ############################## Up-to-date function ##############################################
 
 
-@runtime_checkable
-class HasOutputfile(Protocol):
-    output_file: Path
-    HASH_REGEX: Pattern[str]
-
-
-def is_up_to_date_obj(__object: HasOutputfile, __tree: Node, /) -> bool:
-    return is_up_to_date(__object.output_file, __tree, __object.HASH_REGEX)
-
-
 def is_up_to_date(filepath: Path, tree: Node, regex: Pattern[str]) -> bool:
-    with contextlib.suppress(FileNotFoundError):
+    _MAX_SCANNED_LINES = 10
+    try:
         with open(filepath, "r") as fd:
-            for line, _ in zip(map(str.strip, fd), range(10)):
+            for line, _ in zip(map(str.strip, fd), range(_MAX_SCANNED_LINES)):
                 if (match_ := regex.match(line)) is not None:
-                    return match_.group(1) == tree.configuration_hash
+                    if res := match_.group(1) == tree.configuration_hash:
+                        logging.info("%s is up-to-date.", res)
+                    else:
+                        logging.info("%s is outdated.", res)
+                    return res
+    except FileNotFoundError:
+        logging.info("%s does not exist.")
     return False
 
 
@@ -403,18 +398,8 @@ class XmlBuilder:
         self.output_file = output_dir / source_file.with_suffix(".xml").name
         self.ordt_parms_file = ordt_parms_file
         self.render_fn = render_fn
-
         self._tmp_rdl_dir = output_dir / "temp_rdl_files"
-
-        _remove_directory(output_dir)
-        _create_directory(self._tmp_rdl_dir)
-
         self.unique_node_names: Set[str] = set()
-
-    def clear(self, do_not_clear: bool):
-        if do_not_clear:
-            return
-        _remove_directory(self._tmp_rdl_dir)
 
     def to_ordt_valid_name(self, name: str) -> str:
         # Replace all sorts of brackets, dash and space by an underscore
@@ -430,7 +415,7 @@ class XmlBuilder:
 
         if (
             node.name.upper() in self.unique_node_names
-            or [child.name for child in node.parent.children].count(node.name) > 1
+            or len([c for c in node.parent.children if c.name == node.name]) > 1
         ):
             hier_name = f"{node.parent.name} {node.name}"
             logging.warning(
@@ -506,6 +491,9 @@ class XmlBuilder:
 
     def build(self, tree: Node) -> None:
         logging.info("--- Generating XML file.")
+        _remove_directory(self._tmp_rdl_dir)
+        _create_directory(self._tmp_rdl_dir)
+
         cfg_tuples = self.get_cfg_tuples(tree)
         logging.debug(cfg_tuples)
 
@@ -555,14 +543,8 @@ class LatexBuilder:
         self.output_file = output_dir / source_file.with_suffix(".tex").name
         self.source_file = source_file
         self.render_fn = render_fn
-
         self._tmp_parms_dir = output_dir / "temp_parms_files"
         self._tmp_tex_dir = output_dir / "temp_tex_files"
-
-        _remove_directory(self._tmp_parms_dir)
-        _remove_directory(self._tmp_tex_dir)
-        _create_directory(self._tmp_parms_dir)
-        _create_directory(self._tmp_tex_dir)
 
     def clear(self, do_not_clear: bool) -> None:
         if do_not_clear:
@@ -605,6 +587,10 @@ class LatexBuilder:
 
     def build(self, tree: Node) -> None:
         logging.info("--- Generating Latex file.")
+        self.clear(do_not_clear=False)
+        _create_directory(self._tmp_parms_dir)
+        _create_directory(self._tmp_tex_dir)
+
         regions = self.get_regions(tree)
         logging.debug(regions)
         content = self.render_fn(
@@ -697,9 +683,6 @@ class CHeaderBuilder:
 
 
 # ############################## Python file builder ##############################################
-
-
-_PY_HASH_REGEX = re.compile(r"# HASH: ([a-zA-Z0-9]+)")
 
 
 class _InputField(TypedDict):
@@ -822,33 +805,38 @@ def convert(root: InputDict) -> RootDict:
     return _convert_root(root)
 
 
-def generate_python_memory_map(
-    input_file: Path,
-    output_file: Path,
-    tree: Node,
-    render_fn: RenderFn,
-    template_file: str = "memory_map.py.j2",
-):
-    logging.info("--- Generating Python file.")
+class PythonBuilder:
+    TEMPLATE = "memory_map.py.j2"
+    HASH_REGEX = re.compile(r"# HASH: ([a-zA-Z0-9]+)")
 
-    logging.info("Processing XML input file.")
-    header = {
-        "tool": TOOL.name,
-        "version": "0.3",
-        "hash": tree.configuration_hash,
-    }
-    logging.debug("header = %s", header)
+    def __init__(
+        self, output_file: Path, input_file: Path, render_fn: RenderFn
+    ) -> None:
+        self.output_file = output_file
+        self.input_file = input_file
+        self.render_fn = render_fn
 
-    root = convert(parse_file(input_file))
-    logging.debug("root = %s", root)
+    def build(self, tree: Node) -> None:
+        logging.info("--- Generating Python file.")
 
-    logging.info("Rendering template.")
-    content = render_fn(template_file, header=header, root=root)
+        logging.info("Processing XML input file.")
+        header = {
+            "tool": TOOL.name,
+            "version": "0.3",
+            "hash": tree.configuration_hash,
+        }
+        logging.debug("header = %s", header)
 
-    logging.info("Writing output file.")
-    with open(output_file, "w") as fd:
-        fd.write(content)
-    logging.debug("Generated Python file at %s", output_file)
+        root = convert(parse_file(self.input_file))
+        logging.debug("root = %s", root)
+
+        logging.info("Rendering template.")
+        content = self.render_fn(self.TEMPLATE, header=header, root=root)
+
+        logging.info("Writing output file.")
+        with open(self.output_file, "w") as fd:
+            fd.write(content)
+        logging.debug("Generated Python file at %s", self.output_file)
 
 
 # ############################## High-level function ##############################################
@@ -859,7 +847,6 @@ def ts_render_yaml(
     lint: bool,
     ordt_parms: Optional[Path] = None,
     latex_dir: Optional[Path] = None,
-    xml_dir: Optional[Path] = None,
     h_file: Optional[Path] = None,
     py_file: Optional[Path] = None,
     do_not_clear: bool = False,
@@ -874,35 +861,26 @@ def ts_render_yaml(
     if lint:
         run_linter(tree)
 
-    if (latex_dir, xml_dir, h_file, py_file) == (None, None, None, None):
+    if (latex_dir, h_file, py_file) == (None, None, None, None):
         return
 
     render_fn = create_render_fn()
 
     if latex_dir is not None:
         lb = LatexBuilder(latex_dir, source_file, render_fn)
-        if force or not is_up_to_date_obj(lb, tree):
+        if force or not is_up_to_date(lb.output_file, tree, lb.HASH_REGEX):
             lb.build(tree)
         lb.clear(do_not_clear)
 
-    if xml_dir is not None:
-        xb = XmlBuilder(xml_dir, source_file, ordt_parms, render_fn)
-        xb.build(tree)
-        xb.clear(do_not_clear)
-
     if h_file is not None:
-        hb = CHeaderBuilder(h_file, render_fn)
-        if force or not is_up_to_date_obj(hb, tree):
-            logging.warning(f"{hb.output_file} outdated")
+        if force or not is_up_to_date(h_file, tree, CHeaderBuilder.HASH_REGEX):
+            hb = CHeaderBuilder(h_file, render_fn)
             hb.build(tree)
 
     if py_file is not None:
-        if force or not is_up_to_date(py_file, tree, _PY_HASH_REGEX):
-            if xml_dir is not None:
-                assert xb, "XML must have been generated."  # type: ignore
-                generate_python_memory_map(xb.output_file, py_file, tree, render_fn)
-            else:
-                with TemporaryDirectory() as tmpd:
-                    xb = XmlBuilder(Path(tmpd), source_file, ordt_parms, render_fn)
-                    xb.build(tree)
-                    generate_python_memory_map(xb.output_file, py_file, tree, render_fn)
+        if force or not is_up_to_date(py_file, tree, PythonBuilder.HASH_REGEX):
+            with TemporaryDirectory() as tmpd:
+                xb = XmlBuilder(Path(tmpd), source_file, ordt_parms, render_fn)
+                xb.build(tree)
+                pb = PythonBuilder(py_file, xb.output_file, render_fn)
+                pb.build(tree)
