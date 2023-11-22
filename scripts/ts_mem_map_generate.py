@@ -75,12 +75,6 @@ def get_cli_args():
         help="Script will refuse overlapping address ranges.",
     )
     parser.add_argument(
-        "--xml-dir",
-        type=_dir,
-        help="XML output directory",
-        metavar="DIR",
-    )
-    parser.add_argument(
         "--latex-dir",
         type=_dir,
         help="Latex output directory",
@@ -106,9 +100,9 @@ def get_cli_args():
 
     args = parser.parse_args()
 
-    if not any((args.latex_dir, args.xml_dir, args.h_file, args.py_file)):
+    if not any((args.latex_dir, args.h_file, args.py_file)):
         parser.error(
-            "At least one of --latex-dir, --xml-dir, --h-file or --py-file must be given."
+            "At least one of --latex-dir, --h-file or --py-file must be given."
         )
 
     return args
