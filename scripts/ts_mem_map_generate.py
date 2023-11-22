@@ -98,6 +98,11 @@ def get_cli_args():
         help="Python output file",
         metavar="FILE",
     )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="force file generation",
+    )
 
     args = parser.parse_args()
 
