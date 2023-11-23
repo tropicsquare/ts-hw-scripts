@@ -76,7 +76,7 @@ def __load_test_list_file(list_file_path: str) -> list:
     try:
         GRAMMAR_TST_LST.validate(list_file)
     except SchemaError as e:
-        ts_throw_error(TsErrCode.ERR_SLF_18, e, list_file_path)
+        ts_throw_error(TsErrCode.ERR_SLF_18, list_file_path, e)
     ts_debug("List file valid!")
 
     for phase, options in (
