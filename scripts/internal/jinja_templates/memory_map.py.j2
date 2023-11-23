@@ -1,0 +1,96 @@
+# GENERATED ON {{ date.strftime("%I:%M%p on %B %d, %Y") }}
+# BY {{tool}} VERSION {{version}}
+# HASH: {{header.hash}}
+
+{% macro hex(number) -%}
+    {{- "0x%X" | format(number) -}}
+{%- endmacro -%}
+
+from dataclasses import dataclass, field
+from typing import Any, Type
+
+
+class ReadOnlyError(Exception):
+    pass
+
+
+class RegisterReset:
+    """Descriptor class for a register reset property"""
+
+    def __get__(self, _, obj_type: Type["MemRegister"]) -> int:
+        """
+        Compute the reset value of the register as being
+        the concatenation of its fields' reset values
+        """
+        return sum(
+            attribute.reset << attribute.offset
+            for attribute in obj_type.__dict__.values()
+            if isinstance(attribute, MemField)
+        )
+
+
+class ReadOnlyMeta(type):
+    """Metaclass to ensure attributes cannot be written"""
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        raise ReadOnlyError(
+            f"{self.__qualname__}: cannot set "
+            f"{name} to {value=:#x}: attribute is read-only"
+        )
+
+    def __repr__(self) -> str:
+        return self.__qualname__
+
+
+@dataclass(frozen=True, repr=False)
+class MemField:
+    """Field class"""
+
+    address: int
+    offset: int
+    width: int
+    reset: int
+    mask: int = field(init=False, repr=False)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "mask", (2**self.width - 1) << self.offset)
+
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}("
+            f"address={self.address:#010x}, "
+            f"offset={self.offset}, "
+            f"width={self.width}, "
+            f"reset={self.reset:#x})"
+        )
+
+
+class MemRegister(metaclass=ReadOnlyMeta):
+    """Register class"""
+
+    address: int
+    reset: int = RegisterReset()  # type: ignore
+
+
+class MemRegion(metaclass=ReadOnlyMeta):
+    """Region class"""
+
+    address: int
+
+
+class MemTop(metaclass=ReadOnlyMeta):
+    """Top class"""
+
+
+class {{root.name}}(MemTop):
+{%- for region in root.regions %}
+    class {{region.name}}(MemRegion):
+        address = {{hex(region.address)}}
+    {% for register in region.registers %}
+        class {{register.name}}(MemRegister):
+            address = {{hex(register.address)}}
+        {%- for field in register.fields %}
+            {{field.name}} = MemField({{hex(register.address)}}, {{field.lowidx}}, {{field.width}}, {{hex(field.reset)}})
+        {%- endfor %}
+    {% endfor %}
+{%- endfor %}

@@ -22,6 +22,7 @@ import tty
 import pty
 import select
 from datetime import datetime
+from typing import Any, Optional
 
 import junit_xml
 import psutil
