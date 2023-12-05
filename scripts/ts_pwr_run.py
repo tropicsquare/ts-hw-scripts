@@ -207,7 +207,7 @@ if __name__ == "__main__":
         generate_post_pwr_hook(pwr_scenario, args)
 
         # Generate PrimeTime command
-        pt_shell_cmd = xterm_cmd_wrapper(build_prime_time_cmd(pwr_scenario))
+        pt_shell_cmd = xterm_cmd_wrapper(build_prime_time_cmd(pwr_scenario), args)
 
         ts_print(
             "Running power analysis for '{}'.".format(pwr_scenario["name"]),

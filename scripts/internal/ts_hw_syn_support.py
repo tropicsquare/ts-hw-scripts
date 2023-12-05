@@ -148,6 +148,10 @@ def build_synthesis_cmd(args):
     # Final dc_shell command completition
     dc_cmd = f'TERM=xterm /usr/bin/bash -c "dc_shell -64 {dc_cfg_args}" '
 
+    # Stash standrard output if configured
+    if args.no_std_out:
+        dc_cmd = f'{dc_cmd} >> /dev/null'
+
     # Report final dc_cmd
     ts_info(TsInfoCode.INFO_SYS_3, "dc_shell", dc_cmd)
 

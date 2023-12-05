@@ -174,6 +174,10 @@ def build_sta_cmd(args):
     # Final dc_shell command completition
     pt_cmd = f'TERM=xterm /usr/bin/bash -c "pt_shell {pt_cfg_args}" '
 
+    # Stash standrard output if configured
+    if args.no_std_out:
+        pt_cmd = f'{pt_cmd} >> /dev/null'
+
     # Report final dc_cmd
     ts_info(TsInfoCode.INFO_SYS_3, "pt_shell", pt_cmd)
 
