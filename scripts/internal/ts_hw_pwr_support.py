@@ -287,7 +287,7 @@ def build_design_cfg_cmd(export_path: str):
     return f"ts_design_cfg.py {ts_design_cfg_args}"
 
 
-def build_prime_time_cmd(scenario):
+def build_prime_time_cmd(scenario, args):
     """
     Builds command to run power analysis
     :return: command tu run
@@ -300,7 +300,13 @@ def build_prime_time_cmd(scenario):
     set_args += "set SCENARIO {} ".format(scenario["name"])
     pt_shell_cmd_args += f' -x "{set_args}"'
 
-    return f"pt_shell {pt_shell_cmd_args}"
+    pt_cmd = f"pt_shell {pt_shell_cmd_args}"
+
+    # Stash standrard output if configured
+    if args.no_std_out:
+        pt_cmd = f'{pt_cmd} >> /dev/null'
+
+    return pt_cmd
 
 
 def generate_pre_pwr_hook(scenario, args):

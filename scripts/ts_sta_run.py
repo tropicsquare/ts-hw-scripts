@@ -188,6 +188,9 @@ if __name__ == "__main__":
     # Prepare pt_cmd
     [pt_cmd, log_file] = build_sta_cmd(args)
 
+    ts_print(f"Running STA { 'without' if args.no_std_out else 'with'} standard output",
+             color=TsColors.PURPLE, big=True)
+
     # Run STA
     exec_cmd_in_dir(
         directory=TsGlobals.TS_STA_RUN_DIR, command=pt_cmd, batch_mode=args.batch_mode

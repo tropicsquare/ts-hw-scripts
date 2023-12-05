@@ -1057,6 +1057,12 @@ def add_pd_common_args(parser: ArgumentParser, default: Optional[str] = None) ->
         choices=("sim", "syn", "dft", "sta", "pnr", "pwr", "sta-signoff"),
         help=f"Defines filter for the usage attribute of a mode in ts_design_cfg.yml file. Expected values: syn,sta,dft,pnr etc.",
     )
+    parser.add_argument(
+        "--no-std-out",
+        action="store_true",
+        default=False,
+        help="When set, tool run does not send its output to standard output (Usefull for CI run)."
+    )
 
 
 def add_ts_req_tracing_args(parser: ArgumentParser) -> None:

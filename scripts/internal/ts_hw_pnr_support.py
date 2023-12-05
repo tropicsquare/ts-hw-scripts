@@ -152,6 +152,10 @@ def build_icc2_cmd(args):
     # Final icc2_shell command completition
     pnr_cmd = f'TERM=xterm /usr/bin/bash -c "{pnr_flow}"'
 
+    # Stash standrard output if configured
+    if args.no_std_out:
+        pnr_cmd = f'{pnr_cmd} >> /dev/null'
+
     # Report final dc_cmd
     ts_info(TsInfoCode.INFO_SYS_3, "icc2_shell", pnr_cmd)
 
