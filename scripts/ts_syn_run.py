@@ -171,6 +171,9 @@ if __name__ == "__main__":
     # Prepare dc_cmd
     [dc_cmd, log_file] = build_synthesis_cmd(args)
 
+    ts_print(f"Running synthesis { 'without' if args.no_std_out else 'with'} standard output",
+             color=TsColors.PURPLE, big=True)
+
     # Run DC
     exec_cmd_in_dir(
         directory=TsGlobals.TS_SYN_RUN_DIR, command=dc_cmd, batch_mode=args.batch_mode
