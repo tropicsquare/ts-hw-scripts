@@ -865,7 +865,7 @@ def ts_render_yaml(
     if lint:
         run_linter(tree)
 
-    if (latex_dir, h_file, py_file) == (None, None, None, None):
+    if (latex_dir, h_file, py_file) == (None, None, None):
         return
 
     render_fn = create_render_fn()
