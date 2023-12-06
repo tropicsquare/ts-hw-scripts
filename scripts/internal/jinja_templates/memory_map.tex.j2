@@ -36,10 +36,18 @@
 \pagebreak
 \TsSubSection { {{- subsection.name -}} }
 
+    {%- if subsection.generated_file -%}
+\textbf{Base Address:} {{ format_address(subsection.abs_start_addr) }}
+\newline
+\textbf{End Address:} {{ format_address(subsection.abs_end_addr) }}
+\vspace{4mm}
+{{ subsection.generated_file.read_text() }}
+    {% else -%}
 \textbf{Base Address:} {{ format_address(subsection.start_addr) }}
 \newline
 \textbf{End Address:} {{ format_address(subsection.end_addr) }}
 \vspace{4mm}
+    {% endif -%}
     {% if subsection.regions %}
 \begin{TropicRatioTable3Col}
 {0.6}                                         {0.3}                               {0.1}
