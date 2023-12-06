@@ -342,11 +342,11 @@ def is_up_to_date(filepath: Path, tree: Node, regex: Pattern[str]) -> bool:
         with open(filepath, "r") as fd:
             for line, _ in zip(map(str.strip, fd), range(_MAX_SCANNED_LINES)):
                 if (match_ := regex.match(line)) is not None:
-                    if res := match_.group(1) == tree.configuration_hash:
-                        logging.info("%s is up-to-date.", filepath)
+                    if bool_ := match_.group(1) == tree.configuration_hash:
+                        logging.warning("%s is up-to-date.", filepath)
                     else:
-                        logging.info("%s is outdated.", filepath)
-                    return res
+                        logging.warning("%s is outdated.", filepath)
+                    return bool_
     except FileNotFoundError:
         logging.info("%s does not exist.")
     return False

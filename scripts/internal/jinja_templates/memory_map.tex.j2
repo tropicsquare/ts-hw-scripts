@@ -30,25 +30,26 @@
 \end{TropicRatioTable3Col}
 
 {% for subsection in root_node.regions -%}
+    {%- if subsection.generated_file or subsection.regions -%}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % {{ subsection.name }}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \pagebreak
 \TsSubSection { {{- subsection.name -}} }
 
+    {% endif %}
     {%- if subsection.generated_file -%}
 \textbf{Base Address:} {{ format_address(subsection.abs_start_addr) }}
 \newline
 \textbf{End Address:} {{ format_address(subsection.abs_end_addr) }}
 \vspace{4mm}
 {{ subsection.generated_file.read_text() }}
-    {% else -%}
+    {% elif subsection.regions -%}
 \textbf{Base Address:} {{ format_address(subsection.start_addr) }}
 \newline
 \textbf{End Address:} {{ format_address(subsection.end_addr) }}
 \vspace{4mm}
-    {% endif -%}
-    {% if subsection.regions %}
+
 \begin{TropicRatioTable3Col}
 {0.6}                                         {0.3}                               {0.1}
 {Memory region                                & Address offset range              & Size}
