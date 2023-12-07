@@ -95,17 +95,11 @@ def get_cli_args():
     parser.add_argument(
         "--force",
         action="store_true",
-        help="force file generation",
+        help="Force generation. If not set, the hash written in the output file - if it exists - is compared"
+        "\nagainst the hash of the configuration. The output file is then regenerated upon mismatch.",
     )
 
-    args = parser.parse_args()
-
-    if not any((args.latex_dir, args.h_file, args.py_file)):
-        parser.error(
-            "At least one of --latex-dir, --h-file or --py-file must be given."
-        )
-
-    return args
+    return parser.parse_args()
 
 
 if __name__ == "__main__":
