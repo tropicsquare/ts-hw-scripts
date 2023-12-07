@@ -24,11 +24,13 @@ from functools import cached_property, partial
 from hashlib import sha256
 from itertools import chain, count
 from pathlib import Path
+from pprint import pformat
 from tempfile import TemporaryDirectory
 from typing import (
     Any,
     ClassVar,
     Container,
+    Dict,
     List,
     Literal,
     NamedTuple,
@@ -63,6 +65,21 @@ TEMPLATE_DIRECTORY = TOOL.parent / "jinja_templates"
 
 class MemMapGenerateError(Exception):
     pass
+
+
+# ############################## logging-related features #########################################
+
+
+class NestedStructureLog:
+    """Pretty-print a nested structure upon logging"""
+
+    def __init__(self, struct: Any) -> None:
+        self.struct = struct
+
+    def __str__(self) -> str:
+        if isinstance(self.struct, Node):
+            return pformat(self.struct.to_dict(), sort_dicts=False)
+        return pformat(self.struct, sort_dicts=False)
 
 
 # ############################## file and dir-related functions ###################################
@@ -307,9 +324,9 @@ class Node:
             return []
         return [self.parent] + self.parent.parents
 
-    def pretty_repr(self) -> str:
+    def repr_hierarchy(self) -> str:
         l = ["{}[L{}] {}".format("\t" * self.level, self.level, self.name)]
-        l.extend(child.pretty_repr() for child in self.children)
+        l.extend(child.repr_hierarchy() for child in self.children)
         return "\n".join(l)
 
     @cached_property
@@ -332,6 +349,19 @@ class Node:
 
         return _compute_sha256(sorted(_get_sources(self))).upper()
 
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "name": self.name,
+            "start_addr": f"0x{self.start_addr:08X}",
+            "end_addr": f"0x{self.end_addr:08X}",
+            "level": self.level,
+            "source": str(self.source),
+            "short_name": self.short_name,
+            "reg_map": str(self.reg_map),
+            # no "parent" key here as it causes infinite recursion error
+            "children": [child.to_dict() for child in self.children],
+        }
+
 
 # ############################## Up-to-date function ##############################################
 
@@ -342,7 +372,10 @@ def is_up_to_date(filepath: Path, tree: Node, regex: Pattern[str]) -> bool:
         with open(filepath, "r") as fd:
             for line, _ in zip(map(str.strip, fd), range(_MAX_SCANNED_LINES)):
                 if (match_ := regex.match(line)) is not None:
-                    if bool_ := match_.group(1) == tree.configuration_hash:
+                    computed_hash = match_.group(1)
+                    logging.debug("computed hash: %s", computed_hash)
+                    logging.debug("configuration hash: %s", tree.configuration_hash)
+                    if bool_ := computed_hash == tree.configuration_hash:
                         logging.warning("%s is up-to-date.", filepath)
                     else:
                         logging.warning("%s is outdated.", filepath)
@@ -501,7 +534,7 @@ class XmlBuilder:
         _create_directory(self._tmp_rdl_dir)
 
         cfg_tuples = self.get_cfg_tuples(tree)
-        logging.debug(cfg_tuples)
+        logging.debug(NestedStructureLog(cfg_tuples))
 
         with open(self.rdl_file, "w") as dst:
             with fileinput.input((tup.reg_map for tup in cfg_tuples)) as src:
@@ -598,7 +631,7 @@ class LatexBuilder:
         _create_directory(self._tmp_tex_dir)
 
         regions = self.get_regions(tree)
-        logging.debug(regions)
+        logging.debug(NestedStructureLog(regions))
         content = self.render_fn(
             template_file=self.TEMPLATE,
             header={
@@ -673,7 +706,7 @@ class CHeaderBuilder:
     def build(self, tree: Node) -> None:
         logging.info("--- Generating C header file.")
         defines = self.get_defines(tree)
-        logging.debug(defines)
+        logging.debug(NestedStructureLog(defines))
         content = self.render_fn(
             template_file=self.TEMPLATE,
             header={
@@ -829,10 +862,10 @@ class PythonBuilder:
         header = {
             "hash": tree.configuration_hash,
         }
-        logging.debug("header = %s", header)
+        logging.debug(NestedStructureLog(header))
 
         root = convert(parse_file(self.input_file))
-        logging.debug("root = %s", root)
+        logging.debug(NestedStructureLog(root))
 
         logging.info("Rendering template.")
         content = self.render_fn(self.TEMPLATE, header=header, root=root)
@@ -858,9 +891,8 @@ def ts_render_yaml(
 ):
 
     tree = Node.load_tree(source_file)
-    logging.debug(tree)
-    print(tree.pretty_repr())
-    logging.debug("configuration hash: %s", tree.configuration_hash)
+    logging.debug(NestedStructureLog(tree))
+    print(tree.repr_hierarchy())
 
     if lint:
         run_linter(tree)
