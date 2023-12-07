@@ -10,3 +10,4 @@ sim_logs/
 regression_*/
 .coverage
 report.xml
+.vscode/
