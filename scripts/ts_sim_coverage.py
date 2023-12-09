@@ -5,7 +5,7 @@
 ####################################################################################################
 # Tropic Square coverage script for digital simulations
 #
-# TODO: License
+# For license see LICENSE file in repository root.
 ####################################################################################################
 
 __author__ = "Henri LHote"

@@ -5,7 +5,7 @@
 ####################################################################################################
 # Tropic Square PDK configuration file processing script
 #
-# TODO: License
+# For license see LICENSE file in repository root.
 ####################################################################################################
 
 __author__ = "Ondrej Ille"

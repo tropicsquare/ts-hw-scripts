@@ -3,7 +3,7 @@
 ####################################################################################################
 # Functions for manipulating PDK config files
 #
-# TODO: License
+# For license see LICENSE file in repository root.
 ####################################################################################################
 
 import mmap

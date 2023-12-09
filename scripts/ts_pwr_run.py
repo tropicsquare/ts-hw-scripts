@@ -21,7 +21,7 @@
 # --no-sim (does not run simulation, expects previous run of the target+test with specified seed)
 # --seed <seed> (specifies simulation seed)
 #
-# TODO: License
+# For license see LICENSE file in repository root.
 ####################################################################################################
 
 __author__ = "Vit Masek"

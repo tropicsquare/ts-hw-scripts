@@ -3,7 +3,7 @@
 ####################################################################################################
 # Configuration file parser and over-riding by script options
 #
-# TODO: License
+# For license see LICENSE file in repository root.
 ####################################################################################################
 
 import copy

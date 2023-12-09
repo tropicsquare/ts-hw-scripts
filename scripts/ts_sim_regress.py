@@ -5,7 +5,7 @@
 ####################################################################################################
 # Tropic Square Parallel regression script for digital simulations
 #
-# TODO: License
+# For license see LICENSE file in repository root.
 ####################################################################################################
 
 __author__ = "Ondrej Ille"
