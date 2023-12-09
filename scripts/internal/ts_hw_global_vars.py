@@ -3,7 +3,7 @@
 ####################################################################################################
 # Global variables for Tropic Square Digital simulation scripting system
 #
-# TODO: License
+# For license see LICENSE file in repository root.
 ####################################################################################################
 
 import os

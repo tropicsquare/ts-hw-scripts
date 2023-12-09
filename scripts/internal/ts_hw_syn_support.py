@@ -5,7 +5,7 @@
 # Functions for ts_syn_run.py
 
 #
-# TODO: License
+# For license see LICENSE file in repository root.
 ####################################################################################################
 
 

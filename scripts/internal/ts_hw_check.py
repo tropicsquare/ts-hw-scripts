@@ -3,7 +3,7 @@
 ####################################################################################################
 # Routines for checking simulation results
 #
-# TODO: License
+# For license see LICENSE file in repository root.
 ####################################################################################################
 import os
 import re

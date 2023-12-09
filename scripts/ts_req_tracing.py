@@ -5,7 +5,7 @@
 ####################################################################################################
 # Tropic Square Requirement tracing script for tracing requirements and verification items
 #
-# TODO: License
+# For license see LICENSE file in repository root.
 ####################################################################################################
 
 __author__ = "Marek Santa"

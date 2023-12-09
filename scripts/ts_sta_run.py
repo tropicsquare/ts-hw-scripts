@@ -9,7 +9,7 @@
 # scenario (scenario(s) to run)
 # --runcode <runcode>
 #
-# TODO: License
+# For license see LICENSE file in repository root.
 ####################################################################################################
 
 __author__ = "Jan Zapeca"

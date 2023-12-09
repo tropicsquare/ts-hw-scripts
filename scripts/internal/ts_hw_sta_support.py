@@ -6,7 +6,7 @@
 # Tropic Square
 # Functions for ts_sta_run.py
 #
-# TODO: License
+# For license see LICENSE file in repository root.
 ####################################################################################################
 
 

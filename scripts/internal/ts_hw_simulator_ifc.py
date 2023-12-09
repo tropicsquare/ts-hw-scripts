@@ -3,7 +3,7 @@
 ####################################################################################################
 # Simulator/Compiler interface for Tropic Square simulation scripting system.
 #
-# TODO: License
+# For license see LICENSE file in repository root.
 ####################################################################################################
 
 import contextlib

@@ -3,7 +3,7 @@
 ####################################################################################################
 # Functions for loading source list files.
 #
-# TODO: License
+# For license see LICENSE file in repository root.
 ####################################################################################################
 
 import contextlib

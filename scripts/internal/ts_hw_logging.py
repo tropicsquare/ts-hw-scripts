@@ -3,7 +3,7 @@
 ####################################################################################################
 # Logging and Error codes support for Tropic Square digital scripting system
 #
-# TODO: License
+# For license see LICENSE file in repository root.
 ####################################################################################################
 
 import logging

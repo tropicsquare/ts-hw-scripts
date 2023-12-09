@@ -4,7 +4,7 @@
 # Tropic Square
 # Functions for ts_pnr_run.py
 #
-# TODO: License
+# For license see LICENSE file in repository root.
 ####################################################################################################
 
 

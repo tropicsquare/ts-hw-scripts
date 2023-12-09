@@ -3,7 +3,7 @@
 ###################################################################################################
 # Functions for generating memory map files.
 #
-# TODO: License
+# For license see LICENSE file in repository root.
 ###################################################################################################
 
 __author__ = "Henri LHote"

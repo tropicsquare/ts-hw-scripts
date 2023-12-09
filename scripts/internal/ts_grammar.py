@@ -3,7 +3,7 @@
 ####################################################################################################
 # Grammar for simulation config file, source list file and test list file.
 #
-# TODO: License
+# For license see LICENSE file in repository root.
 ####################################################################################################
 
 
