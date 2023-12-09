@@ -17,7 +17,9 @@ stages:
     - master
     - tags
 
+###################################################################################################
 # Runs test for HW scripts themselves.
+###################################################################################################
 run_tests:
     <<: *only-default
     stage: run_tests
@@ -42,7 +44,10 @@ run_tests:
         reports:
             junit: report.xml
 
+
+###################################################################################################
 # Builds user manual.
+###################################################################################################
 build_docs:
     <<: *only-default
     tags:
@@ -74,6 +79,9 @@ build_docs:
         paths:
             - public
 
+###################################################################################################
+# Deploy on Tropic Square machines
+###################################################################################################
 tropic_install:
     <<: *only-stable
     stage: deploy
@@ -101,4 +109,37 @@ tropic_install:
 
         # Publish scripts themselves
         - cp -r scripts $DEST_FOLDER/$VERSION
+
+###################################################################################################
+# Filter files into 'public' branch so that it can be released on Github.
+#
+# Mirrors master branch, but filters out files that should not be published.
+###################################################################################################
+public_filter:
+    <<: *only-stable
+    stage: deploy
+    tags:
+        - shell
+    script:
+        - source ./setup_env
+
+        - git branch -D public || true
+        - git branch public
+        - git checkout public
+
+        # Filter out folders with sensitive information:
+        #   - examples
+        #   - tests
+        #   - templates/ts_pdk_config.yml
+        #   - templates/ts_design_config.yml
+        - git-filter-repo --path example --path templates/ts_design_config.yml --path templates/ts_pdk_config.yml --path tests --invert-paths --force
+
+        # Force push to "public" branch
+        # Authenticate via Project token passed via CI/CD variable
+        - git config --global user.email "${GITLAB_USER_EMAIL}"
+        - git config --global user.name "${GITLAB_USER_NAME}"
+        - git remote remove origin || true
+        - git remote add origin https://oauth2:$CI_BOT_ACCESS_TOKEN@tropic-gitlab.corp.sldev.cz/internal/development-environment/ts-hw-scripts.git
+        - git remote -v
+        - git push origin public --force
 
