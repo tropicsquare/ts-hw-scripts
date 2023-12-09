@@ -29,6 +29,8 @@ particular functionality of the scripting system (e.g. how to define source
 lists, how to define nested lists, how to define compilation/elaboration options
 or how to configure hooks).
 
+Note: Examples are not publicly available due to sensitive PDK information!
+
 ## Templates
 
 Templates of various config files can be found in `templates` folder. Following
@@ -36,8 +38,8 @@ templates are available:
   - Simulation config file (`ts_sim_cfg.yml`)
   - Test list file (`tlf.yml`)
   - Source list file (`slf.yml`)
-  - Design config file (`ts_design_cfg.yml`)
-  - PDK config file (`ts_sim_cfg.yml`)
+  - Design config file (`ts_design_cfg.yml`) - Not publicly available due to sensitive PDK information!
+  - PDK config file (`ts_sim_cfg.yml`) - Not publicly available due to sensitive PDK information!
   - Power scenarios config file (`ts_pwr_config.yml`)
 
 ## Bug reports / Feature requests
@@ -63,7 +65,7 @@ Maintain following rules when writing/modifing scripts in this repository:
 
 ## Dependencies
 
-Current implementation of `ts-hw-scripts` uses following Python 3.8 with following dependencies:
+Current implementation of `ts-hw-scripts` uses Python 3.8 with following dependencies:
 - `jinja`
 - `pyaml`
 - `schema`
