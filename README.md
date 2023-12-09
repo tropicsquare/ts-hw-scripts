@@ -9,16 +9,6 @@ This repository contains scripts for HW design:
 - Run scenario based power analysis of digital logic on gate level annotated design.
 - Run synthesis
 
-Released version of this repository is placed in `/tools/tropic`.
-
-## How to use this repository
-
-1. Check `ts_sw_cfg.py --list-sw` for latest version of `ts-hw-scripts`.
-2. Place an `ts-hw-scripts` and `ts-python-evn` into `ts_sw_cfg.yml` of your repository.
-3. Call `source ./setup_env`
-4. Use templates from `templates` folder of this repository to start creating
-   input configuration files.
-
 ## Documentation
 
 [User manual](https://tropic-gitlab.corp.sldev.cz/internal/development-environment/ts-hw-scripts/-/jobs/artifacts/master/raw/public/ts_sim_user_guide.pdf?job=build_docs).
@@ -60,7 +50,6 @@ bug or feature.
 ## Development notes
 
 Maintain following rules when writing/modifing scripts in this repository:
-- Use Python (Version 3.6+).
 - The flow of adding new feature is following
   1. Implement the feature
   2. Describe the feature in User manual or create another document which documents
@@ -74,13 +63,8 @@ Maintain following rules when writing/modifing scripts in this repository:
 
 ## Dependencies
 
-Current implementation of `ts-hw-scripts` uses following Python dependencies:
-- jinja
-- pyaml
-- schema
-- junit_xml
-
-Python dependencies of `ts-hw-scripts` are managed by `ts-python-env` repository/SW.
-If `ts-hw-scripts` are enabled together with latest version of `ts-python-env`, then
-launching `source ./setup_env` will launch Python virtual environment which contains
-necessary Python modules to run `ts-hw-scripts`.
+Current implementation of `ts-hw-scripts` uses following Python 3.8 with following dependencies:
+- `jinja`
+- `pyaml`
+- `schema`
+- `junit_xml`
