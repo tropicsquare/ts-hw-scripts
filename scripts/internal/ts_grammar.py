@@ -11,20 +11,15 @@
 # Common grammar
 ####################################################################################################
 import os
+import typing as tp
 
+from pathlib import Path
+from pydantic import BaseModel, conint, root_validator, validator
 from schema import And, Optional, Or, Regex, Schema, SchemaError, Use
 
 from .ts_hw_common import ts_get_curr_dir_rel_path, ts_get_root_rel_path
 from .ts_hw_global_vars import TsGlobals
-from .ts_hw_logging import (
-    TsColors,
-    TsErrCode,
-    TsWarnCode,
-    ts_debug,
-    ts_print,
-    ts_throw_error,
-    ts_warning,
-)
+from .ts_hw_logging import TsWarnCode, ts_debug, ts_warning
 
 ###################################################################################################
 #
@@ -580,49 +575,60 @@ GRAMMAR_PWR_CONFIG = GrammarSchema(
 ###################################################################################################
 
 
-class GRAMMAR_MEM_MAP_CONFIG:
+class PositiveStrictInt(conint(strict=True, ge=0)):
+    pass
 
-    schema = GrammarSchema(
-        {
-            "name": str,
-            Optional("short_name", default=""): str,
-            "start_addr": int,
-            "end_addr": int,
-            Optional("reg_map"): str,
-            Optional("regions"): Or(list, str),
-        }
-    )
 
-    @classmethod
-    def validate(cls, value: dict):
-        if value["start_addr"] < 0:
-            ts_throw_error(
-                TsErrCode.GENERIC,
-                f"Region: {value['name']} has a negative start address defined ({hex(value['start_addr'])})",
-            )
+def _expand_envvars(v: Path) -> Path:
+    if "$" in (expanded_path := os.path.expandvars(str(v))):
+        raise ValueError(f"Envvars used but not defined in path '{v}'")
+    return Path(expanded_path)
 
-        if value["end_addr"] < 0:
-            ts_throw_error(
-                TsErrCode.GENERIC,
-                f"Region: {value['name']} has a negative end address defined ({hex(value['end_addr'])})",
-            )
 
-        if value["start_addr"] == value["end_addr"]:
-            ts_print(
-                f"WARNING: Region: {value['name']} has the same start and end addresses: {hex(value['start_addr'])}",
-                color=TsColors.RED,
-            )
+def _check_extension(ext: tp.Iterable[str]):
+    def _check(v: Path) -> Path:
+        if "".join(v.suffixes) not in ext:
+            raise ValueError(f"{v}: extension should be among {ext}")
+        return v
+    return _check
 
-        elif value["start_addr"] > value["end_addr"]:
-            ts_throw_error(
-                TsErrCode.GENERIC,
-                f"Region: {value['name']} has start address ({hex(value['start_addr'])}) greater than end address ({hex(value['end_addr'])})",
-            )
 
-        if "regions" in value and "reg_map" in value:
-            ts_throw_error(
-                TsErrCode.GENERIC,
-                f"Key error: Sub-block '{value['name']}' should contain exactly one of (Key->'reg_map' or Key->'regions')",
-            )
+def _check_path_extension(filepath: tp.Any, extensions: tp.Iterable[str]):
+    if not isinstance(filepath, Path):
+        return filepath
+    expanded_path = _expand_envvars(filepath)
+    return _check_extension(extensions)(expanded_path)
 
-        cls.schema.validate(value)
+
+class MemoryMapModel(BaseModel):
+    name: str
+    short_name: str = ""
+    start_addr: PositiveStrictInt
+    end_addr: PositiveStrictInt
+    reg_map: tp.Optional[Path]
+    regions: tp.Optional[tp.Union[tp.List["MemoryMapModel"], Path]]
+
+    @root_validator(pre=True)
+    def reg_map_and_regions_cannot_both_be_set(cls, values: tp.Dict[str, tp.Any]):
+        if values.get("reg_map") is not None and values.get("regions") is not None:
+            raise ValueError("'reg_map' and 'regions' cannot both be set.")
+        return values
+
+    @validator("end_addr")
+    def check_end_address(cls, v: int, values: tp.Dict[str, int]):
+        if (start_addr := values.get("start_addr")) is None:
+            # start_addr is not valid, don't check end_addr
+            return v
+        if v == start_addr:
+            raise ValueError("'start_addr' and 'end_addr' should be different.")
+        if v < start_addr:
+            raise ValueError("'end_addr' should be greater than 'start_addr'.")
+        return v
+
+    @validator("reg_map")
+    def check_reg_map(v: tp.Any):
+        return _check_path_extension(v, [".rdl"])
+
+    @validator("regions")
+    def check_regions(v: tp.Any):
+        return _check_path_extension(v, [".yml", ".yaml"])
