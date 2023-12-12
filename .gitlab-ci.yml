@@ -132,6 +132,7 @@ public_filter:
         #   - tests
         #   - templates/ts_pdk_config.yml
         #   - templates/ts_design_config.yml
+        # TODO: Wrap the filtration to some common script and the filtered paths to some standardized file!
         - git-filter-repo --path example --path templates/ts_design_config.yml --path templates/ts_pdk_config.yml --path tests --invert-paths --force
 
         # Force push to "public" branch
@@ -142,4 +143,10 @@ public_filter:
         - git remote add origin https://oauth2:$CI_BOT_ACCESS_TOKEN@tropic-gitlab.corp.sldev.cz/internal/development-environment/ts-hw-scripts.git
         - git remote -v
         - git push origin public --force
+
+        # Force push to GITHUB
+        - git remote remove github_mirror || true
+        - git remote add github_mirror git@github.com:tropicsquare/ts-hw-scripts.git
+        - git push --force github_mirror -u public
+        - git push --tags
 
