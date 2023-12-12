@@ -13,7 +13,6 @@ __maintainer__ = "Henri LHote"
 
 import fileinput
 import logging
-import os
 import re
 import shutil
 import subprocess
@@ -29,8 +28,8 @@ from tempfile import TemporaryDirectory
 from typing import (
     Any,
     ClassVar,
-    Container,
     Dict,
+    Iterable,
     List,
     Literal,
     NamedTuple,
@@ -48,15 +47,7 @@ from typing_extensions import NotRequired, Self
 
 from .__version__ import __version__
 
-try:
-    from .ts_grammar import GRAMMAR_MEM_MAP_CONFIG  # type: ignore
-
-except ImportError:
-
-    class GRAMMAR_MEM_MAP_CONFIG:
-        @staticmethod
-        def validate(_: Any):
-            pass
+from .ts_grammar import MemoryMapModel
 
 
 TOOL = Path(__file__)
@@ -77,23 +68,10 @@ class NestedStructureLog:
         self.struct = struct
 
     def __str__(self) -> str:
-        if isinstance(self.struct, Node):
-            return pformat(self.struct.to_dict(), sort_dicts=False)
         return pformat(self.struct, sort_dicts=False)
 
 
 # ############################## file and dir-related functions ###################################
-
-
-def _has_ext(file: Union[Path, str], *, extensions: Container[str]) -> bool:
-    if isinstance(file, str):
-        file = Path(file)
-    return file.suffix in extensions
-
-
-_is_yaml_file = partial(_has_ext, extensions=(".yml", ".yaml"))
-
-_is_rdl_file = partial(_has_ext, extensions=(".rdl",))
 
 
 def _remove_directory(dirpath: Path) -> None:
@@ -106,24 +84,13 @@ def _create_directory(dirpath: Path) -> None:
     dirpath.mkdir(parents=True, exist_ok=True)
 
 
-def compute_sha256(filepath: Path) -> str:
+def compute_sha256(filepaths: Iterable[Path]) -> str:
     _hash = sha256()
-    with open(filepath, "rb") as fd:
-        for byte_block in iter(lambda: fd.read(4096), b""):
-            _hash.update(byte_block)
+    for filepath in filepaths:
+        with open(filepath, "rb") as fd:
+            for byte_block in iter(lambda: fd.read(4096), b""):
+                _hash.update(byte_block)
     return _hash.hexdigest()
-
-
-def expand_envvars(path: str) -> str:
-    """Expands environment variables in path, returns Path object."""
-    expanded_path = os.path.expandvars(path)
-
-    if "$" in path and Path(expanded_path) == Path(path):
-        raise MemMapGenerateError(
-            f"Environment variable(s) used but not defined in path ({path})"
-        )
-
-    return expanded_path
 
 
 # ############################## file rendering ###################################################
@@ -201,8 +168,8 @@ class RegionsDict(TypedDict):
     short_name: NotRequired[str]
     start_addr: int
     end_addr: int
-    reg_map: NotRequired[str]
-    regions: NotRequired[Union[List[Self], str]]
+    reg_map: NotRequired[Path]
+    regions: NotRequired[Union[List[Self], Path]]
 
 
 @dataclass(frozen=True)
@@ -252,10 +219,7 @@ class Node:
             )
 
         if (reg_map := cfg.get("reg_map")) is not None:
-            assert cfg.get("regions") is None, "node should be a leaf"
-            reg_map = expand_envvars(reg_map)
-            if not _is_rdl_file(reg_map):
-                raise MemMapGenerateError(f"{reg_map} should be an rdl file")
+            assert cfg.get("regions") is None, "Node should be a leaf."
             logging.debug("Including RDL file: %s", reg_map)
             object.__setattr__(node, "reg_map", source.parent / reg_map)
             return node
@@ -270,16 +234,16 @@ class Node:
     @classmethod
     def _load_regions(
         cls,
-        regions: Union[List[RegionsDict], str],
+        regions: Union[List[RegionsDict], Path],
         source: Path,
         level: int,
         parent: Self,
     ) -> List[Self]:
-        if isinstance(regions, str):
-            filepath = source.parent / expand_envvars(regions)
+        if isinstance(regions, Path):
+            filepath = source.parent / regions
             logging.warning("Found new memory sub-region: %s.", regions)
             cfg = cls.load_yaml(filepath)
-            assert cfg.get("reg_map") is None, "node should be a leaf"
+            assert cfg.get("reg_map") is None, "Node should not have an rdl file."
             return cls._load_regions(cfg.get("regions", []), filepath, level, parent)
 
         return [cls.new(region, source, level, parent) for region in regions]
@@ -295,16 +259,13 @@ class Node:
 
     @staticmethod
     def load_yaml(filepath: Path) -> RegionsDict:
-        if not _is_yaml_file(filepath):
-            raise MemMapGenerateError(f"{filepath} should be a yaml file")
-
         logging.debug("Opening YAML file: %s", filepath)
         with open(filepath) as fd:
             content = yaml.safe_load(fd)
 
-        GRAMMAR_MEM_MAP_CONFIG.validate(content)
-        logging.debug("New region validated: %s.", content["name"])
-        return content
+        config = MemoryMapModel.parse_obj(content).dict(exclude_none=True)
+        logging.debug("New region validated: %s.", config["name"])
+        return config  # type: ignore
 
     @property
     def abs_start_addr(self) -> int:
@@ -339,15 +300,7 @@ class Node:
                 chain.from_iterable(_get_sources(child) for child in node.children)
             )
 
-        def _compute_sha256(filepaths: List[Path]) -> str:
-            _hash = sha256()
-            for filepath in filepaths:
-                with open(filepath, "rb") as fd:
-                    for byte_block in iter(lambda: fd.read(4096), b""):
-                        _hash.update(byte_block)
-            return _hash.hexdigest()
-
-        return _compute_sha256(sorted(_get_sources(self))).upper()
+        return compute_sha256(sorted(_get_sources(self))).upper()
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -363,25 +316,39 @@ class Node:
         }
 
 
+# ############################## Node logging utility #############################################
+
+
+class NodeLog:
+    """Pretty-print the tree upon logging"""
+
+    def __init__(self, node: Node) -> None:
+        self.node = node
+
+    def __str__(self) -> str:
+        return pformat(self.node.to_dict(), sort_dicts=False)
+
+
 # ############################## Up-to-date function ##############################################
 
 
 def is_up_to_date(filepath: Path, tree: Node, regex: Pattern[str]) -> bool:
+    """Check if the output file is up-to-date with the current configuration"""
     _MAX_SCANNED_LINES = 10
     try:
         with open(filepath, "r") as fd:
             for line, _ in zip(map(str.strip, fd), range(_MAX_SCANNED_LINES)):
                 if (match_ := regex.match(line)) is not None:
-                    computed_hash = match_.group(1)
-                    logging.debug("computed hash: %s", computed_hash)
-                    logging.debug("configuration hash: %s", tree.configuration_hash)
-                    if bool_ := computed_hash == tree.configuration_hash:
+                    read_hash = match_.group(1)
+                    logging.debug("Hash in existing file %s: %s", filepath, read_hash)
+                    logging.debug("Configuration hash: %s", tree.configuration_hash)
+                    if bool_ := read_hash == tree.configuration_hash:
                         logging.warning("%s is up-to-date.", filepath)
                     else:
                         logging.warning("%s is outdated.", filepath)
                     return bool_
     except FileNotFoundError:
-        logging.info("%s does not exist.")
+        logging.info("%s does not exist.", filepath)
     return False
 
 
@@ -640,6 +607,7 @@ class LatexBuilder:
             },
             root_node=regions,
         )
+        _create_directory(self.output_file.parent)
         with open(self.output_file, "w") as fd:
             fd.write(content)
         logging.info("Generated Latex file at %s", self.output_file)
@@ -716,6 +684,7 @@ class CHeaderBuilder:
             },
             defines=defines,
         )
+        _create_directory(self.output_file.parent)
         with open(self.output_file, "w") as fd:
             fd.write(content.rstrip())
         logging.debug("Generated C header file at %s", self.output_file)
@@ -871,6 +840,7 @@ class PythonBuilder:
         content = self.render_fn(self.TEMPLATE, header=header, root=root)
 
         logging.info("Writing output file.")
+        _create_directory(self.output_file.parent)
         with open(self.output_file, "w") as fd:
             fd.write(content)
         logging.debug("Generated Python file at %s", self.output_file)
@@ -891,7 +861,7 @@ def ts_render_yaml(
 ):
 
     tree = Node.load_tree(source_file)
-    logging.debug(NestedStructureLog(tree))
+    logging.debug(NodeLog(tree))
     print(tree.repr_hierarchy())
 
     if lint:
