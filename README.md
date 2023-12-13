@@ -70,3 +70,6 @@ Current implementation of `ts-hw-scripts` uses Python 3.8 with following depende
 - `pyaml`
 - `schema`
 - `junit_xml`
+- `argcomplete`
+- `psutil`
+- `pydantic`
