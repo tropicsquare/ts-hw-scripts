@@ -43,10 +43,10 @@ class TSFormatter(logging.Formatter):
 
     def __init__(self, use_colors: bool = True):
         if use_colors:
-            log_format = "%(prefix)s%(levelname)s: %(message)s%(suffix)s"
+            log_format = "%(prefix)s[%(levelname)s] %(message)s%(suffix)s"
             self.format = self._format_with_colors
         else:
-            log_format = "%(levelname)s: %(message)s"
+            log_format = "[%(levelname)s] %(message)s"
         super().__init__(fmt=log_format)
 
     def _format_with_colors(self, record: logging.LogRecord):
@@ -56,9 +56,24 @@ class TSFormatter(logging.Formatter):
 
 
 ####################################################################################################
+# Logging enumeration base class
+####################################################################################################
+class TsCode(Enum):
+
+    def __init__(self, value: str) -> None:
+        """Add name of the code in the message for better troubleshooting"""
+        if self.name == "GENERIC":
+            return
+        self._value_ = f"{self.name}: {value}"
+
+    def __str__(self) -> str:
+        return self.value
+
+
+####################################################################################################
 # Error codes
 ####################################################################################################
-class TsErrCode(Enum):
+class TsErrCode(TsCode):
     """
     List of available error codes
     """
@@ -215,7 +230,7 @@ class TsErrCode(Enum):
 ####################################################################################################
 # Warning codes
 ####################################################################################################
-class TsWarnCode(Enum):
+class TsWarnCode(TsCode):
     """
     List of available warning codes
     """
@@ -246,7 +261,7 @@ class TsWarnCode(Enum):
 ####################################################################################################
 # Information codes
 ####################################################################################################
-class TsInfoCode(Enum):
+class TsInfoCode(TsCode):
     """
     List of available informational codes
     """

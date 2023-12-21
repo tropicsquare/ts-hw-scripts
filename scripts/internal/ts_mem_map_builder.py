@@ -169,7 +169,7 @@ class RegionsDict(TypedDict):
     start_addr: int
     end_addr: int
     reg_map: NotRequired[Path]
-    regions: NotRequired[Union[List[Self], Path]]
+    regions: NotRequired[Union[List["RegionsDict"], Path]]
 
 
 @dataclass(frozen=True)
@@ -535,7 +535,7 @@ class LatexRegionDict(TypedDict):
     abs_start_addr: NotRequired[int]
     abs_end_addr: NotRequired[int]
     generated_file: NotRequired[Path]
-    regions: NotRequired[List[Self]]
+    regions: NotRequired[List["LatexRegionDict"]]
 
 
 class LatexBuilder:
