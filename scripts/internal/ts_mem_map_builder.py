@@ -46,9 +46,7 @@ import yaml
 from typing_extensions import NotRequired, Self
 
 from .__version__ import __version__
-
 from .ts_grammar import MemoryMapModel
-
 
 TOOL = Path(__file__)
 TEMPLATE_DIRECTORY = TOOL.parent / "jinja_templates"
@@ -407,10 +405,6 @@ class XmlBuilder:
         self._tmp_rdl_dir = output_dir / "temp_rdl_files"
         self.unique_node_names: Set[str] = set()
 
-    def to_ordt_valid_name(self, name: str) -> str:
-        # Replace all sorts of brackets, dash and space by an underscore
-        return "RF_" + re.sub(f"[{re.escape(r'{}[]()- ')}]", "_", name)
-
     def _get_temp_file(self, name: str, extension: str = ".rdl") -> Path:
         id_ = datetime.now().strftime("%M%S%f")
         return self._tmp_rdl_dir / f"{name}.{id_}{extension}"
@@ -419,23 +413,40 @@ class XmlBuilder:
         # Avoid ORDT duplicate regfile component error
         assert node.parent is not None, "node should not be root"
 
+        def _name(node: Node) -> str:
+            # Return short name in priority
+            if node.short_name:
+                name = node.short_name
+            else:
+                name = node.name
+            # Add short name of parent if it exists
+            if node.parent is not None and node.parent.short_name:
+                return f"{node.parent.short_name}_{name}"
+            return name
+
+        node_name = _name(node)
+
         if (
-            node.name.upper() in self.unique_node_names
-            or len([c for c in node.parent.children if c.name == node.name]) > 1
+            node_name.upper() in self.unique_node_names
+            or len([c for c in node.parent.children if c.name == node_name]) > 1
         ):
-            hier_name = f"{node.parent.name} {node.name}"
+            hier_name = f"{_name(node.parent)} {node_name}"
             logging.warning(
-                "Changing duplicate component name: (%s) -> (%s)", node.name, hier_name
+                "Changing duplicate component name: (%s) -> (%s)", node_name, hier_name
             )
             name = hier_name
         else:
-            name = node.name
+            name = node_name
 
         if name.upper() in self.unique_node_names:
             raise MemMapGenerateError(f"Name '{name}' already used by another region.")
 
         self.unique_node_names.add(name.upper())
-        return self.to_ordt_valid_name(name)
+
+        # Replace all sorts of brackets, dash and space by an underscore
+        name = re.sub(f"[{re.escape(r'{}[]()- ')}]", "_", name)
+        # Replace underscore sequences by unique underscores
+        return re.sub(r"_{2,}", "_", name)
 
     def create_placeholder_reg_map(self, node: Node) -> XmlCfgTuple:
         assert node.reg_map is None, "node should not have a reg_map"
@@ -510,7 +521,7 @@ class XmlBuilder:
 
             dst.write("addrmap {\n")
             for tup in cfg_tuples:
-                dst.write(f"\texternal {tup.name} TOP_{tup.name}@{tup.addr};\n")
+                dst.write(f"\texternal {tup.name} {tup.name}@{tup.addr};\n")
             dst.write(f"}} {self.rdl_file.with_suffix('').name};")
 
         if not self.ordt_parms_file.exists():
@@ -644,7 +655,11 @@ class CHeaderBuilder:
     def to_valid_name(name: str) -> str:
         # Replace variable inappropriate characters with underscores
         # Add underscore to the beginning if string starts with digit
-        return re.sub(r"\W|^(?=\d)", "_", name).upper()
+        name = re.sub(r"\W|^(?=\d)", "_", name)
+        # Replace underscore sequences by unique underscores
+        name = re.sub(r"_{2,}", "_", name)
+        # Remove underscores at the end
+        return re.sub(r"_+$", "", name)
 
     @classmethod
     def get_name(cls, node: Node) -> str:

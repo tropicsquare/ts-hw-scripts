@@ -59,7 +59,6 @@ class TSFormatter(logging.Formatter):
 # Logging enumeration base class
 ####################################################################################################
 class TsCode(Enum):
-
     def __init__(self, value: str) -> None:
         """Add name of the code in the message for better troubleshooting"""
         if self.name == "GENERIC":
@@ -330,19 +329,6 @@ class TsInfoCode(TsCode):
 
 
 ####################################################################################################
-# Codes formatting
-####################################################################################################
-
-
-def __ts_process_log(code: Enum, *opt_args: Any) -> str:
-    assert isinstance(code.value, str)
-    try:
-        return code.value % opt_args
-    except TypeError:
-        ts_script_bug(f"Invalid number of arguments to info/warning/error code: {code}")
-
-
-####################################################################################################
 ####################################################################################################
 # Public API
 ####################################################################################################
@@ -354,7 +340,7 @@ def ts_throw_error(err_code: TsErrCode, *opt_args: Any) -> NoReturn:
     Throws colorized error message for simple debug.
     :param err_code: Error code
     """
-    logging.error(__ts_process_log(err_code, *opt_args))
+    logging.error(err_code, *opt_args)
     sys.exit(1)
 
 
@@ -363,7 +349,7 @@ def ts_warning(warn_code: TsWarnCode, *opt_args: Any) -> None:
     Throws colorized warning message for simple debug.
     :param warn_code: Warning code
     """
-    logging.warning(__ts_process_log(warn_code, *opt_args))
+    logging.warning(warn_code, *opt_args)
 
 
 def ts_info(info_code: TsInfoCode, *opt_args: Any) -> None:
@@ -371,7 +357,7 @@ def ts_info(info_code: TsInfoCode, *opt_args: Any) -> None:
     Throws colorized info message for simple debug.
     :param info_code: Info code
     """
-    logging.info(__ts_process_log(info_code, *opt_args))
+    logging.info(info_code, *opt_args)
 
 
 def ts_debug(msg: object) -> None:
