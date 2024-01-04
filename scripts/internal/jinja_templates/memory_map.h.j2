@@ -1,5 +1,5 @@
 {%- macro format_line(name, value) -%}
-    {{ "#define {:58}    0x{:08X}".format(name, value) }}
+    {{ "#define {:58}    0x{:08X}".format(name | upper, value) }}
 {%- endmacro %}
 /*******************************************************************************
 * @file {{ header.filename }}
