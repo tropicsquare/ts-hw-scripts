@@ -382,7 +382,7 @@ def sta_setup(path: str, args):
     )
     lines.append(f' set MIN_LIBRARY_FILES ""\n')
     lines.append(f"foreach min ${min_name} max ${max_name} {{\n")
-    lines.append(f" lappend MIN_LIBRARY_FILES $min $max\n")
+    lines.append(f" lappend MIN_LIBRARY_FILES $max $min\n")
     lines.append(f"}}\n")
 
     lines.append(f"\n")
