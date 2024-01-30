@@ -374,6 +374,14 @@ def do_dft_lint_spyglass_init(args):
             ts_throw_error(TsErrCode.ERR_DFT_5)
 
 
+def do_dft_atpg_tmax_init(args):
+    """
+    TetraMax files selection
+    """
+    if args.open_result is True:
+        return
+
+
 def __check_pwr_scenarios():
     ts_debug("Checking power scenarios.")
     scenarios = ts_get_pwr_cfg("scenarios")

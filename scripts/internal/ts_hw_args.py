@@ -949,6 +949,26 @@ def add_dft_lint_args(parser: ArgumentParser, tool_type: str) -> None:
     )
 
 
+def add_dft_atpg_args(parser: ArgumentParser, tool_type: str) -> None:
+    """
+    Adds arguments specific to ts_dft_run.py
+    :param parser: Argparse parser to which arguments shall be added
+    """
+    parser.add_argument(
+        "--open-result",
+        action="store_true",
+        default=False,
+        help=f"Open {tool_type} results of selected runcode.",
+    )
+
+    parser.add_argument(
+        "--netlist",
+        nargs="?",
+        default=None,
+        help=f"Use relative path to the netlist file. It helps to overwrite default netlist naming pattern.",
+    )
+
+
 # Common argument --licence-wait
 def add_lic_wait_arg(parser: ArgumentParser, tool_type: str) -> None:
     """

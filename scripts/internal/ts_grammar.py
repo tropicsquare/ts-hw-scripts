@@ -514,6 +514,7 @@ GRAMMAR_DSG_CONFIG = GrammarSchema(
                 Optional("sim"): str,
                 Optional("syn"): str,
                 Optional("dft-lint"): str,
+                Optional("dft-atpg"): str,
                 Optional("sta"): str,
                 Optional("pnr"): str,
                 Optional("pwr"): str,

@@ -203,7 +203,7 @@ class TsGlobals:
 
     # DFT tools names
     TS_DFT_LINT_TOOL = "spyglass"
-    TS_DFT_ATPG_TOOL = "atpg-tst"
+    TS_DFT_ATPG_TOOL = "tmax"
     TS_DFT_RTL_TOOL = "rtl-tst"
 
     # DFT runcode

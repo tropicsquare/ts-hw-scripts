@@ -245,23 +245,23 @@ def build_spyglass_cmd(args):
     return sg_cmd
 
 
-# Generic DFT RUN FILE tool regardless
-def dft_runfile(args):
+# Generic DFT LINT RUN FILE tool regardless
+def dft_lint_runfile(args):
     """
     Returns runfile
     """
-    cmd = f"dft_runfile_{TsGlobals.TS_DFT_LINT_TOOL}(args)"
+    cmd = f"dft_lint_runfile_{TsGlobals.TS_DFT_LINT_TOOL}(args)"
     try:
         return eval(cmd)
     except KeyError:
         ts_throw_error(
             TsErrCode.GENERIC,
-            f"Not defined ts_hw_dft_support.dft_runfile_{TsGlobals.TS_DFT_LINT_TOOL}(args) for selected LINT tool {TsGlobals.TS_DFT_LINT_TOOL}",
+            f"Not defined ts_hw_dft_support.dft_lint_runfile_{TsGlobals.TS_DFT_LINT_TOOL}(args) for selected LINT tool {TsGlobals.TS_DFT_LINT_TOOL}",
         )
 
 
 # LINT SPYGLASS DFT RUNFILE (project file)
-def dft_runfile_spyglass(args):
+def dft_lint_runfile_spyglass(args):
     """
     Generates main dft batch runfile for spyglass (a project file in spyglass terminology)
     * Imports all generated files
@@ -315,7 +315,71 @@ def dft_runfile_spyglass(args):
         dft_runfile.writelines(lines)
 
 
-# Generic DFT design file
+# Generic DFT ATPG RUN FILE tool regardless
+def dft_atpg_runfile(args):
+    """
+    Returns runfile
+    """
+    cmd = f"dft_atpg_runfile_{TsGlobals.TS_DFT_ATPG_TOOL}(args)"
+    try:
+        return eval(cmd)
+    except KeyError:
+        ts_throw_error(
+            TsErrCode.GENERIC,
+            f"Not defined ts_hw_dft_support.dft_atpg_runfile_{TsGlobals.TS_DFT_ATPG_TOOL}(args) for selected ATPG tool {TsGlobals.TS_DFT_ATPG_TOOL}",
+        )
+
+# TetraMax run file script
+def dft_atpg_runfile_tmax(args): 
+    """
+    Generates main dft batch runfile for testmax
+    * Imports all generated files
+    * Imports project/IP specific settings files
+    * Imports dft strategy
+    """
+    # File location
+    path = f"{TsGlobals.TS_DFT_RUNFILE}"
+    # File content
+    lines = []
+    # Initial settings
+    lines.append(f'puts "Running TetraMax user TCL script."\n')
+ 
+    lines.append(f"\n")
+    lines.append(f"#set_rules n21 warning\n")
+    lines.append(f"\n")
+    lines.append(f"# ROM FILE CONTENT\n")
+    lines.append(f"set_rules b24 warning\n")
+    lines.append(f"\n")
+    lines.append(f"source {TsGlobals.TS_DFT_SETUP_FILE} -verbose\n")
+    lines.append(f"\n")
+    lines.append(f"if {{ [file exists $env(TS_REPO_ROOT)/dft/tmax/${{DESIGN_NAME}}_bbx.tcl] }} {{ \n")
+    lines.append(f'    puts "RM-Info: Sourcing ${{DESIGN_NAME}}_bbx.tcl script file from the $env(TS_REPO_ROOT)/dft/tmax folder." \n')
+    lines.append(f"    source -echo -verbose $env(TS_REPO_ROOT)/dft/tmax/${{DESIGN_NAME}}_bbx.tcl \n")
+    lines.append(f"}}\n")
+    lines.append(f"\n")
+    lines.append(f"foreach tmax_library $TMAX_LIBRARY_FILES {{\n")
+    lines.append(f"     read_netlist $tmax_library -library -noabort\n")
+    lines.append(f"}}\n")
+    lines.append(f"\n")
+    lines.append(f"read_netlist $NETLIST_FILES\n")
+    lines.append(f"\n")
+    lines.append(f"report_modules -undefined\n")
+    lines.append(f"report_modules -summary\n")
+    lines.append(f"report_settings build\n")
+    lines.append(f"run_build_model\n")
+    lines.append(f"\n")
+    lines.append(f"report_violations B6\n")
+    lines.append(f"\n")
+    lines.append(f"\n")
+    lines.append(f"\n")
+
+
+    # Create and write the file
+    with open(path, "w") as dft_runfile:
+        dft_runfile.writelines(lines)
+
+
+# Generic lint DFT design file
 def lint_design_cfg(args):
     """
     Returns cfg file
@@ -356,6 +420,59 @@ def lint_design_cfg_spyglass(args):
     setattr(args, "add_opcond", True)
 
     views_to_add = "nldm_db"
+    setattr(args, "add_views", views_to_add)
+    TsGlobals.TS_EXP_VIEWS = args.add_views.split(",")
+
+    setattr(args, "add_syn_rtl_build_dirs", False)
+    setattr(args, "add_constraints", False)
+
+    # ts_hw_design_config_file used in ts_design_cfg.py
+    check_export_view_types(args)
+
+    # ts_hw_design_config_file used in ts_design_cfg.py
+    export_design_config(TsGlobals.TS_DFT_DESIGN_CFG_FILE, args)
+
+
+# Generic ATPG DFT design file
+def atpg_design_cfg(args):
+    """
+    Returns cfg file
+    """
+    cmd = f"atpg_design_cfg_{TsGlobals.TS_DFT_ATPG_TOOL}(args)"
+    try:
+        return eval(cmd)
+    except KeyError:
+        ts_throw_error(
+            TsErrCode.GENERIC,
+            f"Not defined ts_hw_dft_support.atpg_design_cfg_{TsGlobals.TS_DFT_ATPT_TOOL}(args) for selected ATPG tool {TsGlobals.TS_DFT_ATPG_TOOL}",
+        )
+
+# ATPG TETRAMAX DESIGN CFG FILE
+def atpg_design_cfg_tmax(args):
+    """
+    Generates design configuration TCL script
+    * Executes selected procedures from ts_design_cfg script
+    * Generated file to be stored in TS_DFT_RUN_DIR directory
+    """
+
+    setattr(
+        args,
+        "add_top_entity",
+        TsGlobals.TS_SIM_CFG["targets"][TsGlobals.TS_DESIGN_CFG["design"]["target"]][
+            "top_entity"
+        ],
+    )
+    add_topo_data = False
+
+    setattr(args, "add_floorplan", add_topo_data)
+    setattr(args, "add_tluplus", add_topo_data)
+    setattr(args, "add_map_tech", add_topo_data)
+
+    setattr(args, "add_spef", False)
+    setattr(args, "add_wireload", False)
+    setattr(args, "add_opcond", False)
+
+    views_to_add = "tmax"
     setattr(args, "add_views", views_to_add)
     TsGlobals.TS_EXP_VIEWS = args.add_views.split(",")
 
@@ -424,6 +541,63 @@ def lint_setup_file_spyglass():
                     cmd += f"spyglass_lc -64bit -gateslib {obj['views'][view][mode['corner']]} -wdir {TsGlobals.TS_DFT_BUILD_DIR};"
 
     return cmd
+
+# Generic DFT atpg setup file
+def atpg_setup_file(path: str, args):
+    """
+    Returns setup file
+    """
+    cmd = f"atpg_setup_file_{TsGlobals.TS_DFT_ATPG_TOOL}(path,args)"
+    try:
+        return eval(cmd)
+    except KeyError:
+        ts_throw_error(
+            TsErrCode.GENERIC,
+            f"Not defined ts_hw_dft_support.atpg_setup_file_{TsGlobals.TS_DFT_ATPG_TOOL}(args) for selected ATPG tool {TsGlobals.TS_DFT_ATPG_TOOL}",
+        )
+
+def atpg_setup_file_tmax(path: str, args):
+    """
+    Generates ts_atpg_setup file - bridge between pdk cfg, design cfg, sim cfg and synthesis flow
+    : param path: path where to generate the file + name of the file
+    : param args: arguments
+    """
+    # Empty buffer - generation to be line by line
+    lines = []
+
+    lines.append(
+        f"##########################################################################################\n"
+    )
+    lines.append(f"# Variables common to all reference methodology scripts\n")
+    lines.append(f"# Script: {TsGlobals.TS_DFT_SETUP_FILE}\n")
+    lines.append(f"# Version: R-2021.06\n")
+    lines.append(f"# Copyright (C) Tropic Square. All rights reserved.\n")
+    lines.append(
+        f"##########################################################################################\n"
+    )
+    lines.append(f"\n")
+    # Entry point for usage auto-generated design.tcl
+    lines.append(f"source -echo -verbose {TsGlobals.TS_DFT_DESIGN_CFG_FILE}\n")
+    lines.append(f"# The name of top level design\n")
+    lines.append(f'set DESIGN_NAME "{str(ts_get_design_top()).lower()}"\n')
+    lines.append(f"\n")
+    lines.append(
+        "##########################################################################################\n"
+    )
+    lines.append("# Library Setup Variables\n")
+
+    lines.append(f"# Target library\n")
+    lines.append(f'set TMAX_LIBRARY_FILES "${{TS_TMAX_COMPLETE}}"\n')
+
+    lines.append(f"\n")
+    lines.append(f"\n")
+
+    lines.append(f"set NETLIST_FILES {TsGlobals.TS_DFT_NETLIST}\n")
+
+    # Create and write
+    with open(path, "w") as setup_file:
+        setup_file.writelines(lines)
+
 
 
 # Generic DFT lint open design
