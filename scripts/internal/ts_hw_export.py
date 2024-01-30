@@ -489,36 +489,42 @@ def __write_tcl_dict(dict_name: str, input_dict: dict, fd: str):
     fd.write("\n")
 
 
-def __append_to_view_tcl_lists(view_list, folder_list, view_val):
+def __append_to_view_tcl_lists(view_list, folder_list, complete_list,view_val):
     """ """
     view_list_ext = []
     folder_list_ext = []
+    complete_list_ext = []
 
     if type(view_val) == list:
         for x in view_val:
             if os.path.isfile(x):
-                view_list_ext = ["    {} \\\n".format(os.path.basename(x))]
+                view_list_ext.extend(["    {} \\\n".format(os.path.basename(x))]) 
                 folder_list_ext = ["    {} \\\n".format(os.path.dirname(x))]
+                complete_list.extend(["    {} \\\n".format(os.path.abspath(x))])
             else:
                 folder_list_ext = ["    {} \\\n".format(x)]
     else:
         if os.path.isfile(view_val):
             view_list_ext = ["    {} \\\n".format(os.path.basename(view_val))]
             folder_list_ext = ["    {} \\\n".format(os.path.dirname(view_val))]
+            complete_list.extend(["    {} \\\n".format(os.path.abspath(view_val))])
         else:
             folder_list_ext = ["    {} \\\n".format(view_val)]
 
     view_list.extend(view_list_ext)
+    complete_list.extend(complete_list_ext)
 
     if folder_list_ext:
         folder_list.extend(folder_list_ext)
 
 
-def __export_view_no_corners(view: str, fd, enforce=False):
+
+def __export_view_no_corners(view: str, fd, enforce=False, split=False):
     """ """
     # Build lists for the views
     view_list = []
     folder_list = []
+    complete_list = []
 
     for obj_type in ALLOWED_DESIGN_OBJ_TYPES:
         if obj_type in TsGlobals.TS_DESIGN_CFG["design"]:
@@ -544,13 +550,16 @@ def __export_view_no_corners(view: str, fd, enforce=False):
                             view,
                         )
                     continue
-                __append_to_view_tcl_lists(view_list, folder_list, obj["views"][view])
+                __append_to_view_tcl_lists(view_list, folder_list, complete_list, obj["views"][view])
     if view_list:
         fd.write("# Views\n")
         __write_tcl_list("TS_{}_VIEWS".format(view.upper()), view_list, fd)
     if folder_list:
         fd.write("# Folders\n")
         __write_tcl_list("TS_{}_VIEW_DIRS".format(view.upper()), folder_list, fd)
+    if complete_list:
+        fd.write("# Complete path\n")
+        __write_tcl_list("TS_{}_COMPLETE".format(view.upper()), complete_list, fd)
 
 
 def __export_view_with_corners(view: str, fd, enforce=False):
@@ -558,6 +567,7 @@ def __export_view_with_corners(view: str, fd, enforce=False):
     # Build lists for the views
     view_dict = {}
     folder_list = []
+    complete_list = []
 
     for obj_type in ALLOWED_DESIGN_OBJ_TYPES:
         if obj_type in TsGlobals.TS_DESIGN_CFG["design"]:
@@ -600,6 +610,7 @@ def __export_view_with_corners(view: str, fd, enforce=False):
                     __append_to_view_tcl_lists(
                         view_dict[mode["name"].upper()],
                         folder_list,
+                        complete_list,
                         obj["views"][view][mode["corner"]],
                     )
 

@@ -372,7 +372,9 @@ def sta_setup(path: str, args):
     min_name = f""
 
     for mode in modes:
-        if mode["corner"] in "wc":
+        if mode["corner"] == "wc1":
+            max_name = f'TS_NLDM_DB_{mode["name"].upper()}_VIEWS'
+        elif mode["corner"].startswith("wc"):
             max_name = f'TS_NLDM_DB_{mode["name"].upper()}_VIEWS'
         if mode["corner"] in "bc":
             min_name = f'TS_NLDM_DB_{mode["name"].upper()}_VIEWS'

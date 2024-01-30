@@ -27,6 +27,7 @@ from internal.ts_hw_args import (
     add_batch_mode_arg,
     add_cfg_files_arg,
     add_dft_lint_args,
+    add_dft_atpg_args,
     add_force_arg,
     add_lic_wait_arg,
     add_release_arg,
@@ -51,10 +52,13 @@ from internal.ts_hw_dft_support import (
     create_dft_subdirs,
     delete_dft_subdirs,
     dft_logging,
-    dft_runfile,
+    dft_lint_runfile,
+    dft_atpg_runfile,
     get_dft_rootdir,
     lint_design_cfg,
+    atpg_design_cfg,
     lint_setup_file,
+    atpg_setup_file,
     lint_src_file,
     open_design,
     set_dft_global_vars,
@@ -104,7 +108,14 @@ if __name__ == "__main__":
     parser_atpg = subparsers.add_parser("atpg")
     parser_atpg.set_defaults(flow="dft_atpg")
     parser_atpg.set_defaults(filter_mode_usage="dft_atpg")
+    add_runcode_arg(parser_atpg)
+    add_dft_atpg_args(parser_atpg,TsGlobals.TS_DFT_ATPG_TOOL)
+    add_batch_mode_arg(parser_atpg)
+    add_source_data_arg(parser_atpg, "dft_atpg")
     add_stayin_arg(parser_atpg, TsGlobals.TS_DFT_ATPG_TOOL)
+    add_force_arg(parser_atpg)
+    add_cfg_files_arg(parser_atpg)
+    add_ts_common_args(parser_atpg)
 
     # RTL parser
     parser_rtl = subparsers.add_parser("rtl", description="DFT RTL insertion flow")
@@ -184,7 +195,7 @@ if __name__ == "__main__":
         lint_src_file()
 
         # Generates dft run file
-        dft_runfile(args)
+        dft_lint_runfile(args)
 
         # Generates design configuration tcl file
         lint_design_cfg(args)
@@ -202,6 +213,22 @@ if __name__ == "__main__":
 
         # Goodbye message
         ts_print("DFT is done!", color=TsColors.PURPLE, big=True)
+
+    elif args.flow == "dft_atpg":
+        
+        # Generate necessary source files
+        print("ATPG FLOW")
+
+        # Generates dft run file
+        dft_atpg_runfile(args)
+
+        # Generates design configuration tcl file
+        atpg_design_cfg(args)
+
+        # Generates atpg setup file
+        atpg_setup_file(os.path.join(TsGlobals.TS_DFT_RUN_DIR, TsGlobals.TS_DFT_SETUP_FILE), args)
+
+
     else:
         ts_print("DFT cannot be run!", color=TsColors.PURPLE, big=True)
 
