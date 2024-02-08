@@ -335,13 +335,18 @@ def sta_setup(path: str, args):
 
     lines.append(f"set MODES [dict create]\n\n")
 
+
     for mode in modes:
         lines.append(f"dict set MODES {mode['name'].upper()} {{ \n")
-
+    # Python list to TCL list if necessary
+    # This is needed for usage list
         for key in mode:
-            lines.append(f" {key} {mode[key]} \n")
-
+            if type(mode[key]) is list:
+                lines.append(f" {key} {{{' '.join(map(str,mode[key]))}}} \n")
+            else:
+                lines.append(f" {key} {mode[key]} \n")
         lines.append(f"}}\n\n")
+
 
     lines.append(f"\n")
     lines.append(

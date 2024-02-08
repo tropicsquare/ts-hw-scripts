@@ -245,6 +245,33 @@ def build_spyglass_cmd(args):
     return sg_cmd
 
 
+# Generic LINT cmd tool regardless
+def build_atpg_cmd(args):
+    """
+    Returns tool command for dft atpg
+    """
+    cmd = f"build_{TsGlobals.TS_DFT_ATPG_TOOL}_cmd(args)"
+    try:
+        return eval(cmd)
+    except KeyError:
+        ts_throw_error(
+            TsErrCode.GENERIC,
+            f"Not defined ts_hw_dft_support.build_{TsGlobals.TS_DFT_ATPG_TOOL}_cmd() for selected ATPG tool {TsGlobals.TS_DFT_ATPG_TOOL}",
+        )
+
+# ATPG cmd TetraMax DFT/ATPG tool
+def build_tmax_cmd(args):
+    """
+    Returns tmax command for execution by ts-common/exec_cmd_in_dir_interactive()
+    """
+
+    sg_cfg_args = f""
+    sg_cfg_args = f"{TsGlobals.TS_DFT_RUNFILE} -64"
+    sg_cmd = f"tmax {sg_cfg_args}"
+
+    return sg_cmd
+
+
 # Generic DFT LINT RUN FILE tool regardless
 def dft_lint_runfile(args):
     """
@@ -341,38 +368,14 @@ def dft_atpg_runfile_tmax(args):
     path = f"{TsGlobals.TS_DFT_RUNFILE}"
     # File content
     lines = []
-    # Initial settings
+    # Execution
     lines.append(f'puts "Running TetraMax user TCL script."\n')
- 
-    lines.append(f"\n")
-    lines.append(f"#set_rules n21 warning\n")
-    lines.append(f"\n")
-    lines.append(f"# ROM FILE CONTENT\n")
-    lines.append(f"set_rules b24 warning\n")
-    lines.append(f"\n")
-    lines.append(f"source {TsGlobals.TS_DFT_SETUP_FILE} -verbose\n")
-    lines.append(f"\n")
-    lines.append(f"if {{ [file exists $env(TS_REPO_ROOT)/dft/tmax/${{DESIGN_NAME}}_bbx.tcl] }} {{ \n")
-    lines.append(f'    puts "RM-Info: Sourcing ${{DESIGN_NAME}}_bbx.tcl script file from the $env(TS_REPO_ROOT)/dft/tmax folder." \n')
-    lines.append(f"    source -echo -verbose $env(TS_REPO_ROOT)/dft/tmax/${{DESIGN_NAME}}_bbx.tcl \n")
-    lines.append(f"}}\n")
-    lines.append(f"\n")
-    lines.append(f"foreach tmax_library $TMAX_LIBRARY_FILES {{\n")
-    lines.append(f"     read_netlist $tmax_library -library -noabort\n")
-    lines.append(f"}}\n")
-    lines.append(f"\n")
-    lines.append(f"read_netlist $NETLIST_FILES\n")
-    lines.append(f"\n")
-    lines.append(f"report_modules -undefined\n")
-    lines.append(f"report_modules -summary\n")
-    lines.append(f"report_settings build\n")
-    lines.append(f"run_build_model\n")
-    lines.append(f"\n")
-    lines.append(f"report_violations B6\n")
-    lines.append(f"\n")
-    lines.append(f"\n")
-    lines.append(f"\n")
-
+    lines.append(f'\n')
+    lines.append(f'if {{ [file exists $env(TS_REPO_ROOT)/dft/tmax/{str(ts_get_design_top()).lower()}_scan_base.tcl] }} {{\n')
+    lines.append(f'     puts "RM-Info: Sourcing {str(ts_get_design_top()).lower()}_scan_base.tcl script file from the $env(TS_REPO_ROOT)/dft/tmax folder."\n')
+    lines.append(f'     source -echo -verbose $env(TS_REPO_ROOT)/dft/tmax/{str(ts_get_design_top()).lower()}_scan_base.tcl\n')
+    lines.append(f'}}\n')
+    lines.append(f'\n')
 
     # Create and write the file
     with open(path, "w") as dft_runfile:
@@ -585,14 +588,12 @@ def atpg_setup_file_tmax(path: str, args):
         "##########################################################################################\n"
     )
     lines.append("# Library Setup Variables\n")
-
+    lines.append(f"\n")
     lines.append(f"# Target library\n")
     lines.append(f'set TMAX_LIBRARY_FILES "${{TS_TMAX_COMPLETE}}"\n')
-
     lines.append(f"\n")
-    lines.append(f"\n")
-
     lines.append(f"set NETLIST_FILES {TsGlobals.TS_DFT_NETLIST}\n")
+    lines.append(f"\n")
 
     # Create and write
     with open(path, "w") as setup_file:

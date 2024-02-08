@@ -49,6 +49,7 @@ from internal.ts_hw_common import (
 )
 from internal.ts_hw_dft_support import (
     build_lint_cmd,
+    build_atpg_cmd,
     create_dft_subdirs,
     delete_dft_subdirs,
     dft_logging,
@@ -227,6 +228,13 @@ if __name__ == "__main__":
 
         # Generates atpg setup file
         atpg_setup_file(os.path.join(TsGlobals.TS_DFT_RUN_DIR, TsGlobals.TS_DFT_SETUP_FILE), args)
+
+        # Prepare atpg cmd
+        # Uses dft runfile
+        atpg_cmd = build_atpg_cmd(args)
+
+        # Run ATPG
+        exec_cmd_in_dir(TsGlobals.TS_DFT_RUN_DIR, atpg_cmd, args.batch_mode)
 
 
     else:
