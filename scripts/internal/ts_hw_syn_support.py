@@ -293,12 +293,15 @@ def syn_mcmm_file(path: str, args):
 
     for mode in modes:
         lines.append(f"dict set MODES {mode['name'].upper()} {{ \n")
-
+    # Python list to TCL list if necessary
+    # This is needed for usage list
         for key in mode:
-            lines.append(f" {key} {mode[key]} \n")
-
+            if type(mode[key]) is list:
+                lines.append(f" {key} {{{' '.join(map(str,mode[key]))}}} \n")
+            else:
+                lines.append(f" {key} {mode[key]} \n")
         lines.append(f"}}\n\n")
-    lines.append(f"\n")
+
     lines.append(f"\n")
     lines.append(f"\n")
     lines.append(f"remove_scenario -all\n")
@@ -363,10 +366,13 @@ def syn_setup(path: str, args):
 
     for mode in modes:
         lines.append(f"dict set MODES {mode['name'].upper()} {{ \n")
-
+    # Python list to TCL list if necessary
+    # This is needed for usage list
         for key in mode:
-            lines.append(f" {key} {mode[key]} \n")
-
+            if type(mode[key]) is list:
+                lines.append(f" {key} {{{' '.join(map(str,mode[key]))}}} \n")
+            else:
+                lines.append(f" {key} {mode[key]} \n")
         lines.append(f"}}\n\n")
 
     lines.append(f"\n")

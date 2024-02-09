@@ -445,6 +445,7 @@ PDK_VIEW_CONFIG = GrammarSchema(
         Optional("gds"): __str_or_list,
         Optional("cdl"): __str_or_list,
         Optional("milkyway"): str,
+        Optional("ndm"): __str_or_list,
         Optional("slf"): __str_or_list,
 	Optional("tmax"): __str_or_list,
     }
