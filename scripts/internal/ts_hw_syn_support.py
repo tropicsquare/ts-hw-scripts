@@ -322,7 +322,6 @@ def syn_mcmm_file(path: str, args):
     )
     lines.append(f"}}\n")
     lines.append(f"\n")
-    lines.append(f"unset MODES\n")
 
     # Create and write
     with open(path, "w") as setup_file:
