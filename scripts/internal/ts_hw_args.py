@@ -968,6 +968,20 @@ def add_dft_atpg_args(parser: ArgumentParser, tool_type: str) -> None:
         help=f"Use relative path to the netlist file. It helps to overwrite default netlist naming pattern.",
     )
 
+    parser.add_argument(
+        "--mode",
+        nargs="?",
+        default=None,
+        help=f"Use the name of source dft script for given mode e.g. scan_base or scan_capture. Prerequisite is existing <design_name>_<mode>.tcl file.",
+    )
+
+    parser.add_argument(
+        "--gui",
+        action="store_true",
+        default=False,
+        help=f"GUI to be used.",
+    )
+
 
 # Common argument --licence-wait
 def add_lic_wait_arg(parser: ArgumentParser, tool_type: str) -> None:

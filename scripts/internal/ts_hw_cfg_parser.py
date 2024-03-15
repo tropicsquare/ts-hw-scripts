@@ -380,6 +380,22 @@ def do_dft_atpg_tmax_init(args):
     """
     if args.open_result is True:
         return
+    if args.mode is None:
+        ts_throw_error(TsErrCode.ERR_DFT_6)
+    else:
+        root_dir = ts_get_root_rel_path(f"dft/{TsGlobals.TS_DFT_ATPG_TOOL}/")
+        regex = re.compile(rf"(.*)({args.mode})(.*)(tcl)$")
+
+        try:
+            files = [
+                f
+                for f in os.listdir(root_dir)
+                if os.path.isfile(os.path.join(root_dir, f))
+            ]
+            for f in files:
+                result = regex.search(f)
+        except:
+            ts_throw_error(TsErrCode.ERR_DFT_6)
 
 
 def __check_pwr_scenarios():

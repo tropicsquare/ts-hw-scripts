@@ -217,6 +217,7 @@ class TsErrCode(TsCode):
     ERR_DFT_3 = "DFT root_dir cannot be selected properly."
     ERR_DFT_4 = "Netlist %s was not found"
     ERR_DFT_5 = "Missing dft constraint file"
+    ERR_DFT_6 = "Please select atpg mode. Use scan_base or scan_compress etc."
 
     # PNR error messages
     ERR_PNR_0 = "Missing runcode parameter"

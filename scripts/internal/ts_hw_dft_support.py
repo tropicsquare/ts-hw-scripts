@@ -266,9 +266,10 @@ def build_tmax_cmd(args):
     """
 
     sg_cfg_args = f""
-    sg_cfg_args = f"{TsGlobals.TS_DFT_RUNFILE} -64"
+    sg_cfg_args += f"{TsGlobals.TS_DFT_RUNFILE} -64 -env RUNCODE {TsGlobals.TS_DFT_RUNCODE}"
+    if not args.gui:
+        sg_cfg_args += f" -shell"
     sg_cmd = f"tmax {sg_cfg_args}"
-
     return sg_cmd
 
 
@@ -371,9 +372,11 @@ def dft_atpg_runfile_tmax(args):
     # Execution
     lines.append(f'puts "Running TetraMax user TCL script."\n')
     lines.append(f'\n')
-    lines.append(f'if {{ [file exists $env(TS_REPO_ROOT)/dft/tmax/{str(ts_get_design_top()).lower()}_scan_base.tcl] }} {{\n')
-    lines.append(f'     puts "RM-Info: Sourcing {str(ts_get_design_top()).lower()}_scan_base.tcl script file from the $env(TS_REPO_ROOT)/dft/tmax folder."\n')
-    lines.append(f'     source -echo -verbose $env(TS_REPO_ROOT)/dft/tmax/{str(ts_get_design_top()).lower()}_scan_base.tcl\n')
+    lines.append(f'if {{ [file exists $env(TS_REPO_ROOT)/dft/tmax/{str(ts_get_design_top()).lower()}_{args.mode}.tcl] }} {{\n')
+    lines.append(f'     puts "RM-Info: Sourcing {str(ts_get_design_top()).lower()}_{args.mode}.tcl script file from the $env(TS_REPO_ROOT)/dft/tmax folder."\n')
+    lines.append(f'     source -echo -verbose $env(TS_REPO_ROOT)/dft/tmax/{str(ts_get_design_top()).lower()}_{args.mode}.tcl\n')
+    lines.append(f'}} else {{\n')
+    lines.append(f'     exit\n')
     lines.append(f'}}\n')
     lines.append(f'\n')
 
