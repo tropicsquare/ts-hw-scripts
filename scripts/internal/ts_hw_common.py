@@ -6,6 +6,7 @@
 # For license see LICENSE file in repository root.
 ####################################################################################################
 
+import atexit
 import contextlib
 import logging
 import os
@@ -23,6 +24,7 @@ import pty
 import select
 from datetime import datetime
 from typing import Any, Optional
+from typing_extensions import NoReturn
 
 import junit_xml
 import psutil
@@ -479,7 +481,7 @@ def generate_junit_test_object(
     return test
 
 
-def gracefully_quit(sig, frame):
+def gracefully_quit(sig: int, _) -> NoReturn:
     """
     Exit the current process in a clean way
     """
@@ -489,7 +491,7 @@ def gracefully_quit(sig, frame):
         ts_debug(f"Terminating process {child}")
         child.terminate()
 
-    gone, alive = psutil.wait_procs(children, timeout=2)
+    _, alive = psutil.wait_procs(children, timeout=2)
 
     for child in alive:
         # the hard way
@@ -499,7 +501,7 @@ def gracefully_quit(sig, frame):
     ts_throw_error(TsErrCode.ERR_CMP_5, signal.Signals(sig).name)
 
 
-def propagate_to_parent(sig, frame):
+def propagate_to_parent(sig: int, _) -> None:
     """
     Send signal to parent process
     """
@@ -512,9 +514,26 @@ def init_signals_handler():
     """
     Initialize external signals handling
     """
-    signal.signal(signal.SIGINT, gracefully_quit)
-    signal.signal(signal.SIGTERM, gracefully_quit)
-    signal.signal(signal.SIGUSR1, propagate_to_parent)
+    sigint_hdlr = signal.signal(signal.SIGINT, gracefully_quit)  # type: ignore
+    sigterm_hdlr = signal.signal(signal.SIGTERM, gracefully_quit)  # type: ignore
+    sigusr1_hdlr = signal.signal(signal.SIGUSR1, propagate_to_parent)  # type: ignore
+
+    def restore_signal_handlers() -> None:
+        signal.signal(signal.SIGINT, sigint_hdlr)
+        signal.signal(signal.SIGTERM, sigterm_hdlr)
+        signal.signal(signal.SIGUSR1, sigusr1_hdlr)
+
+    stdin_tty_attrs = termios.tcgetattr(sys.stdin)
+    stdout_tty_attrs = termios.tcgetattr(sys.stdout)
+    stderr_tty_attrs = termios.tcgetattr(sys.stderr)
+
+    def restore_tty_attrs() -> None:
+        termios.tcsetattr(sys.stdin, termios.TCSADRAIN, stdin_tty_attrs)
+        termios.tcsetattr(sys.stdout, termios.TCSADRAIN, stdout_tty_attrs)
+        termios.tcsetattr(sys.stderr, termios.TCSADRAIN, stderr_tty_attrs)
+
+    atexit.register(restore_tty_attrs)
+    atexit.register(restore_signal_handlers)
 
 
 def get_pdk_obj(obj_type: str, target_obj_name: str, target_obj_version: str) -> dict:
