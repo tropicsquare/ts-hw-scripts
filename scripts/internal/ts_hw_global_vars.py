@@ -242,6 +242,9 @@ class TsGlobals:
     # DFT design_cfg file
     TS_DFT_DESIGN_CFG_FILE = "design_cfg.tcl"
 
+    # DFT release dir
+    TS_DFT_RELEASE_DIR = None
+
     # Enviromental variable for RTL LINT root directory
     TS_RTL_LINT_PATH = "lint"
 
