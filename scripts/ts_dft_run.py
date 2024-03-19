@@ -62,6 +62,7 @@ from internal.ts_hw_dft_support import (
     atpg_setup_file,
     lint_src_file,
     open_design,
+    dft_release,
     set_dft_global_vars,
 )
 from internal.ts_hw_global_vars import TsGlobals
@@ -111,6 +112,7 @@ if __name__ == "__main__":
     parser_atpg.set_defaults(filter_mode_usage="dft_atpg")
     add_runcode_arg(parser_atpg)
     add_dft_atpg_args(parser_atpg,TsGlobals.TS_DFT_ATPG_TOOL)
+    add_release_arg(parser_atpg)
     add_batch_mode_arg(parser_atpg)
     add_source_data_arg(parser_atpg, "dft_atpg")
     add_stayin_arg(parser_atpg, TsGlobals.TS_DFT_ATPG_TOOL)
@@ -235,6 +237,20 @@ if __name__ == "__main__":
 
         # Run ATPG
         exec_cmd_in_dir(TsGlobals.TS_DFT_RUN_DIR, atpg_cmd, args.batch_mode)
+
+        # Release data to a given flow_dir - sta
+        if (
+            args.release
+            and TsGlobals.TS_DESIGN_CFG["design"]["flow_dirs"]["dft-atpg"] is not None
+            and not args.force
+        ):
+            TsGlobals.TS_DFT_RELEASE_DIR = os.path.join(
+                ts_get_root_rel_path(
+                    TsGlobals.TS_DESIGN_CFG["design"]["flow_dirs"]["dft-atpg"],
+                    TsGlobals.TS_DFT_RUNCODE,
+                )
+            )
+            dft_release(TsGlobals.TS_DFT_RUN_DIR, TsGlobals.TS_DFT_RELEASE_DIR, "dft")
 
 
     else:

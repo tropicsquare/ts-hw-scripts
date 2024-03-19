@@ -266,7 +266,7 @@ def build_tmax_cmd(args):
     """
 
     sg_cfg_args = f""
-    sg_cfg_args += f"{TsGlobals.TS_DFT_RUNFILE} -64 -env RUNCODE {TsGlobals.TS_DFT_RUNCODE}"
+    sg_cfg_args += f"{TsGlobals.TS_DFT_RUNFILE} -64 -env RUNCODE {TsGlobals.TS_DFT_RUNCODE} -env REPORTS_DIR {TsGlobals.TS_DFT_REPORTS_DIR} -env RESULTS_DIR {TsGlobals.TS_DFT_RESULTS_DIR} -env LOGS_DIR {TsGlobals.TS_DFT_LOGS_DIR}"
     if not args.gui:
         sg_cfg_args += f" -shell"
     sg_cmd = f"tmax {sg_cfg_args}"
@@ -632,3 +632,28 @@ def dft_lint_spyglass_open_design(args):
     sg_cmd = f'TERM=xterm /usr/bin/bash -c "cd {TsGlobals.TS_DFT_RUN_DIR}; {sg_cmd}" ;'
 
     return sg_cmd
+
+
+
+def dft_release(source_dir, release_dir, flow_dir_type):
+    """
+    Hard-copy data from source directory to release directory
+    """
+    if source_dir is not release_dir:
+        os.makedirs(release_dir, exist_ok=True)
+        shutil.copytree(
+            eval(f"TsGlobals.TS_{str(flow_dir_type).upper()}_REPORTS_DIR"),
+            f"{release_dir}/reports",
+            dirs_exist_ok=True,
+        )
+        shutil.copytree(
+            eval(f"TsGlobals.TS_{str(flow_dir_type).upper()}_LOGS_DIR"),
+            f"{release_dir}/logs",
+            dirs_exist_ok=True,
+        )
+        shutil.copytree(
+            eval(f"TsGlobals.TS_{str(flow_dir_type).upper()}_RESULTS_DIR"),
+            f"{release_dir}/results",
+            dirs_exist_ok=True,
+        )
+        ts_print("Release is done!", color=TsColors.PURPLE, big=True)
