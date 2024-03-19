@@ -148,5 +148,5 @@ public_filter:
         - git remote remove github_mirror || true
         - git remote add github_mirror git@github.com:tropicsquare/ts-hw-scripts.git
         - git push --force github_mirror -u public
-        - git push --tags
+        - git push --force --tags
 
