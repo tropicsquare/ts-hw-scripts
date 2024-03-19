@@ -523,17 +523,22 @@ def init_signals_handler():
         signal.signal(signal.SIGTERM, sigterm_hdlr)
         signal.signal(signal.SIGUSR1, sigusr1_hdlr)
 
-    stdin_tty_attrs = termios.tcgetattr(sys.stdin)
-    stdout_tty_attrs = termios.tcgetattr(sys.stdout)
-    stderr_tty_attrs = termios.tcgetattr(sys.stderr)
-
-    def restore_tty_attrs() -> None:
-        termios.tcsetattr(sys.stdin, termios.TCSADRAIN, stdin_tty_attrs)
-        termios.tcsetattr(sys.stdout, termios.TCSADRAIN, stdout_tty_attrs)
-        termios.tcsetattr(sys.stderr, termios.TCSADRAIN, stderr_tty_attrs)
-
-    atexit.register(restore_tty_attrs)
     atexit.register(restore_signal_handlers)
+
+    def restore_tty_attrs(fd: Any, attrs: Any) -> None:
+        termios.tcsetattr(fd, termios.TCSADRAIN, attrs)
+
+    with contextlib.suppress(termios.error):
+        stdin_tty_attrs = termios.tcgetattr(sys.stdin)
+        atexit.register(restore_tty_attrs, sys.stdin, stdin_tty_attrs)
+
+    with contextlib.suppress(termios.error):
+        stdout_tty_attrs = termios.tcgetattr(sys.stdout)
+        atexit.register(restore_tty_attrs, sys.stdout, stdout_tty_attrs)
+
+    with contextlib.suppress(termios.error):
+        stderr_tty_attrs = termios.tcgetattr(sys.stderr)
+        atexit.register(restore_tty_attrs, sys.stderr, stderr_tty_attrs)
 
 
 def get_pdk_obj(obj_type: str, target_obj_name: str, target_obj_version: str) -> dict:
